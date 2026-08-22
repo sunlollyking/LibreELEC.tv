@@ -19,6 +19,10 @@ PKG_BUILD_FLAGS="+pic"
 #
 # JPEG2000 stays off because openjpeg is not in the tree. A page whose scan is
 # encoded as JPX then renders blank rather than failing to open.
+# Poppler hides its symbols and its inline functions, which suits a shared
+# library. This is a static archive linked into Kodi, and the linker then
+# refuses the inlined std::string members it emitted as hidden, so the
+# visibility defaults are put back.
 PKG_CMAKE_OPTS_TARGET="-DBUILD_SHARED_LIBS=OFF \
                        -DBUILD_GTK_TESTS=OFF \
                        -DBUILD_QT5_TESTS=OFF \
@@ -39,4 +43,7 @@ PKG_CMAKE_OPTS_TARGET="-DBUILD_SHARED_LIBS=OFF \
                        -DENABLE_LCMS=ON \
                        -DWITH_Cairo=OFF \
                        -DWITH_NSS3=OFF \
-                       -DRUN_GPERF_IF_PRESENT=OFF"
+                       -DRUN_GPERF_IF_PRESENT=OFF \
+                       -DCMAKE_C_VISIBILITY_PRESET=default \
+                       -DCMAKE_CXX_VISIBILITY_PRESET=default \
+                       -DCMAKE_VISIBILITY_INLINES_HIDDEN=OFF"
