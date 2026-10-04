@@ -1,0 +1,106 @@
+From afeb0903e1163064fa6ca936ad676f010d4df279 Mon Sep 17 00:00:00 2001
+From: Chris <meischris39@hotmail.com>
+Date: Sun, 4 Oct 2026 17:31:26 +0100
+Subject: [PATCH] Keep main memory in the library's own image on Linux
+
+The 640mb block has to sit within rip-relative reach of the code. Kodi
+can fill the address space around a freshly loaded core with other
+mappings, so a search found no room, fell back to wherever the OS put
+it, and the recompiled code crashed on its first jump.
+---
+ common/include/Utilities/PageFaultSource.h |  6 ++++++
+ common/src/Utilities/VirtualMemory.cpp     | 13 +++++++++++--
+ pcsx2/System.cpp                           | 11 +++++++++++
+ 3 files changed, 28 insertions(+), 2 deletions(-)
+
+diff --git a/common/include/Utilities/PageFaultSource.h b/common/include/Utilities/PageFaultSource.h
+index 0bc797d04..f01160754 100644
+--- a/common/include/Utilities/PageFaultSource.h
++++ b/common/include/Utilities/PageFaultSource.h
+@@ -113,11 +113,17 @@ class VirtualMemoryManager
+     // reserved memory (in pages)
+     u32 m_pages_reserved;
+ 
++    // Whether the memory was mapped here, rather than handed over by the caller
++    bool m_owned;
++
+ public:
+     // If upper_bounds is nonzero and the OS fails to allocate memory that is below it,
+     // Alloc() will always return null pointers
+     // strict indicates that the allocation should quietly fail if the memory can't be mapped at `base`
+     VirtualMemoryManager(uptr base, size_t size, uptr upper_bounds = 0, bool strict = false);
++    // Manages memory the caller already owns, such as a static array. It is
++    // reset, not unmapped, when the manager is destroyed.
++    VirtualMemoryManager(void *region, size_t size);
+     ~VirtualMemoryManager();
+ 
+     void *GetBase() const { return (void *)m_baseptr; }
+diff --git a/common/src/Utilities/VirtualMemory.cpp b/common/src/Utilities/VirtualMemory.cpp
+index d003b7faa..910fe4039 100644
+--- a/common/src/Utilities/VirtualMemory.cpp
++++ b/common/src/Utilities/VirtualMemory.cpp
+@@ -77,7 +77,7 @@ static size_t pageAlign(size_t size)
+     ((void)(HostSys::Munmap((uptr)(ptr), size), (ptr) = NULL))
+ 
+ VirtualMemoryManager::VirtualMemoryManager(uptr base, size_t size, uptr upper_bounds, bool strict)
+-    : m_baseptr(0), m_pageuse(nullptr), m_pages_reserved(0)
++    : m_baseptr(0), m_pageuse(nullptr), m_pages_reserved(0), m_owned(true)
+ {
+     if (!size) return;
+ 
+@@ -110,10 +110,19 @@ VirtualMemoryManager::VirtualMemoryManager(uptr base, size_t size, uptr upper_bo
+     m_pageuse = new std::atomic<bool>[m_pages_reserved]();
+ }
+ 
++VirtualMemoryManager::VirtualMemoryManager(void *region, size_t size)
++    : m_baseptr((uptr)region), m_pageuse(nullptr), m_pages_reserved(size / PCSX2_PAGESIZE), m_owned(false)
++{
++    // Leave it as a reservation would: no access until a part is committed
++    HostSys::MmapResetPtr(region, m_pages_reserved * PCSX2_PAGESIZE);
++    m_pageuse = new std::atomic<bool>[m_pages_reserved]();
++}
++
+ VirtualMemoryManager::~VirtualMemoryManager()
+ {
+     if (m_pageuse) delete[] m_pageuse;
+-    if (m_baseptr) HostSys::Munmap(m_baseptr, m_pages_reserved * PCSX2_PAGESIZE);
++    if (m_baseptr && m_owned) HostSys::Munmap(m_baseptr, m_pages_reserved * PCSX2_PAGESIZE);
++    else if (m_baseptr) HostSys::MmapResetPtr((void *)m_baseptr, m_pages_reserved * PCSX2_PAGESIZE);
+ }
+ 
+ static bool VMMMarkPagesAsInUse(std::atomic<bool> *begin, std::atomic<bool> *end) {
+diff --git a/pcsx2/System.cpp b/pcsx2/System.cpp
+index 12d21bed1..536658460 100644
+--- a/pcsx2/System.cpp
++++ b/pcsx2/System.cpp
+@@ -160,9 +160,19 @@ public:
+ 	virtual ~CpuInitializerSet() = default;
+ };
+ 
++#ifndef _WIN32
++// Main memory is part of this library's image, so it is loaded within reach of
++// the code the recompilers generate. A busy host process can leave no room near
++// that code for the search below to find, and memory placed out of reach crashes.
++alignas(PCSX2_PAGESIZE) static u8 s_mainMemory[HostMemoryMap::Size];
++#endif
++
+ /// Attempts to find a spot near static variables for the main memory
+ static VirtualMemoryManagerPtr makeMainMemoryManager(void)
+ {
++#ifndef _WIN32
++	return std::make_shared<VirtualMemoryManager>(s_mainMemory, sizeof(s_mainMemory));
++#else
+ 	// Everything looks nicer when the start of all the sections is a nice round looking number.
+ 	// Also reduces the variation in the address due to small changes in code.
+ 	// Breaks ASLR but so does anything else that tries to make addresses constant for our debugging pleasure
+@@ -183,6 +193,7 @@ static VirtualMemoryManagerPtr makeMainMemoryManager(void)
+ 	}
+ 
+ 	return std::make_shared<VirtualMemoryManager>(0, HostMemoryMap::Size);
++#endif
+ }
+ 
+ // --------------------------------------------------------------------------------------
+-- 
+2.53.0
+

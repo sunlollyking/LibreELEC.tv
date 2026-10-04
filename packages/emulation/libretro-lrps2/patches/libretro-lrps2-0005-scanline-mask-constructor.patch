@@ -1,0 +1,36 @@
+From 4f02a0e7207b8cfa3be28a962a492a93adc3f137 Mon Sep 17 00:00:00 2001
+From: Chris <meischris39@hotmail.com>
+Date: Sun, 4 Oct 2026 16:34:00 +0100
+Subject: [PATCH] GS: Build the scanline mask with an array constructor
+
+Initialising an array from a brace list is GLSL 4.20 (420pack) syntax,
+which ESSL does not have. Mesa 26.2 rejects it, so the whole convert
+program for the scanline filter failed to link under GLES, and with it
+the renderer: every frame came out black. The constructor form means the
+same in desktop GLSL and ESSL.
+---
+ pcsx2/GS/Renderers/OpenGL/GSDeviceOGL.cpp | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/pcsx2/GS/Renderers/OpenGL/GSDeviceOGL.cpp b/pcsx2/GS/Renderers/OpenGL/GSDeviceOGL.cpp
+index 39df56b60..bb70cafd3 100644
+--- a/pcsx2/GS/Renderers/OpenGL/GSDeviceOGL.cpp
++++ b/pcsx2/GS/Renderers/OpenGL/GSDeviceOGL.cpp
+@@ -435,11 +435,11 @@ static const char convert_glsl_shader_raw[] =
+ "#ifdef ps_main5\n"
+ "vec4 ps_scanlines(uint i)\n"
+ "{\n"
+-"    vec4 mask[2] =\n"
+-"    {\n"
++"    vec4 mask[2] = vec4[2]\n"
++"    (\n"
+ "        vec4(1, 1, 1, 0),\n"
+ "        vec4(0, 0, 0, 0)\n"
+-"    };\n"
++"    );\n"
+ "\n"
+ "    return sample_c() * clamp((mask[i] + 0.5f), 0.0f, 1.0f);\n"
+ "}\n"
+-- 
+2.53.0
+

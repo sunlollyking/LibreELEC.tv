@@ -67,12 +67,13 @@ pre_configure_target() {
   export CFLAGS="${CFLAGS} -mfxsr -include stdint.h"
   export CXXFLAGS="${CXXFLAGS} -mfxsr -include stdint.h -std=gnu++17"
 
-  # xz is built "+pic -sysroot", so nothing lands where find_package(LibLZMA)
-  # looks and the tree falls back to its bundled copy -- a 2020 snapshot whose
-  # mythread.h picks the win32 backend under this toolchain and stops at
-  # "windows.h: No such file or directory". Point CMake at the real one.
+  # xz is installed outside the sysroot, so nothing lands where
+  # find_package(LibLZMA) looks and the tree falls back to its bundled copy --
+  # a 2020 snapshot whose mythread.h picks the win32 backend under this
+  # toolchain and stops at "windows.h: No such file or directory". Point CMake
+  # at the real one, which the image ships as liblzma.so.5.
   # PKG_CMAKE_OPTS_TARGET is expanded after this hook runs, so appending works.
-  PKG_CMAKE_OPTS_TARGET+=" -DLIBLZMA_LIBRARY=$(get_install_dir xz)/usr/lib/liblzma.a"
+  PKG_CMAKE_OPTS_TARGET+=" -DLIBLZMA_LIBRARY=$(get_install_dir xz)/usr/lib/liblzma.so"
   PKG_CMAKE_OPTS_TARGET+=" -DLIBLZMA_INCLUDE_DIR=$(get_install_dir xz)/usr/include"
 }
 
