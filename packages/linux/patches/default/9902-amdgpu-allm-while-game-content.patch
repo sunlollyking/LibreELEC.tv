@@ -12,8 +12,9 @@ content type nor ALLM reached the sink. Don't force the modeset; apply
 the change to the running stream as a stream update, as HDR metadata is.
 ---
 --- a/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c
+--- a/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c
 +++ b/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c
-@@ -7323,6 +7323,40 @@
+@@ -7620,6 +7620,40 @@
  }
  #endif
  
@@ -54,19 +55,19 @@ the change to the running stream as a stream update, as HDR metadata is.
  static struct dc_stream_state *
  create_stream_for_sink(struct drm_connector *connector,
  		       const struct drm_display_mode *drm_mode,
-@@ -7473,8 +7507,10 @@
- 
+@@ -7771,8 +7805,10 @@
  	update_stream_signal(stream, sink);
  
--	if (stream->signal == SIGNAL_TYPE_HDMI_TYPE_A)
-+	if (stream->signal == SIGNAL_TYPE_HDMI_TYPE_A) {
- 		mod_build_hf_vsif_infopacket(stream, &stream->vsp_infopacket);
+ 	if (stream->signal == SIGNAL_TYPE_HDMI_TYPE_A ||
+-	    stream->signal == SIGNAL_TYPE_HDMI_FRL)
++	    stream->signal == SIGNAL_TYPE_HDMI_FRL) {
+ 		mod_build_hf_vsif_infopacket(stream, &stream->vsp_infopacket, false, false);
 +		fill_hf_vsif_allm(stream);
 +	}
  
  	if (stream->signal == SIGNAL_TYPE_DISPLAY_PORT ||
  	    stream->signal == SIGNAL_TYPE_DISPLAY_PORT_MST ||
-@@ -8411,12 +8447,14 @@
+@@ -8746,12 +8782,14 @@
  		new_crtc_state->mode_changed = true;
  	}
  
@@ -83,7 +84,7 @@ the change to the running stream as a stream update, as HDR metadata is.
  	}
  
  	if (!drm_connector_atomic_hdr_metadata_equal(old_con_state, new_con_state)) {
-@@ -10975,6 +11013,7 @@
+@@ -11615,6 +11653,7 @@
  		struct dc_info_packet hdr_packet;
  		struct dc_stream_status *status = NULL;
  		bool abm_changed, hdr_changed, scaling_changed, output_color_space_changed = false;
@@ -91,7 +92,7 @@ the change to the running stream as a stream update, as HDR metadata is.
  
  		memset(&stream_update, 0, sizeof(stream_update));
  
-@@ -11004,7 +11043,10 @@
+@@ -11644,7 +11683,10 @@
  		hdr_changed =
  			!drm_connector_atomic_hdr_metadata_equal(old_con_state, new_con_state);
  
@@ -103,13 +104,14 @@ the change to the running stream as a stream update, as HDR metadata is.
  			continue;
  
  		stream_update.stream = dm_new_crtc_state->stream;
-@@ -11034,6 +11076,15 @@
+@@ -11674,6 +11716,16 @@
  			stream_update.hdr_static_metadata = &hdr_packet;
  		}
  
 +		if (content_type_changed) {
 +			dm_new_crtc_state->stream->content_type = get_output_content_type(new_con_state);
-+			if (dm_new_crtc_state->stream->signal == SIGNAL_TYPE_HDMI_TYPE_A) {
++			if (dm_new_crtc_state->stream->signal == SIGNAL_TYPE_HDMI_TYPE_A ||
++			    dm_new_crtc_state->stream->signal == SIGNAL_TYPE_HDMI_FRL) {
 +				fill_hf_vsif_allm(dm_new_crtc_state->stream);
 +				stream_update.hfvsif_infopacket =
 +					&dm_new_crtc_state->stream->hfvsif_infopacket;
