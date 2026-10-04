@@ -1,0 +1,45 @@
+From 32725f06d25885b69396e4729d199476a54d1739 Mon Sep 17 00:00:00 2001
+From: Chris <chris.dixon.78.burnbridge@gmail.com>
+Date: Fri, 08 Aug 2026 18:35:00 +0100
+Subject: [PATCH] define GLEW_EGL so glew does not pull in glxew
+
+GLEW resolves its entry points through GLX unless built with GLEW_EGL, and
+glxewInit() returns GLEW_ERROR_NO_GLX_DISPLAY where there is no GLX -- which is
+every GBM build, this one included. glewInit() then fails and the GL backend
+never comes up.
+
+GL_LIB also becomes a soft assignment, so a system whose glvnd provides
+libOpenGL rather than libGL can name it without losing the -lEGL this adds.
+
+The GLEW_EGL part is merged upstream as
+https://github.com/hrydgard/ppsspp/pull/22045, backported to the commit the Kodi
+add-on pins.
+---
+diff --git a/libretro/Makefile b/libretro/Makefile
+--- a/libretro/Makefile
++++ b/libretro/Makefile
+@@ -68,7 +68,10 @@
+ 		GLES = 1
+ 		GL_LIB := -lGLESv2
+ 	else
+-		GL_LIB := -lGL
++		GL_LIB ?= -lGL
++		ifeq ($(GLEW_EGL),1)
++			GL_LIB += -lEGL
++		endif
+ 	endif
+ 	PLATFORM_EXT := unix
+ 	LDFLAGS += -lrt -ldl
+@@ -424,6 +427,12 @@
+ endif
+ 
+ ### Finalize ###
++# GLEW resolves its entry points through GLX by default; glxewInit() fails with
++# GLEW_ERROR_NO_GLX_DISPLAY where there is no GLX, which is every GBM build.
++ifeq ($(GLEW_EGL),1)
++   COREFLAGS += -DGLEW_EGL
++endif
++
+ OBJECTS		+= $(SOURCES_CXX:.cpp=.o) $(SOURCES_C:.c=.o) $(ASMFILES:.S=.o)
+ CXXFLAGS    += $(CPUOPTS) $(COREFLAGS) $(FFMPEGINCFLAGS) $(INCFLAGS) $(INCFLAGS_PLATFORM) $(PLATCFLAGS) $(fpic) $(PLATCFLAGS) $(CPUFLAGS) $(GLFLAGS) $(DYNAFLAGS)
+ CFLAGS		+= $(CPUOPTS) $(COREFLAGS) $(FFMPEGINCFLAGS) $(INCFLAGS) $(INCFLAGS_PLATFORM) $(PLATCFLAGS) $(fpic) $(PLATCFLAGS) $(CPUFLAGS) $(GLFLAGS) $(DYNAFLAGS)

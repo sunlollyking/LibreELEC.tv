@@ -1,0 +1,121 @@
+From: Chris <meischris39@hotmail.com>
+Subject: [PATCH] drm/amd/display: Ask for ALLM while the content type is Game
+
+An HDMI sink switches to its own low latency (game) mode when the HDMI
+Forum vendor specific infoframe sets ALLM_Mode. The display core sends
+that infoframe when it is valid, but amdgpu_dm never builds one. Build
+it with ALLM set while the connector content type is Game.
+
+A change of content type forced a modeset, but with unchanged timing DC
+keeps the pipe and never reprograms its infoframes, so neither the AVI
+content type nor ALLM reached the sink. Don't force the modeset; apply
+the change to the running stream as a stream update, as HDR metadata is.
+---
+--- a/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c
++++ b/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c
+@@ -7323,6 +7323,40 @@
+ }
+ #endif
+ 
++/*
++ * Ask an HDMI sink for its Auto Low Latency Mode (ALLM) while the content is a
++ * game. ALLM is carried by the HDMI Forum vendor specific infoframe, which the
++ * display core already sends when it is valid.
++ */
++static void fill_hf_vsif_allm(struct dc_stream_state *stream)
++{
++	struct dc_info_packet *packet = &stream->hfvsif_infopacket;
++	uint8_t checksum;
++	int i;
++
++	memset(packet, 0, sizeof(*packet));
++
++	if (stream->content_type != DISPLAY_CONTENT_TYPE_GAME)
++		return;
++
++	packet->hb0 = HDMI_INFOFRAME_TYPE_VENDOR;
++	packet->hb1 = 0x01;
++	packet->hb2 = 5;
++
++	packet->sb[1] = HDMI_FORUM_IEEE_OUI & 0xff;
++	packet->sb[2] = (HDMI_FORUM_IEEE_OUI >> 8) & 0xff;
++	packet->sb[3] = (HDMI_FORUM_IEEE_OUI >> 16) & 0xff;
++	packet->sb[4] = 1; /* version */
++	packet->sb[5] = 1 << 1; /* ALLM_Mode */
++
++	checksum = packet->hb0 + packet->hb1 + packet->hb2;
++	for (i = 1; i <= packet->hb2; i++)
++		checksum += packet->sb[i];
++	packet->sb[0] = (uint8_t)(0x100 - checksum);
++
++	packet->valid = true;
++}
++
+ static struct dc_stream_state *
+ create_stream_for_sink(struct drm_connector *connector,
+ 		       const struct drm_display_mode *drm_mode,
+@@ -7473,8 +7507,10 @@
+ 
+ 	update_stream_signal(stream, sink);
+ 
+-	if (stream->signal == SIGNAL_TYPE_HDMI_TYPE_A)
++	if (stream->signal == SIGNAL_TYPE_HDMI_TYPE_A) {
+ 		mod_build_hf_vsif_infopacket(stream, &stream->vsp_infopacket);
++		fill_hf_vsif_allm(stream);
++	}
+ 
+ 	if (stream->signal == SIGNAL_TYPE_DISPLAY_PORT ||
+ 	    stream->signal == SIGNAL_TYPE_DISPLAY_PORT_MST ||
+@@ -8411,12 +8447,14 @@
+ 		new_crtc_state->mode_changed = true;
+ 	}
+ 
++	/*
++	 * A modeset with unchanged timing keeps the old infoframes, so the
++	 * content type is sent with a stream update in commit_tail instead.
++	 */
+ 	if (new_con_state->content_type != old_con_state->content_type) {
+ 		new_crtc_state = drm_atomic_get_crtc_state(state, crtc);
+ 		if (IS_ERR(new_crtc_state))
+ 			return PTR_ERR(new_crtc_state);
+-
+-		new_crtc_state->mode_changed = true;
+ 	}
+ 
+ 	if (!drm_connector_atomic_hdr_metadata_equal(old_con_state, new_con_state)) {
+@@ -10975,6 +11013,7 @@
+ 		struct dc_info_packet hdr_packet;
+ 		struct dc_stream_status *status = NULL;
+ 		bool abm_changed, hdr_changed, scaling_changed, output_color_space_changed = false;
++		bool content_type_changed;
+ 
+ 		memset(&stream_update, 0, sizeof(stream_update));
+ 
+@@ -11004,7 +11043,10 @@
+ 		hdr_changed =
+ 			!drm_connector_atomic_hdr_metadata_equal(old_con_state, new_con_state);
+ 
+-		if (!scaling_changed && !abm_changed && !hdr_changed && !output_color_space_changed)
++		content_type_changed = new_con_state->content_type != old_con_state->content_type;
++
++		if (!scaling_changed && !abm_changed && !hdr_changed && !output_color_space_changed &&
++		    !content_type_changed)
+ 			continue;
+ 
+ 		stream_update.stream = dm_new_crtc_state->stream;
+@@ -11034,6 +11076,15 @@
+ 			stream_update.hdr_static_metadata = &hdr_packet;
+ 		}
+ 
++		if (content_type_changed) {
++			dm_new_crtc_state->stream->content_type = get_output_content_type(new_con_state);
++			if (dm_new_crtc_state->stream->signal == SIGNAL_TYPE_HDMI_TYPE_A) {
++				fill_hf_vsif_allm(dm_new_crtc_state->stream);
++				stream_update.hfvsif_infopacket =
++					&dm_new_crtc_state->stream->hfvsif_infopacket;
++			}
++		}
++
+ 		status = dc_stream_get_status(dm_new_crtc_state->stream);
+ 
+ 		if (WARN_ON(!status))

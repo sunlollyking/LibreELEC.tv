@@ -1,0 +1,38 @@
+The vendored libzip calls close(), getpid() and friends without declaring them.
+<unistd.h> is included only on Apple, and only in mkstemp.c. That was a warning
+until C23 made implicit declarations an error, and the build now stops with:
+
+  mkstemp.c: error: implicit declaration of function 'getpid'
+  zip_close.c: error: implicit declaration of function 'close'
+
+Two hunks are needed: zipint.h covers the files that include it, and mkstemp.c
+does not include zipint.h at all, so its own Apple-only guard is widened.
+
+diff -ur a/core/deps/libzip/mkstemp.c b/core/deps/libzip/mkstemp.c
+--- a/core/deps/libzip/mkstemp.c	2026-08-08 18:38:49.745720837 +0100
++++ b/core/deps/libzip/mkstemp.c	2026-08-08 18:41:55.447708593 +0100
+@@ -43,7 +43,7 @@
+ #include <stdio.h>
+ #include <stdlib.h>
+ 
+-#ifdef __APPLE__
++#if defined(__APPLE__) || defined(__unix__)
+ #include <unistd.h>
+ #endif
+ 
+diff -ur a/core/deps/libzip/zipint.h b/core/deps/libzip/zipint.h
+--- a/core/deps/libzip/zipint.h	2026-08-08 18:38:49.746038171 +0100
++++ b/core/deps/libzip/zipint.h	2026-08-08 18:41:55.447676844 +0100
+@@ -43,6 +43,12 @@
+ #include "zip.h"
+ #include "config.h"
+ 
++#ifndef _WIN32
++/* close(), getpid() and friends. These were used without a declaration,
++   which C23 turned from a warning into an error. */
++#include <unistd.h>
++#endif
++
+ #ifndef HAVE_MKSTEMP
+ int _zip_mkstemp(char *);
+ #define mkstemp _zip_mkstemp

@@ -1,0 +1,18 @@
+The core hard-links -lGL for desktop OpenGL with no way to name a different
+library. glvnd provides libOpenGL rather than libGL on a GBM build -- there is
+no GLX there to supply the latter -- so the link fails with "cannot find -lGL".
+
+Make it a variable, defaulting to the existing behaviour.
+
+--- a/yabause/src/libretro/Makefile.common	2026-08-08 16:42:58.998035873 +0100
++++ b/yabause/src/libretro/Makefile.common	2026-08-08 16:42:59.016178572 +0100
+@@ -69,7 +69,8 @@
+ 	else ifeq ($(ARCH_IS_MACOSX), 1)
+ 		LDFLAGS += -framework OpenGL
+ 	else
+-		LDFLAGS += -lGL
++		GL_LIB ?= -lGL
++		LDFLAGS += $(GL_LIB)
+ 	endif
+ endif
+ 

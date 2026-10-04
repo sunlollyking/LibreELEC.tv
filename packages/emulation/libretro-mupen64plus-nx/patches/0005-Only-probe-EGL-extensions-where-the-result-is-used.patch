@@ -1,0 +1,62 @@
+From: Chris <chris.dixon.78.burnbridge@gmail.com>
+Subject: [PATCH] Stop opening an EGL display the core does not own
+
+Two places call eglGetDisplay(EGL_DEFAULT_DISPLAY) whenever EGL is defined,
+which is every GLES build. There is no default display to open on a GBM
+system, so both fail:
+
+  EGL Debugging:
+  Error: EGL_BAD_ALLOC
+  Command: eglGetDisplay
+  Message: EGL_BAD_ALLOC error: In eglGetPlatformDisplay: Failed to create
+           EGLDisplay
+
+Neither call is needed under libretro, where the frontend creates and owns the
+context and hands the core its framebuffer and get_proc_address.
+
+DisplayWindowMupen64plus::_start() calls eglInitialize() on that display and
+throws the result away -- it is not stored, not checked, and nothing else in
+the file touches EGL. Its only purpose was to initialise a display the core
+does not own.
+
+isEGLExtensionSupported() sets one thing, GLInfo::eglImage, and the only code
+that acts on it is guarded by EGL and OS_ANDROID together:
+
+  ColorBufferReader * ContextImpl::createColorBufferReader(CachedTexture *_pTexture)
+  {
+  #if defined(EGL) && defined(OS_ANDROID)
+      if (m_glInfo.eglImage)
+          return new ColorBufferReaderWithEGLImage(...);
+  #endif
+
+as is ColorBufferReaderWithEGLImage itself. So off Android the probe can only
+fail, and the flag it sets feeds nothing that is compiled. Give it the same
+guard as its consumer.
+
+Non-Android EGL builds keep every colour buffer reader they had -- the EGLImage
+one was never among them -- and stop opening a display they have no use for.
+
+--- a/GLideN64/src/Graphics/OpenGLContext/mupen64plus/mupen64plus_DisplayWindow.cpp
++++ b/GLideN64/src/Graphics/OpenGLContext/mupen64plus/mupen64plus_DisplayWindow.cpp
+@@ -76,10 +76,6 @@
+ 	_getDisplaySize();
+ 	_setBufferSize();
+
+-#ifdef EGL
+-	eglInitialize(eglGetDisplay(EGL_DEFAULT_DISPLAY), nullptr, nullptr);
+-#endif // EGL
+-
+ 	LOG(LOG_VERBOSE, "[GlideN64]: Create setting videomode %dx%d", m_screenWidth, m_screenHeight);
+ 	return true;
+ }
+--- a/GLideN64/src/Graphics/OpenGLContext/opengl_Utils.cpp
++++ b/GLideN64/src/Graphics/OpenGLContext/opengl_Utils.cpp
+@@ -50,7 +50,7 @@
+
+ bool Utils::isEGLExtensionSupported(const char * extension)
+ {
+-#ifdef EGL
++#if defined(EGL) && defined(OS_ANDROID)
+ 	const char* where = strchr(extension, ' ');
+ 	if (where || *extension == '\0')
+ 		return false;
