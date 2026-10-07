@@ -5,10 +5,10 @@
 PKG_NAME="kodi"
 PKG_VERSION="53116bfd378c57eebfb789d7f8ba6427aa483610"
 PKG_SHA256="685b623c78c9c83480b3977338a3758dae9df146ed2d19ab97b1bd4ccf8bee1d"
-PKG_LICENSE="GPL-2.0-or-later"
+PKG_LICENSE="GPL-3.0-only"
 PKG_SITE="http://www.kodi.tv"
 PKG_URL="https://github.com/sunlollyking/xbmc/archive/${PKG_VERSION}.tar.gz"
-PKG_DEPENDS_TARGET="toolchain JsonSchemaBuilder:host TexturePacker:host Python3 zlib systemd lzo pcre2 swig:host libass curl exiv2 fontconfig fribidi tinyxml tinyxml2 libjpeg-turbo freetype libcdio taglib libxml2 libxslt nlohmann-json sqlite ffmpeg crossguid libdvdnav libfmt libfstrcmp flatbuffers:host flatbuffers libudfread spdlog libxkbcommon"
+PKG_DEPENDS_TARGET="toolchain libplacebo JsonSchemaBuilder:host TexturePacker:host Python3 zlib systemd lzo pcre2 swig:host libass curl exiv2 fontconfig fribidi tinyxml tinyxml2 libjpeg-turbo freetype libcdio taglib libxml2 libxslt nlohmann-json sqlite ffmpeg crossguid libdvdnav libfmt libfstrcmp flatbuffers:host flatbuffers libudfread spdlog libxkbcommon"
 PKG_DEPENDS_UNPACK="commons-lang3 commons-text groovy"
 PKG_DEPENDS_HOST="toolchain"
 PKG_LONGDESC="A free and open source cross-platform media player."
@@ -19,6 +19,9 @@ if [ "${TARGET_ARCH}" = "arm" ]; then
 fi
 
 configure_package() {
+  if [ "${CB1_HDR10_AI}" = "yes" ]; then
+    PKG_DEPENDS_TARGET+=" lightgbm"
+  fi
   # Single threaded LTO is very slow so rely on Kodi for parallel LTO support
   if [ "${LTO_SUPPORT}" = "yes" ] && ! build_with_debug; then
     PKG_KODI_USE_LTO="-DUSE_LTO=${CONCURRENCY_MAKE_LEVEL}"
@@ -250,7 +253,9 @@ configure_package() {
                -DLIBDVDREAD_URL=${SOURCES}/libdvdread/libdvdread-$(get_pkg_version libdvdread).tar.xz \
                -DLIBDVDREAD_HASH=SHA256=$(get_pkg_variable libdvdread PKG_SHA256)"
 
-  PKG_CMAKE_OPTS_TARGET="-DNATIVEPREFIX=${TOOLCHAIN} \
+  PKG_CMAKE_OPTS_TARGET="-DENABLE_DVBRIDGE=ON \
+                         -DDVBRIDGE_SOURCE_DIR=${PKG_DIR}/cb1/src \
+                         -DNATIVEPREFIX=${TOOLCHAIN} \
                          -DWITH_TEXTUREPACKER=${TOOLCHAIN}/bin/TexturePacker \
                          -DWITH_JSONSCHEMABUILDER=${TOOLCHAIN}/bin/JsonSchemaBuilder \
                          -DSWIG_EXECUTABLE=${TOOLCHAIN}/bin/swig \
@@ -299,6 +304,15 @@ configure_package() {
                          ${KODI_ALSA} \
                          ${KODI_PULSEAUDIO} \
                          ${KODI_PIPEWIRE}"
+
+  if [ "${CB1_HDR10_AI}" = "yes" ]; then
+    PKG_CMAKE_OPTS_TARGET+=" -DCB1_ENABLE_HDR10_AI=ON \
+                           -DCB1_L1L3_BUNDLE_CONTRACT=${PKG_DIR}/cb1-model/contract \
+                           -DCB1_LIGHTGBM_INCLUDE_DIR=${SYSROOT_PREFIX}/usr/include \
+                           -DCB1_LIGHTGBM_LIBRARY=${SYSROOT_PREFIX}/usr/lib/lib_lightgbm.so"
+  else
+    PKG_CMAKE_OPTS_TARGET+=" -DCB1_ENABLE_HDR10_AI=OFF"
+  fi
 }
 
 configure_host() {
@@ -308,6 +322,7 @@ configure_host() {
     -DCMAKE_INSTALL_PREFIX=/usr \
     -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} \
     -DHEADERS_ONLY=ON \
+    -DDVBRIDGE_SOURCE_DIR=${PKG_DIR}/cb1/src \
     ${KODI_ARCH} \
     ${KODI_NEON} \
     ${KODI_PLATFORM} ..
@@ -327,6 +342,9 @@ makeinstall_host() {
 }
 
 pre_configure_target() {
+  # Keep source-location diagnostics useful without embedding build-host paths.
+  export CFLAGS+=" -ffile-prefix-map=${ROOT}=/usr/src/libreelec"
+  export CXXFLAGS+=" -ffile-prefix-map=${ROOT}=/usr/src/libreelec"
   export LIBS="${LIBS} -lncurses"
   if [ "${TARGET_ARCH}" = "arm" ]; then
     LDFLAGS+=" -Wl,--allow-shlib-undefined"
@@ -334,6 +352,10 @@ pre_configure_target() {
 }
 
 post_makeinstall_target() {
+  if [ "${CB1_HDR10_AI}" = "yes" ]; then
+    mkdir -p ${INSTALL}/usr/share/cb1/l1l3
+    cp ${PKG_DIR}/cb1-model/data/* ${INSTALL}/usr/share/cb1/l1l3/
+  fi
   mkdir -p ${INSTALL}/.noinstall
   mv ${INSTALL}/usr/share/kodi/addons/skin.estuary \
      ${INSTALL}/usr/share/kodi/addons/service.xbmc.versioncheck \
