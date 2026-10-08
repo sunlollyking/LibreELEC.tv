@@ -3360,7 +3360,7 @@ index 1580be947e..d382c87f9c 100644
    EGLint m_renderableType{0};
  
 diff --git a/xbmc/windowing/gbm/WinSystemGbmGLESContext.cpp b/xbmc/windowing/gbm/WinSystemGbmGLESContext.cpp
-index 59df2cb472..a6658a885f 100644
+index 410fecc..522eb7a 100644
 --- a/xbmc/windowing/gbm/WinSystemGbmGLESContext.cpp
 +++ b/xbmc/windowing/gbm/WinSystemGbmGLESContext.cpp
 @@ -37,6 +37,14 @@ extern "C"
@@ -3390,20 +3390,15 @@ index 59df2cb472..a6658a885f 100644
    if (res.iWidth != m_nWidth || res.iHeight != m_nHeight)
    {
      CLog::Log(LOGDEBUG, "CWinSystemGbmGLESContext::{} - resolution changed, creating a new window",
-@@ -139,6 +152,42 @@ void CWinSystemGbmGLESContext::PresentRender(bool rendered, bool videoLayer)
+@@ -139,6 +152,37 @@ void CWinSystemGbmGLESContext::PresentRender(bool rendered, bool videoLayer)
    if (!m_bRenderCreated)
      return;
  
 +  PresentFrame(rendered, videoLayer);
 +  if (m_dispReset && m_dispResetTimer.IsTimePast())
 +  {
-+    CLog::Log(LOGDEBUG, "CWinSystemGbmGLESContext::{} - Sending display reset to all clients",
-+              __FUNCTION__);
 +    m_dispReset = false;
-+    std::unique_lock lock(m_resourceSection);
-+
-+    for (auto resource : m_resources)
-+      resource->OnResetDisplay();
++    CWinSystemGbm::OnResetDisplay();
 +  }
 +}
 +
@@ -3433,24 +3428,20 @@ index 59df2cb472..a6658a885f 100644
    if (rendered || videoLayer)
    {
      // A frame committed without waiting reaches the screen a vblank later
-@@ -183,16 +232,7 @@ void CWinSystemGbmGLESContext::PresentRender(bool rendered, bool videoLayer)
+@@ -183,11 +227,7 @@ void CWinSystemGbmGLESContext::PresentRender(bool rendered, bool videoLayer)
      KODI::TIME::Sleep(10ms);
    }
  
 -  if (m_dispReset && m_dispResetTimer.IsTimePast())
 -  {
--    CLog::Log(LOGDEBUG, "CWinSystemGbmGLESContext::{} - Sending display reset to all clients",
--              __FUNCTION__);
 -    m_dispReset = false;
--    std::unique_lock lock(m_resourceSection);
- 
--    for (auto resource : m_resources)
--      resource->OnResetDisplay();
+-    CWinSystemGbm::OnResetDisplay();
 -  }
++
  }
  
  bool CWinSystemGbmGLESContext::SetGuiCompositing(int colorTransfer)
-@@ -204,7 +244,11 @@ bool CWinSystemGbmGLESContext::SetGuiCompositing(int colorTransfer)
+@@ -199,7 +239,11 @@ bool CWinSystemGbmGLESContext::SetGuiCompositing(int colorTransfer)
      if (!m_compositeShader)
      {
        std::string defines;
@@ -3463,7 +3454,7 @@ index 59df2cb472..a6658a885f 100644
          defines += "#define KODI_LIMITED_RANGE 1\n";
        m_compositeShader = std::make_unique<CGuiCompositeShaderGLES>(defines);
        if (!m_compositeShader->CompileAndLink())
-@@ -362,6 +406,27 @@ void CWinSystemGbmGLESContext::CompositeGui()
+@@ -357,6 +401,27 @@ void CWinSystemGbmGLESContext::CompositeGui()
        m_DRM->GetGuiPlane() != nullptr)
      return;
  
@@ -3491,7 +3482,7 @@ index 59df2cb472..a6658a885f 100644
    glActiveTexture(GL_TEXTURE0);
    glBindTexture(GL_TEXTURE_2D, m_guiFbo.Texture());
  
-@@ -381,7 +446,19 @@ void CWinSystemGbmGLESContext::CompositeGui()
+@@ -376,7 +441,19 @@ void CWinSystemGbmGLESContext::CompositeGui()
    float w = static_cast<float>(m_guiFboWidth);
    float h = static_cast<float>(m_guiFboHeight);
  
@@ -3511,7 +3502,7 @@ index 59df2cb472..a6658a885f 100644
  
    m_compositeShader->SetProjection(proj);
    m_compositeShader->Enable();
-@@ -404,8 +481,130 @@ void CWinSystemGbmGLESContext::CompositeGui()
+@@ -399,8 +476,130 @@ void CWinSystemGbmGLESContext::CompositeGui()
    glDisableVertexAttribArray(texLoc);
  
    m_compositeShader->Disable();

@@ -3,8 +3,8 @@
 # Copyright (C) 2017-present Team LibreELEC (https://libreelec.tv)
 
 PKG_NAME="kodi"
-PKG_VERSION="53116bfd378c57eebfb789d7f8ba6427aa483610"
-PKG_SHA256="685b623c78c9c83480b3977338a3758dae9df146ed2d19ab97b1bd4ccf8bee1d"
+PKG_VERSION="b44927f43b8ac7d642fb54b53bc6d28284398f60"
+PKG_SHA256="0a2c7b8dd3588423fed545c92559f7d8c1403bb00aba0f526c2c09b64085e0f1"
 PKG_LICENSE="GPL-3.0-only"
 PKG_SITE="http://www.kodi.tv"
 PKG_URL="https://github.com/sunlollyking/xbmc/archive/${PKG_VERSION}.tar.gz"
