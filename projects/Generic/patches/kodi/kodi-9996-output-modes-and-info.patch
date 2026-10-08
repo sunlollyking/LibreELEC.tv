@@ -1,9 +1,9 @@
-From c1c57e936e0d2a7c5e9336dd461ab32e18e2ada0 Mon Sep 17 00:00:00 2001
+From 85ac0df3a0d17dd4df666b97622a2b34ad7612b0 Mon Sep 17 00:00:00 2001
 From: CroqueMr <CroqueMr@users.noreply.github.com>
-Date: Wed, 7 Oct 2026 08:25:35 +0100
+Date: Thu, 8 Oct 2026 18:55:38 +0100
 Subject: [PATCH] kodi-9996-output-modes-and-info
 
-From CroqueMr/libreelec-x86-DV R1.0.0-Beta1 (kodi-9996-output-modes-and-info.patch).
+From CroqueMr/libreelec-x86-DV R1.0.0-Beta2 (kodi-9996-output-modes-and-info.patch).
 ---
  CMakeLists.txt                                |    5 +
  .../resources/strings.po                      |  255 ++++
@@ -69,12 +69,12 @@ From CroqueMr/libreelec-x86-DV R1.0.0-Beta1 (kodi-9996-output-modes-and-info.pat
  xbmc/windowing/gbm/WinSystemGbm.h             |    4 +
  xbmc/windowing/gbm/WinSystemGbmEGLContext.cpp |   86 +-
  xbmc/windowing/gbm/WinSystemGbmEGLContext.h   |   19 +-
- .../windowing/gbm/WinSystemGbmGLESContext.cpp | 1049 ++++++++++++++++-
+ .../windowing/gbm/WinSystemGbmGLESContext.cpp | 1053 ++++++++++++++++-
  xbmc/windowing/gbm/WinSystemGbmGLESContext.h  |   78 +-
  xbmc/windowing/gbm/drm/DRMAtomic.cpp          |    7 +
  xbmc/windowing/gbm/drm/DRMAtomic.h            |    6 +
  xbmc/windowing/gbm/drm/DRMUtils.cpp           |   11 +-
- 69 files changed, 5370 insertions(+), 147 deletions(-)
+ 69 files changed, 5374 insertions(+), 147 deletions(-)
  create mode 100644 addons/skin.estuary/xml/IncludesDVProcessInfo.xml
  create mode 100644 xbmc/cores/VideoPlayer/DVDCodecs/Video/DVOutputSelection.h
  create mode 100644 xbmc/cores/VideoPlayer/DVDCodecs/Video/DVOutputSettings.h
@@ -88,7 +88,7 @@ From CroqueMr/libreelec-x86-DV R1.0.0-Beta1 (kodi-9996-output-modes-and-info.pat
  create mode 100644 xbmc/utils/DVRenderUsage.h
 
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 434474780e..b3a48a5266 100644
+index e8a26b8195..ed40edfb15 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -6,6 +6,7 @@ endif()
@@ -111,10 +111,10 @@ index 434474780e..b3a48a5266 100644
  
  if(POLICY CMP0069)
 diff --git a/addons/resource.language.en_gb/resources/strings.po b/addons/resource.language.en_gb/resources/strings.po
-index bf54271686..f6f2972fd6 100644
+index 0b909650b6..ce914ff04d 100644
 --- a/addons/resource.language.en_gb/resources/strings.po
 +++ b/addons/resource.language.en_gb/resources/strings.po
-@@ -26925,3 +26925,258 @@ msgstr ""
+@@ -26937,3 +26937,258 @@ msgstr ""
  msgctxt "#40806"
  msgid "Adjust and display the volume level while audio is passed through. The level is not applied to the bitstream, but every change is announced, so an add-on or automation can apply it to an external audio processor."
  msgstr ""
@@ -646,7 +646,7 @@ index ee7d629fd9..76f34dd411 100644
 +  </include>
  </includes>
 diff --git a/addons/skin.estuary/xml/Variables.xml b/addons/skin.estuary/xml/Variables.xml
-index c3a2a03ea4..47935f7b40 100644
+index e757e0e2e1..7ff47ed76e 100644
 --- a/addons/skin.estuary/xml/Variables.xml
 +++ b/addons/skin.estuary/xml/Variables.xml
 @@ -1,5 +1,9 @@
@@ -676,7 +676,7 @@ index 3fc157f4d8..1298b37b43 100644
      <keyboard>
        <period>NextPicture</period>
 diff --git a/system/settings/settings.xml b/system/settings/settings.xml
-index 0424f15c36..5d3f8796c6 100755
+index 95fe7b1096..8017c5a49e 100755
 --- a/system/settings/settings.xml
 +++ b/system/settings/settings.xml
 @@ -2,6 +2,92 @@
@@ -799,10 +799,10 @@ index 1b31d01d4f..f1da266b09 100644
  
  class CVideoBufferSysMem : public CVideoBuffer
 diff --git a/xbmc/cores/VideoPlayer/CMakeLists.txt b/xbmc/cores/VideoPlayer/CMakeLists.txt
-index 8e3a8e0016..2f32af7923 100644
+index 55549a8076..8b1c09c6a8 100644
 --- a/xbmc/cores/VideoPlayer/CMakeLists.txt
 +++ b/xbmc/cores/VideoPlayer/CMakeLists.txt
-@@ -72,3 +72,6 @@ if("webos" IN_LIST CORE_PLATFORM_NAME_LC)
+@@ -74,3 +74,6 @@ if("webos" IN_LIST CORE_PLATFORM_NAME_LC)
  endif()
  
  core_add_library(VideoPlayer)
@@ -2030,7 +2030,7 @@ index daf553e33b..c3fdbd973b 100644
    int m_getBufferError;
  
 diff --git a/xbmc/cores/VideoPlayer/VideoPlayer.cpp b/xbmc/cores/VideoPlayer/VideoPlayer.cpp
-index 3f43b1daf6..7a46f2b822 100644
+index 41fac039ee..91d53e5662 100644
 --- a/xbmc/cores/VideoPlayer/VideoPlayer.cpp
 +++ b/xbmc/cores/VideoPlayer/VideoPlayer.cpp
 @@ -8,6 +8,12 @@
@@ -4399,7 +4399,7 @@ index 5637f23876..518f5ec6b7 100644
    void LoadPlane(CYuvPlane& plane, int type,
                   unsigned width,  unsigned height,
 diff --git a/xbmc/cores/VideoPlayer/VideoRenderers/OverlayRenderer.cpp b/xbmc/cores/VideoPlayer/VideoRenderers/OverlayRenderer.cpp
-index 652ad6b10b..b470af76d0 100644
+index 986a2b8134..878e2c7c79 100644
 --- a/xbmc/cores/VideoPlayer/VideoRenderers/OverlayRenderer.cpp
 +++ b/xbmc/cores/VideoPlayer/VideoRenderers/OverlayRenderer.cpp
 @@ -302,7 +302,7 @@ void CRenderer::Render(COverlay* o)
@@ -4419,12 +4419,12 @@ index 652ad6b10b..b470af76d0 100644
 +  if (idx < 0 || idx >= MAX_RENDER_BUFFERS)
      return;
  
-   bool doMarkDirty = false;
+   SubtitleResolution resolution;
 diff --git a/xbmc/cores/VideoPlayer/VideoRenderers/OverlayRenderer.h b/xbmc/cores/VideoPlayer/VideoRenderers/OverlayRenderer.h
-index b9e88f5326..cd61e110e2 100644
+index 8b8a506974..c0e0dc8927 100644
 --- a/xbmc/cores/VideoPlayer/VideoRenderers/OverlayRenderer.h
 +++ b/xbmc/cores/VideoPlayer/VideoRenderers/OverlayRenderer.h
-@@ -214,7 +214,7 @@ namespace OVERLAY {
+@@ -227,7 +227,7 @@ namespace OVERLAY {
      };
  
      mutable CCriticalSection m_section;
@@ -5613,10 +5613,10 @@ index 582c5d6067..20513bcd44 100644
    {
      case SettingOptionsSort::Ascending:
 diff --git a/xbmc/utils/CMakeLists.txt b/xbmc/utils/CMakeLists.txt
-index 4ed5fa0b31..4d05fd619e 100644
+index 2171b5bad8..a4fdab389e 100644
 --- a/xbmc/utils/CMakeLists.txt
 +++ b/xbmc/utils/CMakeLists.txt
-@@ -259,6 +259,9 @@ if("gbm" IN_LIST CORE_PLATFORM_NAME_LC OR "wayland" IN_LIST CORE_PLATFORM_NAME_L
+@@ -260,6 +260,9 @@ if("gbm" IN_LIST CORE_PLATFORM_NAME_LC OR "wayland" IN_LIST CORE_PLATFORM_NAME_L
  endif()
  
  core_add_library(utils)
@@ -5833,10 +5833,10 @@ index 4f4275922b..58e72b42a4 100644
    AddButton(groupSaveAsDefault, SETTING_VIDEO_CALIBRATION, 214, SettingLevel::Basic);
  }
 diff --git a/xbmc/windowing/gbm/WinSystemGbm.cpp b/xbmc/windowing/gbm/WinSystemGbm.cpp
-index 6e74b565e8..ed967478cf 100644
+index d87879891f..5804c8128b 100644
 --- a/xbmc/windowing/gbm/WinSystemGbm.cpp
 +++ b/xbmc/windowing/gbm/WinSystemGbm.cpp
-@@ -691,6 +691,34 @@ bool CWinSystemGbm::SetHDR(const VideoPicture* videoPicture)
+@@ -707,6 +707,34 @@ bool CWinSystemGbm::SetHDR(const VideoPicture* videoPicture)
    return m_hdrBlob.IsValid();
  }
  
@@ -5872,12 +5872,12 @@ index 6e74b565e8..ed967478cf 100644
  {
    auto drm = std::dynamic_pointer_cast<CDRMAtomic>(m_DRM);
 diff --git a/xbmc/windowing/gbm/WinSystemGbm.h b/xbmc/windowing/gbm/WinSystemGbm.h
-index ca0e0424fe..830285db4c 100644
+index 07894e9bb2..12799a775c 100644
 --- a/xbmc/windowing/gbm/WinSystemGbm.h
 +++ b/xbmc/windowing/gbm/WinSystemGbm.h
-@@ -90,6 +90,10 @@ public:
- protected:
+@@ -91,6 +91,10 @@ protected:
    void OnLostDevice();
+   void OnResetDisplay();
  
 +#ifdef HAVE_DVBRIDGE
 +  bool StageOrdinaryHDR10Recovery();
@@ -6077,7 +6077,7 @@ index d382c87f9c..1ef6c4bc8b 100644
    std::unique_ptr<KODI::UTILS::EGL::CEGLFence> m_eglFence;
  
 diff --git a/xbmc/windowing/gbm/WinSystemGbmGLESContext.cpp b/xbmc/windowing/gbm/WinSystemGbmGLESContext.cpp
-index 2271b15ad2..22e62386b3 100644
+index a64781c1d4..c295e94f30 100644
 --- a/xbmc/windowing/gbm/WinSystemGbmGLESContext.cpp
 +++ b/xbmc/windowing/gbm/WinSystemGbmGLESContext.cpp
 @@ -7,6 +7,9 @@
@@ -6144,7 +6144,7 @@ index 2271b15ad2..22e62386b3 100644
  #endif
    if (res.iWidth != m_nWidth || res.iHeight != m_nHeight)
    {
-@@ -168,21 +192,106 @@ void CWinSystemGbmGLESContext::PresentRender(bool rendered, bool videoLayer)
+@@ -163,21 +187,106 @@ void CWinSystemGbmGLESContext::PresentRender(bool rendered, bool videoLayer)
  void CWinSystemGbmGLESContext::PresentFrame(bool rendered, bool videoLayer)
  {
  #ifdef HAVE_DVBRIDGE
@@ -6255,7 +6255,7 @@ index 2271b15ad2..22e62386b3 100644
      m_dvFrame = false;
      return;
    }
-@@ -226,6 +335,10 @@ void CWinSystemGbmGLESContext::PresentFrame(bool rendered, bool videoLayer)
+@@ -221,6 +330,10 @@ void CWinSystemGbmGLESContext::PresentFrame(bool rendered, bool videoLayer)
      }
  
      CWinSystemGbm::FlipPage(rendered, videoLayer, async);
@@ -6266,7 +6266,7 @@ index 2271b15ad2..22e62386b3 100644
    }
    else
    {
-@@ -246,7 +359,7 @@ bool CWinSystemGbmGLESContext::SetGuiCompositing(int colorTransfer)
+@@ -241,7 +354,7 @@ bool CWinSystemGbmGLESContext::SetGuiCompositing(int colorTransfer)
        std::string defines;
        if (UseLimitedColor()
  #ifdef HAVE_DVBRIDGE
@@ -6275,7 +6275,7 @@ index 2271b15ad2..22e62386b3 100644
  #endif
            )
          defines += "#define KODI_LIMITED_RANGE 1\n";
-@@ -409,7 +522,7 @@ void CWinSystemGbmGLESContext::CompositeGui()
+@@ -404,7 +517,7 @@ void CWinSystemGbmGLESContext::CompositeGui()
  #ifdef HAVE_DVBRIDGE
    GLint previousFramebuffer = 0;
    GLint previousViewport[4]{};
@@ -6284,7 +6284,7 @@ index 2271b15ad2..22e62386b3 100644
    if (dvComposite)
    {
      if (!m_dvFrame || !m_dvBridge)
-@@ -498,29 +611,44 @@ bool NativeDVEligible(bool source, bool software, bool interlaced, bool stereo)
+@@ -493,29 +606,44 @@ bool NativeDVEligible(bool source, bool software, bool interlaced, bool stereo)
    if (!source || software)
      return false;
    auto* window = dynamic_cast<CWinSystemGbmGLESContext*>(CServiceBroker::GetWinSystem());
@@ -6338,7 +6338,7 @@ index 2271b15ad2..22e62386b3 100644
  }
  
  bool CWinSystemGbmGLESContext::DVBridgeRequested(const VideoPicture* picture)
-@@ -530,11 +658,474 @@ bool CWinSystemGbmGLESContext::DVBridgeRequested(const VideoPicture* picture)
+@@ -525,11 +653,474 @@ bool CWinSystemGbmGLESContext::DVBridgeRequested(const VideoPicture* picture)
  
  int CWinSystemGbmGLESContext::VideoOutputBitDepth(const VideoPicture* picture) const
  {
@@ -6814,7 +6814,7 @@ index 2271b15ad2..22e62386b3 100644
    const auto failure = [this](const char* stage) {
      if (DVBRIDGE::DiagnosticsEnabled() &&
          m_dvSetupFailures.Record(DVBRIDGE::DiagnosticNowMs(), stage))
-@@ -543,51 +1134,401 @@ bool CWinSystemGbmGLESContext::BeginDVBridge()
+@@ -538,51 +1129,405 @@ bool CWinSystemGbmGLESContext::BeginDVBridge()
            GetOutputBitDepth(), m_renderableType);
      return false;
    };
@@ -6863,6 +6863,8 @@ index 2271b15ad2..22e62386b3 100644
 +  ResetDVActivation(picture);
 +  const auto capabilities = GetDVOutputCapabilities(picture);
 +  if (picture && capabilities.isDV && preferences.output != DVBRIDGE::OutputMode::Disabled &&
++      (capabilities.nativeDV || capabilities.hdr10 ||
++       picture->hdrType != StreamHdrType::HDR_TYPE_HDR10) &&
 +      (!capabilities.processingKnown || (picture->strDVELType == "FEL" && !picture->doviEnhancement)))
 +    return true; // Configure must reach UploadTexture before source-dependent activation.
 +  m_dvSelection = SelectedDVOutput(picture);
@@ -6951,6 +6953,8 @@ index 2271b15ad2..22e62386b3 100644
 +      m_dvContext && !m_dvContext->StopHDR10AI()) return false;
 +#endif
 +  if (capabilities.isDV && preferences.output != DVBRIDGE::OutputMode::Disabled &&
++      (capabilities.nativeDV || capabilities.hdr10 ||
++       picture.hdrType != StreamHdrType::HDR_TYPE_HDR10) &&
 +      (!capabilities.processingKnown || (picture.strDVELType == "FEL" && !picture.doviEnhancement)))
 +    return false;
 +  auto selectionCapabilities = capabilities;
@@ -7228,7 +7232,7 @@ index 2271b15ad2..22e62386b3 100644
      return true;
    if (m_dvState.Captured())
    {
-@@ -597,7 +1538,7 @@ bool CWinSystemGbmGLESContext::EndDVBridge()
+@@ -592,7 +1537,7 @@ bool CWinSystemGbmGLESContext::EndDVBridge()
      glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
      glClearColor(0, 0, 0, 1);
      glClear(GL_COLOR_BUFFER_BIT);
@@ -7237,7 +7241,7 @@ index 2271b15ad2..22e62386b3 100644
      if (!m_eglContext.TrySwapBuffers() || !FlipDVBridgePage(m_dvState, true))
      {
        if (DVBRIDGE::DiagnosticsEnabled() &&
-@@ -607,8 +1548,13 @@ bool CWinSystemGbmGLESContext::EndDVBridge()
+@@ -602,8 +1547,13 @@ bool CWinSystemGbmGLESContext::EndDVBridge()
        return false;
      }
    }
@@ -7252,7 +7256,7 @@ index 2271b15ad2..22e62386b3 100644
    if (DVBRIDGE::DiagnosticsEnabled() &&
        m_dvSetupFailures.Recovered(DVBRIDGE::DiagnosticNowMs()))
      CLog::Log(LOGINFO, "DVBridge: normal display restored after failures={}", m_dvSetupFailures.Count());
-@@ -621,7 +1567,38 @@ bool CWinSystemGbmGLESContext::DestroyWindowSystem()
+@@ -616,7 +1566,38 @@ bool CWinSystemGbmGLESContext::DestroyWindowSystem()
    if (!EndDVBridge())
      return false;
    m_dvBridge.reset();
@@ -7292,7 +7296,7 @@ index 2271b15ad2..22e62386b3 100644
  }
  #endif
  
-@@ -637,5 +1614,15 @@ bool CWinSystemGbmGLESContext::CreateContext()
+@@ -632,5 +1613,15 @@ bool CWinSystemGbmGLESContext::CreateContext()
      CLog::Log(LOGERROR, "EGL context creation failed");
      return false;
    }
@@ -7523,6 +7527,3 @@ index 804f87d84c..ed3c765016 100644
        handles, strides, offsets, modifiers, &fb->opaque_fb_id, flags);
    if (result != 0)
    {
--- 
-2.53.0
-
