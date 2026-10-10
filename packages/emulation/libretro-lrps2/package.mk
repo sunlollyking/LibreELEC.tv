@@ -5,12 +5,12 @@ PKG_NAME="libretro-lrps2"
 PKG_VERSION="e01fab211e38571094281fdeeba42f83575d5488"
 PKG_SHA256="4e9c22b65d5aa8b27c8fe5a787f685c8747aa96e4ac777c8b74b3c693e0ee40b"
 PKG_LICENSE="GPL-2.0-or-later"
-PKG_SITE="https://github.com/kodi-game/LRPS2"
+PKG_SITE="https://github.com/sunlollyking/LRPS2"
 # The kodi-game fork rather than libretro/LRPS2, which no longer exists. This
 # is the commit game.libretro.lrps2 pins, and it carries the 3rdparty tree as
 # real directories, so an archive build has everything it needs -- unlike
 # libretro-dolphin, which needs a git clone for its submodules.
-PKG_URL="https://github.com/kodi-game/LRPS2/archive/${PKG_VERSION}.tar.gz"
+PKG_URL="https://github.com/sunlollyking/LRPS2/archive/${PKG_VERSION}.tar.gz"
 PKG_DEPENDS_TARGET="toolchain zlib libpng xz libxml2 libaio"
 PKG_LONGDESC="LRPS2 is a libretro port of the PCSX2 PlayStation 2 emulator."
 PKG_TOOLCHAIN="cmake"
