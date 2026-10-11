@@ -1,0 +1,395 @@
+Dolby Vision R1.0.0-Beta3 over Beta2 (CroqueMr/libreelec-x86-DV): CB1 processing and fast chroma.
+
+--- a/src/include/libplacebo/renderer.h	2026-10-11 21:47:14.182581783 +0100
++++ b/src/include/libplacebo/renderer.h	2026-10-11 19:07:54.000000000 +0100
+@@ -364,6 +364,12 @@
+     bool cb1_dovi_transport;
+     // Exact native transport sampler cache, default off. Validated GPU only.
+     bool cb1_exact_scaler_cache;
++    // CB1 opt-in: bilinear input chroma enlargement; luma and RGB stay unchanged.
++    // Default off. Requires matched renderer headers and library.
++#define PL_CB1_CHROMA_FILTER_API 1
++    bool cb1_fast_chroma;
++    // Borrowed opt-in CB1 processing contract. Requires a matched library.
++    const struct pl_cb1_dovi_processing *cb1_processing;
+ 
+ 
+     // If this is true, all shaders will be generated as "dynamic" shaders,
+@@ -741,6 +747,9 @@
+                             struct pl_frame *target);
+ 
+ 
++// Matched private CB1 input-chroma renderer ABI.
++PL_API unsigned pl_cb1_chroma_filter_abi(void);
++
+ // Render a single image to a target using the given parameters. This is
+ // fully dynamic, i.e. the params can change at any time. libplacebo will
+ // internally detect and flush whatever caches are invalidated as a result of
+--- a/src/include/libplacebo/shaders/colorspace.h	2026-10-11 21:47:14.182691826 +0100
++++ b/src/include/libplacebo/shaders/colorspace.h	2026-10-10 16:59:22.000000000 +0100
+@@ -44,6 +44,28 @@
+ // Reconstruct normalized opponent components, without display-management color
+ // conversion. Caller owns their representation and subsequent transport.
+ #define PL_HAVE_CB1_DOVI_TRANSPORT 1
++#define PL_HAVE_CB1_PROCESSING 5
++
++// CB1-owned source contract. No decoder objects cross this boundary.
++struct pl_cb1_dovi_component {
++    uint8_t num_pivots, method[8], order[8];
++    uint16_t pivots[9];
++    int64_t poly[8][3], constant[8], mmr[8][3][7];
++};
++
++struct pl_cb1_dovi_processing {
++    uint32_t groups, narrow_components, poly_components;
++    uint8_t bit_depth, denominator;
++    struct pl_cb1_dovi_component components[3];
++    pl_tex mmr_texture;
++    pl_tex pq_texture[2];
++};
++#define PL_CB1_PROCESSING_ABI ((PL_HAVE_CB1_PROCESSING << 16) | (unsigned)sizeof(struct pl_cb1_dovi_processing))
++PL_API unsigned pl_cb1_processing_abi(void);
++
++// Borrowed for shader preparation; null preserves the reference path.
++PL_API void pl_shader_dovi_reconstruct_ex(pl_shader sh, struct pl_color_repr *repr,
++    pl_shader enhancement_layer, const struct pl_cb1_dovi_processing *processing);
+ PL_API void pl_shader_dovi_reconstruct(pl_shader sh, struct pl_color_repr *repr,
+                                         pl_shader enhancement_layer);
+ 
+@@ -60,6 +82,7 @@
+     // and output of the shader depends on the EL being used, based on repr.
+     // Currently only Dolby Vision EL is supported.
+     pl_shader enhancement_layer;
++    const struct pl_cb1_dovi_processing *cb1_processing;
+ };
+ 
+ #define pl_color_decode_args(...) (&(struct pl_color_decode_args) { __VA_ARGS__ })
+--- a/src/renderer.c	2026-10-11 21:47:14.183003130 +0100
++++ b/src/renderer.c	2026-10-11 19:01:57.000000000 +0100
+@@ -593,6 +593,7 @@
+ enum sampler_usage {
+     SAMPLER_MAIN,
+     SAMPLER_PLANE,
++    SAMPLER_CHROMA,
+     SAMPLER_LOWPASS,
+ };
+ 
+@@ -610,6 +611,7 @@
+ {
+     const struct pl_render_params *params = pass->params;
+     struct sampler_info info = { .usage = usage };
++    bool plane = usage == SAMPLER_PLANE || usage == SAMPLER_CHROMA;
+     pl_renderer rr = pass->rr;
+ 
+     float rx = src->new_w / fabsf(pl_rect_w(src->rect));
+@@ -639,14 +641,16 @@
+     case SAMPLER_DOWN:
+         if (usage == SAMPLER_LOWPASS) {
+             info.config = &pl_filter_bicubic;
+-        } else if (usage == SAMPLER_PLANE && params->plane_downscaler) {
++        } else if (plane && params->plane_downscaler) {
+             info.config = params->plane_downscaler;
+         } else {
+             info.config = params->downscaler;
+         }
+         break;
+     case SAMPLER_UP:
+-        if (usage == SAMPLER_PLANE && params->plane_upscaler) {
++        if (usage == SAMPLER_CHROMA && params->cb1_fast_chroma) {
++            info.config = &pl_filter_bilinear;
++        } else if (plane && params->plane_upscaler) {
+             info.config = params->plane_upscaler;
+         } else {
+             pl_assert(usage != SAMPLER_LOWPASS);
+@@ -718,7 +722,8 @@
+                              pl_tex target_tex, const struct pl_sample_src *src)
+ {
+     const struct pl_render_params *params = pass->params;
+-    if (usage == SAMPLER_PLANE && !skip_inactive_rows(pass, sh, src->new_h, true))
++    bool plane = usage == SAMPLER_PLANE || usage == SAMPLER_CHROMA;
++    if (plane && !skip_inactive_rows(pass, sh, src->new_h, true))
+         return;
+     if (!sampler)
+         goto fallback;
+@@ -776,7 +781,8 @@
+         .antiring    = params->antiringing_strength,
+         .no_widening = params->skip_anti_aliasing && usage != SAMPLER_LOWPASS,
+         .cb1_fp32_lut = params->cb1_fp32_scaler_lut,
+-        .cb1_exact_lut_cache = params->cb1_dovi_transport && params->cb1_exact_scaler_cache,
++        .cb1_exact_lut_cache = (params->cb1_dovi_transport && params->cb1_exact_scaler_cache) ||
++            (params->cb1_processing && (params->cb1_processing->groups & 4)),
+         .lut         = lut,
+     };
+ 
+@@ -800,7 +806,7 @@
+         src2.rect.y1 = src1.new_h;
+ 
+         pl_shader tsh = pl_dispatch_begin(rr->dp);
+-        if (usage == SAMPLER_PLANE && !skip_inactive_rows(pass, tsh, src1.new_h, false)) {
++        if (plane && !skip_inactive_rows(pass, tsh, src1.new_h, false)) {
+             pl_dispatch_abort(rr->dp, &tsh);
+             ok = false;
+             goto done;
+@@ -1585,7 +1591,8 @@
+         },
+     };
+ 
+-    struct sampler_info info = sample_src_info(pass, &src, SAMPLER_PLANE);
++    enum sampler_usage usage = st->type == PLANE_CHROMA ? SAMPLER_CHROMA : SAMPLER_PLANE;
++    struct sampler_info info = sample_src_info(pass, &src, usage);
+     if (info.type == SAMPLER_COMPLEX)
+         return true;
+ 
+@@ -1697,7 +1704,9 @@
+                  src.rect.x0, src.rect.y0, src.rect.x1, src.rect.y1);
+ 
+         pl_shader plane_sh = pl_dispatch_begin_ex(rr->dp, true);
+-        dispatch_sampler(pass, plane_sh, &rr->samplers_el[i], SAMPLER_PLANE,
++        enum sampler_usage usage = detect_plane_type(plane, &el->repr) == PLANE_CHROMA ?
++                                   SAMPLER_CHROMA : SAMPLER_PLANE;
++        dispatch_sampler(pass, plane_sh, &rr->samplers_el[i], usage,
+                          NULL, &src);
+ 
+         ident_t sub = sh_subpass(sh, plane_sh);
+@@ -2034,7 +2043,8 @@
+             st->img.tex = NULL;
+             st->img.sh = pl_dispatch_begin_ex(rr->dp, true);
+             dispatch_sampler(pass, st->img.sh, &rr->samplers_src[i],
+-                             SAMPLER_PLANE, NULL, &src);
++                             st->type == PLANE_CHROMA ? SAMPLER_CHROMA : SAMPLER_PLANE,
++                             NULL, &src);
+             st->img.err_enum |= PL_RENDER_ERR_SAMPLING;
+             st->img.rect.x0 = st->img.rect.y0 = 0.0f;
+             st->img.w = st->img.rect.x1 = src.new_w;
+@@ -2128,7 +2138,7 @@
+         }
+ #endif
+         if (params->cb1_dovi_transport) {
+-            pl_shader_dovi_reconstruct(sh, &pass->img.repr, el_sh);
++            pl_shader_dovi_reconstruct_ex(sh, &pass->img.repr, el_sh, params->cb1_processing);
+             // Internal carrier only. The output hook owns opponent encoding.
+             pass->img.repr.sys = PL_COLOR_SYSTEM_RGB;
+             pass->img.repr.levels = PL_COLOR_LEVELS_FULL;
+@@ -2137,6 +2147,7 @@
+                 .repr              = &pass->img.repr,
+                 .color_adjustment  = params->color_adjustment,
+                 .enhancement_layer = el_sh,
++                .cb1_processing    = params->cb1_processing,
+             ));
+         }
+         pl_dispatch_abort(rr->dp, &el_sh);
+@@ -3727,6 +3738,11 @@
+     return false;
+ }
+ 
++unsigned pl_cb1_chroma_filter_abi(void)
++{
++    return PL_CB1_CHROMA_FILTER_API;
++}
++
+ bool pl_render_image(pl_renderer rr, const struct pl_frame *image,
+                      const struct pl_frame *target, const struct pl_render_params *params)
+ {
+--- a/src/shaders/colorspace.c	2026-10-11 21:47:14.183373108 +0100
++++ b/src/shaders/colorspace.c	2026-10-10 20:51:15.000000000 +0100
+@@ -53,6 +53,39 @@
+          "}\n", signal, signal);
+ }
+ 
++static void cb1_colour_dense_eotf(pl_shader sh)
++{
++    if (SH_PARAMS(sh).cb1_stable_pq) {
++        cb1_pq_eotf(sh,"color.rgb");
++    } else {
++        GLSL("color.rgb = pow(max(color.rgb, 0.0), vec3(1.0/%f));   \n"
++             "color.rgb = max(color.rgb - vec3(%f), 0.0)            \n"
++             "             / (vec3(%f) - vec3(%f) * color.rgb);     \n"
++             "color.rgb = pow(color.rgb, vec3(1.0/%f));             \n",
++             PQ_M2, PQ_C1, PQ_C2, PQ_C3, PQ_M1);
++    }
++}
++
++static bool cb1_colour_lookup(pl_shader sh, const struct pl_cb1_dovi_processing *p,
++                              bool encode)
++{
++    if (!p || !(p->groups & 8) || !p->pq_texture[encode]) return false;
++    ident_t lut=sh_bind(sh,p->pq_texture[encode],PL_TEX_ADDRESS_CLAMP,
++                       PL_TEX_SAMPLE_LINEAR,"cb1_colour_lut",NULL,NULL,NULL);
++    if (!encode) GLSL("vec3 cb1_pq_source=color.rgb;bool cb1_decode_coarse=false;\n");
++    /* Per-fragment refinement is bounded: out-of-domain values stay dense. */
++    GLSL("if (all(greaterThan(color.rgb, vec3("$"))) && "
++         "all(lessThan(color.rgb, vec3("$")))) {\n",
++         SH_FLOAT(encode ? 0.0000152587890625 : 0.02), SH_FLOAT(encode ? 0.95 : 0.98));
++    if (encode) GLSL("vec3 cb1_pos=sqrt(sqrt(color.rgb));\n");
++    else GLSL("cb1_decode_coarse=true;vec3 cb1_pos=color.rgb;\n");
++    GLSL("cb1_pos=(cb1_pos*4095.0+vec3(0.5))/4096.0;\n"
++         "color.rgb=vec3(texture("$",vec2(cb1_pos.r,0.5)).r,\n"
++         "texture("$",vec2(cb1_pos.g,0.5)).r,texture("$",vec2(cb1_pos.b,0.5)).r);\n"
++         "} else {\n",lut,lut,lut);
++    return true;
++}
++
+ void pl_shader_set_alpha(pl_shader sh, struct pl_color_repr *repr,
+                          enum pl_alpha_mode mode)
+ {
+@@ -215,7 +248,8 @@
+ #endif
+ }
+ 
+-void pl_shader_dovi_reshape(pl_shader sh, const struct pl_dovi_metadata *data)
++static void dovi_reshape(pl_shader sh, const struct pl_dovi_metadata *data,
++                         const struct pl_cb1_dovi_processing *processing)
+ {
+ #ifdef PL_HAVE_DOVI
+     if (!sh_require(sh, PL_SHADER_SIG_COLOR, 0, 0) || !data)
+@@ -231,6 +265,11 @@
+ 
+     float coeffs_data[8][4];
+     float mmr_packed_data[8*6][4];
++    ident_t mmr_lut=NULL_IDENT;
++    if (processing && (processing->groups&3) && processing->mmr_texture &&
++        (processing->narrow_components || processing->poly_components))
++        mmr_lut=sh_bind(sh,processing->mmr_texture,PL_TEX_ADDRESS_CLAMP,
++            PL_TEX_SAMPLE_LINEAR,"cb1_mmr",NULL,NULL,NULL);
+ 
+     for (int c = 0; c < 3; c++) {
+         const struct pl_reshape_data *comp = &data->comp[c];
+@@ -239,6 +278,18 @@
+ 
+         pl_assert(comp->num_pivots >= 2 && comp->num_pivots <= 9);
+         struct pl_reshape_data compact;
++        bool common_mmr = comp->num_pivots > 2 && comp->method[0] == 1;
++        for (int i = 1; common_mmr && i < comp->num_pivots - 1; i++)
++            common_mmr = comp->method[i] == 1 && comp->mmr_order[i] == comp->mmr_order[0] &&
++                !memcmp(&comp->mmr_constant[i], &comp->mmr_constant[0], sizeof(float)) &&
++                !memcmp(comp->mmr_coeffs[i], comp->mmr_coeffs[0], sizeof(comp->mmr_coeffs[0]));
++        if (common_mmr) {
++            // Identical intervals share coefficients and the original outer bounds.
++            compact = *comp;
++            compact.pivots[1] = comp->pivots[comp->num_pivots - 1];
++            compact.num_pivots = 2;
++            comp = &compact;
++        }
+         bool polynomial = comp->num_pivots > 2;
+         for (int i = 0; polynomial && i < comp->num_pivots - 1; i++)
+             polynomial = comp->method[i] == 0;
+@@ -272,6 +323,37 @@
+             GLSL("color[%d] = sig[%d]; \n", c, c);
+             continue;
+         }
++        if (processing && mmr_lut && (processing->poly_components&(1u<<c))) {
++            ident_t row=SH_FLOAT((c*3+0.5)/9.0);
++            ident_t lo=SH_FLOAT_DYN(comp->pivots[0]);
++            ident_t hi=SH_FLOAT_DYN(comp->pivots[comp->num_pivots-1]);
++            GLSL("color[%d]=clamp(texture("$",vec2((sig[%d]*1023.0+0.5)/1024.0,"$")).r,"$","$"); \n",
++                c,mmr_lut,c,row,lo,hi);
++            continue;
++        }
++        if (processing && mmr_lut &&
++            (processing->narrow_components&(1u<<c))) {
++            ident_t constant=SH_FLOAT_DYN(comp->mmr_constant[0]);
++            GLSL("s = "$"; \n",constant);
++            for (int input=0;input<3;input++) {
++                ident_t row=SH_FLOAT((c*3+input+0.5)/9.0);
++                GLSL("s += texture("$",vec2((sig[%d]*1023.0+0.5)/1024.0,"$")).r; \n",
++                     mmr_lut,input,row);
++            }
++            GLSL("{ vec4 cross1=vec4(sig.x*sig.y,sig.x*sig.z,sig.y*sig.z,sig.x*sig.y*sig.z); \n");
++            for (int order=0;order<comp->mmr_order[0];order++) {
++                float values[4];
++                memcpy(values,&comp->mmr_coeffs[0][order][3],sizeof(values));
++                ident_t cross=sh_var(sh,(struct pl_shader_var){.var=pl_var_vec4("cb1_cross"),.data=values});
++                if (order==0) GLSL("s += dot("$",cross1); \n",cross);
++                if (order==1) GLSL("s += dot("$",cross1*cross1); \n",cross);
++                if (order==2) GLSL("s += dot("$",cross1*cross1*cross1); \n",cross);
++            }
++            ident_t lo=SH_FLOAT_DYN(comp->pivots[0]);
++            ident_t hi=SH_FLOAT_DYN(comp->pivots[comp->num_pivots-1]);
++            GLSL("color[%d]=clamp(s,"$","$"); } \n",c,lo,hi);
++            continue;
++        }
+         if (reshape_univariate_mmr(sh, comp, c))
+             continue;
+         GLSL("s = sig[%d]; \n", c);
+@@ -425,9 +507,25 @@
+ #endif
+ }
+ 
++void pl_shader_dovi_reshape(pl_shader sh, const struct pl_dovi_metadata *data)
++{
++    dovi_reshape(sh,data,NULL);
++}
++
++unsigned pl_cb1_processing_abi(void)
++{
++    return PL_CB1_PROCESSING_ABI;
++}
++
+ void pl_shader_dovi_reconstruct(pl_shader sh, struct pl_color_repr *repr,
+                                  pl_shader enhancement_layer)
+ {
++    pl_shader_dovi_reconstruct_ex(sh, repr, enhancement_layer, NULL);
++}
++
++void pl_shader_dovi_reconstruct_ex(pl_shader sh, struct pl_color_repr *repr,
++    pl_shader enhancement_layer, const struct pl_cb1_dovi_processing *processing)
++{
+     if (!sh_require(sh, PL_SHADER_SIG_COLOR, 0, 0))
+         return;
+     if (!repr || repr->sys != PL_COLOR_SYSTEM_DOLBYVISION || !repr->dovi) {
+@@ -436,7 +534,7 @@
+     }
+     ident_t scale = SH_FLOAT(pl_color_repr_normalize(repr));
+     GLSL("color.rgb *= vec3("$"); \n", scale);
+-    pl_shader_dovi_reshape(sh, repr->dovi);
++    dovi_reshape(sh, repr->dovi, processing);
+     if (enhancement_layer && repr->dovi->nlq_active) {
+         ident_t el = sh_subpass(sh, enhancement_layer);
+         if (el)
+@@ -455,7 +553,7 @@
+     GLSL("// pl_shader_decode_color \n"
+          "{ \n");
+     if (repr->sys == PL_COLOR_SYSTEM_DOLBYVISION)
+-        pl_shader_dovi_reconstruct(sh, repr, args->enhancement_layer);
++        pl_shader_dovi_reconstruct_ex(sh, repr, args->enhancement_layer, args->cb1_processing);
+ 
+     enum pl_color_system orig_sys = repr->sys;
+     pl_transform3x3 tr = pl_color_repr_decode(repr, params);
+@@ -572,18 +670,20 @@
+         });
+ 
+         // PQ EOTF
+-        if (SH_PARAMS(sh).cb1_stable_pq) {
+-            cb1_pq_eotf(sh, "color.rgb");
+-        } else {
+-        GLSL("color.rgb = pow(max(color.rgb, 0.0), vec3(1.0/%f));   \n"
+-             "color.rgb = max(color.rgb - vec3(%f), 0.0)            \n"
+-             "             / (vec3(%f) - vec3(%f) * color.rgb);     \n"
+-             "color.rgb = pow(color.rgb, vec3(1.0/%f));             \n",
+-             PQ_M2, PQ_C1, PQ_C2, PQ_C3, PQ_M1);
+-        }
++        bool coarse_decode=cb1_colour_lookup(sh,args->cb1_processing,false);
++        cb1_colour_dense_eotf(sh);
++        if (coarse_decode) GLSL("}\n");
+         // LMS matrix
+         GLSL("color.rgb = "$" * color.rgb; \n", mat);
++        if (coarse_decode) {
++            /* Cancellation before PQ encoding amplifies small linear errors. */
++            GLSL("if(cb1_decode_coarse && any(lessThan(color.rgb,vec3(0.001)))) {\n"
++                 "color.rgb=cb1_pq_source;\n");
++            cb1_colour_dense_eotf(sh);
++            GLSL("color.rgb = "$" * color.rgb;\n}\n",mat);
++        }
+         // PQ OETF
++        bool coarse_encode=cb1_colour_lookup(sh,args->cb1_processing,true);
+         if (SH_PARAMS(sh).cb1_stable_pq) {
+             cb1_pq_oetf(sh, "color.rgb");
+         } else {
+@@ -593,6 +693,7 @@
+              "color.rgb = pow(color.rgb, vec3(%f));                 \n",
+              PQ_M1, PQ_C1, PQ_C2, PQ_C3, PQ_M2);
+         }
++        if (coarse_encode) GLSL("}\n");
+         break;
+ #else
+         SH_FAIL(sh, "libplacebo was compiled without support for dolbyvision reshaping");
