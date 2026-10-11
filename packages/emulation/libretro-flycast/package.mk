@@ -2,48 +2,41 @@
 # Copyright (C) 2026-present Team LibreELEC (https://libreelec.tv)
 
 PKG_NAME="libretro-flycast"
-PKG_VERSION="4473f5cb923ad4b9cd9e5a66e2205bec817af4fb"
-PKG_SHA256="ef74f224417af8b2c970ccbf9ce54f19b990c11a6df7c33345ea5339f8586849"
+PKG_VERSION="32a3c34b02688d42c91a2854ee63062fe19aa0bd"
+PKG_SHA256="246f2c798dae73431267e574f48ccbac2c84cadc279141d9d028a0121186543a"
 PKG_LICENSE="GPL-2.0-or-later"
 PKG_SITE="https://github.com/flyinghead/flycast"
 PKG_URL="https://github.com/kodi-game/flycast/archive/${PKG_VERSION}.tar.gz"
-PKG_DEPENDS_TARGET="toolchain"
+PKG_DEPENDS_TARGET="toolchain zlib"
 PKG_LONGDESC="Flycast is a multi-platform Sega Dreamcast, Naomi and Atomiswave emulator."
-
-# Keep symbols: this core runs unthrottled and silent with correct timing
-# declared, and the reason is somewhere inside it.
 PKG_BUILD_FLAGS="-strip"
-PKG_TOOLCHAIN="make"
+PKG_TOOLCHAIN="cmake"
 
 PKG_LIBNAME="flycast_libretro.so"
 PKG_LIBPATH="${PKG_LIBNAME}"
 PKG_LIBVAR="FLYCAST_LIB"
 
-# The toolchain ships no omp.h; the core enables OpenMP by default
-PKG_MAKE_OPTS_TARGET="platform=unix GIT_VERSION= HAVE_OPENMP=0"
+# The libretro core only: none of the standalone app's audio, crash reporting,
+# scripting or Windows back ends, and LibreELEC has no libzip or Vulkan loader
+PKG_CMAKE_OPTS_TARGET="-DLIBRETRO=ON \
+                       -DUSE_VULKAN=OFF \
+                       -DUSE_OPENMP=OFF \
+                       -DUSE_HOST_LIBZIP=OFF \
+                       -DUSE_ALSA=OFF \
+                       -DUSE_LIBAO=OFF \
+                       -DUSE_PULSEAUDIO=OFF \
+                       -DUSE_BREAKPAD=OFF \
+                       -DUSE_LUA=OFF \
+                       -DUSE_DX9=OFF \
+                       -DUSE_DX11=OFF"
 
-if build_with_debug; then
-  PKG_MAKE_OPTS_TARGET+=" DEBUG=1"
-fi
-
-# The core resolves GL entry points at runtime through glsym rather than linking
-# them, so this is about having the library present rather than linking it
 if [ "${OPENGL_SUPPORT}" = "yes" ]; then
   PKG_DEPENDS_TARGET+=" ${OPENGL}"
-  # glvnd here provides libOpenGL, not libGL -- there is no GLX on GBM. The
-  # Makefile only falls back to -lGL when GL_LIB is unset, so naming it is
-  # enough; no patch needed.
-  PKG_MAKE_OPTS_TARGET+=" GL_LIB=-lOpenGL"
 fi
 
 if [ "${OPENGLES_SUPPORT}" = "yes" ]; then
   PKG_DEPENDS_TARGET+=" ${OPENGLES}"
-  PKG_MAKE_OPTS_TARGET+=" FORCE_GLES=1"
-  # HAVE_GL3 implies HAVE_CORE, which defines CORE, and the bundled glsm then
-  # calls glGenVertexArrays/glBindVertexArray. Those are desktop GL 3 and are
-  # not declared by the ES2 headers this path uses, so the build stops at
-  # "implicit declaration of function 'glGenVertexArrays'".
-  PKG_MAKE_OPTS_TARGET+=" HAVE_GL3=0"
+  PKG_CMAKE_OPTS_TARGET+=" -DUSE_GLES=ON"
 fi
 
 makeinstall_target() {

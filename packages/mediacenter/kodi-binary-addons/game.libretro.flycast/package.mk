@@ -2,8 +2,8 @@
 # Copyright (C) 2026-present Team LibreELEC (https://libreelec.tv)
 
 PKG_NAME="game.libretro.flycast"
-PKG_VERSION="0.1.0.65-Omega"
-PKG_SHA256="7ec8fc9ab576d0f623863b47666076057ac33ccb7fd5967b02ad1ee618a05754"
+PKG_VERSION="0.1.0.68-Omega"
+PKG_SHA256="bd2e56859efea4e3a852e6ff8c56090f75384fa599e103c00b0e2da1427cbdf2"
 PKG_REV="1"
 PKG_ARCH="any"
 PKG_LICENSE="GPL-2.0-or-later"
