@@ -1,0 +1,57 @@
+From d01b89638b6614c67f5614405d2ed34034576f55 Mon Sep 17 00:00:00 2001
+From: Chris <meischris39@hotmail.com>
+Date: Thu, 15 Oct 2026 22:59:03 +0100
+Subject: [PATCH] libretro: offer Nero images
+
+MAME's CD code opens .nrg images, but the core didn't list the
+extension, disc control wouldn't take one, and it wasn't passed to the
+CD-ROM drive, so frontends never got a Nero image as far as MAME.
+---
+ src/osd/libretro/libretro-internal/disk_control.h | 3 ++-
+ src/osd/libretro/libretro-internal/libretro.cpp   | 2 +-
+ src/osd/libretro/libretro-internal/retro_init.cpp | 2 +-
+ 3 files changed, 4 insertions(+), 3 deletions(-)
+
+diff --git a/src/osd/libretro/libretro-internal/disk_control.h b/src/osd/libretro/libretro-internal/disk_control.h
+index f0726b5..943e3d4 100644
+--- a/src/osd/libretro/libretro-internal/disk_control.h
++++ b/src/osd/libretro/libretro-internal/disk_control.h
+@@ -36,7 +36,8 @@ static bool is_disc(const std::string &path)
+    if (dot == std::string::npos)
+       return false;
+    const char *ext = path.c_str() + dot;
+-   return !core_stricmp(ext, ".cue") || !core_stricmp(ext, ".chd") || !core_stricmp(ext, ".iso");
++   return !core_stricmp(ext, ".cue") || !core_stricmp(ext, ".chd") || !core_stricmp(ext, ".iso") ||
++         !core_stricmp(ext, ".nrg");
+ }
+ 
+ static cdrom_image_device *drive()
+diff --git a/src/osd/libretro/libretro-internal/libretro.cpp b/src/osd/libretro/libretro-internal/libretro.cpp
+index 47ae491..e4595b0 100644
+--- a/src/osd/libretro/libretro-internal/libretro.cpp
++++ b/src/osd/libretro/libretro-internal/libretro.cpp
+@@ -632,7 +632,7 @@ void retro_get_system_info(struct retro_system_info *info)
+ 
+    info->library_name     = "SAME_CDI";
+    info->library_version  = bare_build_version;
+-   info->valid_extensions = "chd|iso|cue|m3u";
++   info->valid_extensions = "chd|iso|cue|nrg|m3u";
+    info->need_fullpath    = true;
+    info->block_extract    = true;
+ }
+diff --git a/src/osd/libretro/libretro-internal/retro_init.cpp b/src/osd/libretro/libretro-internal/retro_init.cpp
+index 6b97953..b1f6cc1 100644
+--- a/src/osd/libretro/libretro-internal/retro_init.cpp
++++ b/src/osd/libretro/libretro-internal/retro_init.cpp
+@@ -534,7 +534,7 @@ static int execute_game(char* path)
+    Add_Option(forcedSystem);
+     // load chd directly
+    if (strlen(gameName) >= strlen("chd")){
+-           if(!core_stricmp(&gameName[strlen(gameName)-strlen("chd")], "chd") || !core_stricmp(&gameName[strlen(gameName)-strlen("iso")], "iso") || !core_stricmp(&gameName[strlen(gameName)-strlen("cue")], "cue")){
++           if(!core_stricmp(&gameName[strlen(gameName)-strlen("chd")], "chd") || !core_stricmp(&gameName[strlen(gameName)-strlen("iso")], "iso") || !core_stricmp(&gameName[strlen(gameName)-strlen("cue")], "cue") || !core_stricmp(&gameName[strlen(gameName)-strlen("nrg")], "nrg")){
+                Add_Option((char*)"-cdrom");
+                Add_Option((char*)gameName);
+            }
+-- 
+2.53.0
+
