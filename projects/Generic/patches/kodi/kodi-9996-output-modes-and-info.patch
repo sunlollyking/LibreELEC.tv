@@ -88,7 +88,7 @@ From CroqueMr/libreelec-x86-DV R1.0.0-Beta2 (kodi-9996-output-modes-and-info.pat
  create mode 100644 xbmc/utils/DVRenderUsage.h
 
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index e8a26b8195..ed40edfb15 100644
+index e8a26b8195df0c1be6af15032fc092f1d7aaed93..ed40edfb15865dd13bdb31cca7fe9fa3b12881e3 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -6,6 +6,7 @@ endif()
@@ -111,10 +111,10 @@ index e8a26b8195..ed40edfb15 100644
  
  if(POLICY CMP0069)
 diff --git a/addons/resource.language.en_gb/resources/strings.po b/addons/resource.language.en_gb/resources/strings.po
-index 0b909650b6..ce914ff04d 100644
+index f8a1d574f317ca69a87f9efe34cb851e90332e5f..21c08b0315c9dc05c1477ba55936095ebca1ee8d 100644
 --- a/addons/resource.language.en_gb/resources/strings.po
 +++ b/addons/resource.language.en_gb/resources/strings.po
-@@ -26937,3 +26937,258 @@ msgstr ""
+@@ -27041,3 +27041,258 @@ msgstr ""
  msgctxt "#40806"
  msgid "Adjust and display the volume level while audio is passed through. The level is not applied to the bitstream, but every change is announced, so an add-on or automation can apply it to an external audio processor."
  msgstr ""
@@ -374,7 +374,7 @@ index 0b909650b6..ce914ff04d 100644
 +msgid "Playback modes | Source: {0}"
 +msgstr ""
 diff --git a/addons/skin.estuary/xml/DialogPlayerProcessInfo.xml b/addons/skin.estuary/xml/DialogPlayerProcessInfo.xml
-index c4f1c10ae4..fc33e7060f 100644
+index c4f1c10ae4a4e22d724095ba9032acbe0ae0c942..fc33e7060f8e21b52fff7b62208efc92890fc957 100644
 --- a/addons/skin.estuary/xml/DialogPlayerProcessInfo.xml
 +++ b/addons/skin.estuary/xml/DialogPlayerProcessInfo.xml
 @@ -6,7 +6,9 @@
@@ -388,7 +388,7 @@ index c4f1c10ae4..fc33e7060f 100644
  			<height>250</height>
  			<animation effect="slide" end="0,-20" time="150" condition="VideoPlayer.Content(LiveTV)">conditional</animation>
 diff --git a/addons/skin.estuary/xml/DialogSelect.xml b/addons/skin.estuary/xml/DialogSelect.xml
-index ef828ecd30..15dde9e78e 100644
+index ef828ecd308561b7d28e56e06330c26ab723861b..15dde9e78eb66ed3c69893cb8667793a25a10a5e 100644
 --- a/addons/skin.estuary/xml/DialogSelect.xml
 +++ b/addons/skin.estuary/xml/DialogSelect.xml
 @@ -4,7 +4,8 @@
@@ -403,7 +403,7 @@ index ef828ecd30..15dde9e78e 100644
  		<include condition="Window.IsActive(dialogselectsubtitle)">VideoDialogSelectSubtitleLayout</include>
 diff --git a/addons/skin.estuary/xml/IncludesDVProcessInfo.xml b/addons/skin.estuary/xml/IncludesDVProcessInfo.xml
 new file mode 100644
-index 0000000000..f3a9d7a326
+index 0000000000000000000000000000000000000000..f3a9d7a32648bd3344f36f2d04fd88f6adc5c96d
 --- /dev/null
 +++ b/addons/skin.estuary/xml/IncludesDVProcessInfo.xml
 @@ -0,0 +1,171 @@
@@ -579,7 +579,7 @@ index 0000000000..f3a9d7a326
 +  </include>
 +</includes>
 diff --git a/addons/skin.estuary/xml/Includes_DialogSelect.xml b/addons/skin.estuary/xml/Includes_DialogSelect.xml
-index ee7d629fd9..76f34dd411 100644
+index ee7d629fd9b529bc205ce4572345e8c1253db1f4..76f34dd411075b92c812676b95572571b598ca41 100644
 --- a/addons/skin.estuary/xml/Includes_DialogSelect.xml
 +++ b/addons/skin.estuary/xml/Includes_DialogSelect.xml
 @@ -1273,4 +1273,62 @@
@@ -646,7 +646,7 @@ index ee7d629fd9..76f34dd411 100644
 +  </include>
  </includes>
 diff --git a/addons/skin.estuary/xml/Variables.xml b/addons/skin.estuary/xml/Variables.xml
-index e757e0e2e1..7ff47ed76e 100644
+index 64348d1f541db0d9d1e207ae7afd2775d5874b51..ead7350eae9ecad3fd7707bbacc66cb85c69baf0 100644
 --- a/addons/skin.estuary/xml/Variables.xml
 +++ b/addons/skin.estuary/xml/Variables.xml
 @@ -1,5 +1,9 @@
@@ -660,7 +660,7 @@ index e757e0e2e1..7ff47ed76e 100644
  		<value condition="ListItem.IsRecording">windows/pvr/record.png</value>
  		<value condition="ListItem.HasTimer | ListItem.HasTimerSchedule">windows/pvr/timer.png</value>
 diff --git a/system/keymaps/keyboard.xml b/system/keymaps/keyboard.xml
-index 3fc157f4d8..1298b37b43 100644
+index 3fc157f4d8b415a4e5d3bd3fa1d7574abac70c23..1298b37b43cec7e84313f5808c26c07aa915356d 100644
 --- a/system/keymaps/keyboard.xml
 +++ b/system/keymaps/keyboard.xml
 @@ -727,6 +727,11 @@
@@ -676,7 +676,7 @@ index 3fc157f4d8..1298b37b43 100644
      <keyboard>
        <period>NextPicture</period>
 diff --git a/system/settings/settings.xml b/system/settings/settings.xml
-index 95fe7b1096..8017c5a49e 100755
+index c2585c157c989cb794754d2118388c20abeff851..81b641d634cdcfd00d6608e092655f3497b7751a 100755
 --- a/system/settings/settings.xml
 +++ b/system/settings/settings.xml
 @@ -2,6 +2,92 @@
@@ -773,7 +773,7 @@ index 95fe7b1096..8017c5a49e 100755
          <setting id="videoplayer.autoplaynextitem" type="list[integer]" label="13433" help="36152">
            <constraints>
 diff --git a/xbmc/cores/VideoPlayer/Buffers/VideoBuffer.h b/xbmc/cores/VideoPlayer/Buffers/VideoBuffer.h
-index 1b31d01d4f..f1da266b09 100644
+index 1b31d01d4fa6eaa7103e1c4df72223053ef96238..f1da266b094e0afb56f7aabb433991341b6deaa6 100644
 --- a/xbmc/cores/VideoPlayer/Buffers/VideoBuffer.h
 +++ b/xbmc/cores/VideoPlayer/Buffers/VideoBuffer.h
 @@ -93,6 +93,11 @@ public:
@@ -799,10 +799,10 @@ index 1b31d01d4f..f1da266b09 100644
  
  class CVideoBufferSysMem : public CVideoBuffer
 diff --git a/xbmc/cores/VideoPlayer/CMakeLists.txt b/xbmc/cores/VideoPlayer/CMakeLists.txt
-index 55549a8076..8b1c09c6a8 100644
+index 2f3126863e86408709b29796de614f8f43921925..e1fcecefc4fc6c54d8186462b0000507160df18f 100644
 --- a/xbmc/cores/VideoPlayer/CMakeLists.txt
 +++ b/xbmc/cores/VideoPlayer/CMakeLists.txt
-@@ -74,3 +74,6 @@ if("webos" IN_LIST CORE_PLATFORM_NAME_LC)
+@@ -76,3 +76,6 @@ if("webos" IN_LIST CORE_PLATFORM_NAME_LC)
  endif()
  
  core_add_library(VideoPlayer)
@@ -810,7 +810,7 @@ index 55549a8076..8b1c09c6a8 100644
 +  target_link_libraries(${CORE_LIBRARY} PRIVATE dvbridge_core)
 +endif()
 diff --git a/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVDVideoCodec.h b/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVDVideoCodec.h
-index da74132634..3669f96ca8 100644
+index da741326344d1c6b6f50ecff25a93325dc46f0ad..3669f96ca8a6d0e5387f890fea7c97baff6bf987 100644
 --- a/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVDVideoCodec.h
 +++ b/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVDVideoCodec.h
 @@ -281,4 +281,8 @@ public:
@@ -823,7 +823,7 @@ index da74132634..3669f96ca8 100644
 +#endif
  };
 diff --git a/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVDVideoCodecFFmpeg.cpp b/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVDVideoCodecFFmpeg.cpp
-index 0f38caa3a1..68a086228b 100644
+index 7bae3f4682d462f15097007eb7ef9ed6e7165971..290fc9ddf3ac027c62bbd5aeea90fd608363ff5c 100644
 --- a/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVDVideoCodecFFmpeg.cpp
 +++ b/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVDVideoCodecFFmpeg.cpp
 @@ -7,6 +7,9 @@
@@ -836,7 +836,7 @@ index 0f38caa3a1..68a086228b 100644
  
  #include "DVDCodecs/DVDCodecs.h"
  #include "DVDCodecs/DVDFactoryCodec.h"
-@@ -1335,6 +1338,9 @@ bool CDVDVideoCodecFFmpeg::GetPictureCommon(VideoPicture* pVideoPicture)
+@@ -1338,6 +1341,9 @@ bool CDVDVideoCodecFFmpeg::GetPictureCommon(VideoPicture* pVideoPicture)
      }
    }
  
@@ -846,7 +846,7 @@ index 0f38caa3a1..68a086228b 100644
    if (pVideoPicture->iRepeatPicture)
      pVideoPicture->dts = DVD_NOPTS_VALUE;
    else
-@@ -1564,6 +1570,31 @@ unsigned CDVDVideoCodecFFmpeg::GetConvergeCount()
+@@ -1567,6 +1573,31 @@ unsigned CDVDVideoCodecFFmpeg::GetConvergeCount()
    return m_iLastKeyframe;
  }
  
@@ -879,7 +879,7 @@ index 0f38caa3a1..68a086228b 100644
  {
    if(m_pHardware)
 diff --git a/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVDVideoCodecFFmpeg.h b/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVDVideoCodecFFmpeg.h
-index 3c6375c8d0..d07420c614 100644
+index 3c6375c8d030c1c07a427e511fb6a924bbe4d1b9..d07420c614bd8aff41119c5aaa93aebbb1525a5c 100644
 --- a/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVDVideoCodecFFmpeg.h
 +++ b/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVDVideoCodecFFmpeg.h
 @@ -50,6 +50,11 @@ public:
@@ -896,7 +896,7 @@ index 3c6375c8d0..d07420c614 100644
    {
 diff --git a/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVOutputSelection.h b/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVOutputSelection.h
 new file mode 100644
-index 0000000000..d7bff033ca
+index 0000000000000000000000000000000000000000..d7bff033cab6976b9dcfeb2d48f23572cafddcf7
 --- /dev/null
 +++ b/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVOutputSelection.h
 @@ -0,0 +1,76 @@
@@ -978,7 +978,7 @@ index 0000000000..d7bff033ca
 +#endif
 diff --git a/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVOutputSettings.h b/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVOutputSettings.h
 new file mode 100644
-index 0000000000..55f1349925
+index 0000000000000000000000000000000000000000..55f1349925c28adfc80cc418a97e8361b9119278
 --- /dev/null
 +++ b/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVOutputSettings.h
 @@ -0,0 +1,141 @@
@@ -1124,7 +1124,7 @@ index 0000000000..55f1349925
 +}
 +} // namespace DVBRIDGE
 diff --git a/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVPlaybackInfo.h b/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVPlaybackInfo.h
-index 9d72a89a02..f154fdc001 100644
+index 9d72a89a02c44d93d4f6954d00d98bdd190c9fa1..f154fdc001c216d20d8b50611181ad15fd8410b2 100644
 --- a/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVPlaybackInfo.h
 +++ b/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVPlaybackInfo.h
 @@ -2,21 +2,119 @@
@@ -1253,7 +1253,7 @@ index 9d72a89a02..f154fdc001 100644
  };
 diff --git a/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVPlaybackNotification.h b/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVPlaybackNotification.h
 new file mode 100644
-index 0000000000..fc7219a979
+index 0000000000000000000000000000000000000000..fc7219a9797d643ff3854c976327b0af90d71587
 --- /dev/null
 +++ b/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVPlaybackNotification.h
 @@ -0,0 +1,105 @@
@@ -1364,7 +1364,7 @@ index 0000000000..fc7219a979
 +#endif
 diff --git a/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVStreamTelemetry.h b/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVStreamTelemetry.h
 new file mode 100644
-index 0000000000..ceaa03bfab
+index 0000000000000000000000000000000000000000..ceaa03bfabfc2afc08e7c5a506ec210c3ce58da0
 --- /dev/null
 +++ b/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVStreamTelemetry.h
 @@ -0,0 +1,375 @@
@@ -1745,7 +1745,7 @@ index 0000000000..ceaa03bfab
 +} // namespace DVBRIDGE
 diff --git a/xbmc/cores/VideoPlayer/DVDCodecs/Video/HDR10AIActivation.h b/xbmc/cores/VideoPlayer/DVDCodecs/Video/HDR10AIActivation.h
 new file mode 100644
-index 0000000000..472bc322a6
+index 0000000000000000000000000000000000000000..472bc322a66945bc141a43097f2e932626f5584d
 --- /dev/null
 +++ b/xbmc/cores/VideoPlayer/DVDCodecs/Video/HDR10AIActivation.h
 @@ -0,0 +1,123 @@
@@ -1873,7 +1873,7 @@ index 0000000000..472bc322a6
 +};
 +}
 diff --git a/xbmc/cores/VideoPlayer/DVDCodecs/Video/VAAPI.cpp b/xbmc/cores/VideoPlayer/DVDCodecs/Video/VAAPI.cpp
-index 5103cc1f15..a749b88e7b 100644
+index bc984028c309dde8633f1a3b31d251e76ac76c92..91621bf0aa18745c13aae893ebf9794bb3f41db5 100644
 --- a/xbmc/cores/VideoPlayer/DVDCodecs/Video/VAAPI.cpp
 +++ b/xbmc/cores/VideoPlayer/DVDCodecs/Video/VAAPI.cpp
 @@ -29,6 +29,9 @@
@@ -1886,7 +1886,7 @@ index 5103cc1f15..a749b88e7b 100644
  
  #include <drm_fourcc.h>
  #include <va/va_drm.h>
-@@ -752,6 +755,12 @@ bool CDecoder::Open(AVCodecContext* avctx, AVCodecContext* mainctx, const enum A
+@@ -764,6 +767,12 @@ bool CDecoder::Open(AVCodecContext* avctx, AVCodecContext* mainctx, const enum A
    // add an extra surface for safety, some faulty material
    // make ffmpeg require more buffers
    m_vaapiConfig.maxReferences += 6;
@@ -1899,7 +1899,7 @@ index 5103cc1f15..a749b88e7b 100644
  
    if (!ConfigVAAPI())
    {
-@@ -1058,6 +1067,14 @@ CDVDVideoCodec::VCReturn CDecoder::Check(AVCodecContext* avctx)
+@@ -1070,6 +1079,14 @@ CDVDVideoCodec::VCReturn CDecoder::Check(AVCodecContext* avctx)
      state = m_DisplayState;
    }
  
@@ -1914,7 +1914,7 @@ index 5103cc1f15..a749b88e7b 100644
    if (state == VAAPI_LOST)
    {
      CLog::Log(LOGDEBUG, LOGVIDEO, "VAAPI::Check waiting for display reset event");
-@@ -1272,11 +1289,13 @@ bool CDecoder::ConfigVAAPI()
+@@ -1284,11 +1301,13 @@ bool CDecoder::ConfigVAAPI()
    // can dispatch sampling per-fourcc without re-inspecting each surface.
    m_vaapiConfig.pixelFormat = pixelFormat;
  
@@ -1930,7 +1930,7 @@ index 5103cc1f15..a749b88e7b 100644
            nb_surfaces, attribs, 1), "vaCreateSurfaces"))
    {
      return false;
-@@ -1422,7 +1441,7 @@ public:
+@@ -1434,7 +1453,7 @@ public:
    bool HasFree();
    void QueueReturnPicture(CVaapiRenderPicture *pic);
    CVaapiRenderPicture* ProcessSyncPicture();
@@ -1939,7 +1939,7 @@ index 5103cc1f15..a749b88e7b 100644
    void DeleteTextures(bool precleanup);
  
    std::deque<CVaapiProcessedPicture> processedPics;
-@@ -1453,10 +1472,9 @@ CVaapiBufferPool::CVaapiBufferPool(CDecoder &decoder)
+@@ -1465,10 +1484,9 @@ CVaapiBufferPool::CVaapiBufferPool(CDecoder &decoder)
  
  CVaapiBufferPool::~CVaapiBufferPool()
  {
@@ -1952,7 +1952,7 @@ index 5103cc1f15..a749b88e7b 100644
      delete pic;
    }
    allRenderPics.clear();
-@@ -1554,11 +1572,19 @@ CVaapiRenderPicture* CVaapiBufferPool::ProcessSyncPicture()
+@@ -1566,11 +1584,19 @@ CVaapiRenderPicture* CVaapiBufferPool::ProcessSyncPicture()
    return retPic;
  }
  
@@ -1974,7 +1974,7 @@ index 5103cc1f15..a749b88e7b 100644
      pic->valid = false;
    }
    procPicId = 0;
-@@ -2338,7 +2364,7 @@ void COutput::ProcessReturnProcPicture(int id)
+@@ -2350,7 +2376,7 @@ void COutput::ProcessReturnProcPicture(int id)
  
  void COutput::EnsureBufferPool()
  {
@@ -1984,7 +1984,7 @@ index 5103cc1f15..a749b88e7b 100644
  
  void COutput::ReleaseBufferPool(bool precleanup)
 diff --git a/xbmc/cores/VideoPlayer/DVDCodecs/Video/VAAPI.h b/xbmc/cores/VideoPlayer/DVDCodecs/Video/VAAPI.h
-index daf553e33b..c3fdbd973b 100644
+index 93cd546283263883e378434ac8d8c2c465386bf2..464e652337c6fbd005e82451b6ab900daacfdfbf 100644
 --- a/xbmc/cores/VideoPlayer/DVDCodecs/Video/VAAPI.h
 +++ b/xbmc/cores/VideoPlayer/DVDCodecs/Video/VAAPI.h
 @@ -190,6 +190,7 @@ struct CVaapiConfig
@@ -2003,7 +2003,7 @@ index daf553e33b..c3fdbd973b 100644
    explicit CVaapiRenderPicture(int id) : CVideoBuffer(id) { }
    void GetPlanes(uint8_t*(&planes)[YuvImage::MAX_PLANES]) override;
    void GetStrides(int(&strides)[YuvImage::MAX_PLANES]) override;
-@@ -549,7 +551,14 @@ public:
+@@ -553,7 +555,14 @@ public:
    virtual void Close();
    long Release() override;
    bool CanSkipDeint() override;
@@ -2019,7 +2019,7 @@ index daf553e33b..c3fdbd973b 100644
  
    CDVDVideoCodec::VCReturn Check(AVCodecContext* avctx) override;
    const std::string Name() override { return "vaapi"; }
-@@ -588,6 +597,9 @@ protected:
+@@ -592,6 +601,9 @@ protected:
  
    bool m_vaapiConfigured;
    CVaapiConfig  m_vaapiConfig;
@@ -2030,7 +2030,7 @@ index daf553e33b..c3fdbd973b 100644
    int m_getBufferError;
  
 diff --git a/xbmc/cores/VideoPlayer/VideoPlayer.cpp b/xbmc/cores/VideoPlayer/VideoPlayer.cpp
-index 41fac039ee..91d53e5662 100644
+index 151b44dc47f0a3f769f3f00d9798aa9cf889a3d8..aa2b722dff7171908db31c3ba2a9e6e29e959270 100644
 --- a/xbmc/cores/VideoPlayer/VideoPlayer.cpp
 +++ b/xbmc/cores/VideoPlayer/VideoPlayer.cpp
 @@ -8,6 +8,12 @@
@@ -2046,7 +2046,7 @@ index 41fac039ee..91d53e5662 100644
  #include "cores/VideoPlayer/DVDCodecs/Video/DVPlaybackPolicy.h"
  #endif
  
-@@ -844,6 +850,9 @@ bool CVideoPlayer::OpenFile(const CFileItem& file, const CPlayerOptions &options
+@@ -845,6 +851,9 @@ bool CVideoPlayer::OpenFile(const CFileItem& file, const CPlayerOptions &options
  
    m_item = file;
    m_playerOptions = options;
@@ -2056,7 +2056,7 @@ index 41fac039ee..91d53e5662 100644
  
    m_processInfo->SetPlayTimes(0,0,0,0);
    m_bAbortRequest = false;
-@@ -861,6 +870,9 @@ bool CVideoPlayer::OpenFile(const CFileItem& file, const CPlayerOptions &options
+@@ -862,6 +871,9 @@ bool CVideoPlayer::OpenFile(const CFileItem& file, const CPlayerOptions &options
  
  bool CVideoPlayer::CloseFile(bool reopen)
  {
@@ -2066,17 +2066,17 @@ index 41fac039ee..91d53e5662 100644
    CLog::Log(LOGINFO, "CVideoPlayer::CloseFile()");
  
    // set the abort request so that other threads can finish up
-@@ -1423,6 +1435,9 @@ void CVideoPlayer::CheckBetterStream(CCurrentStream& current, CDemuxStream* stre
+@@ -1424,6 +1436,9 @@ void CVideoPlayer::CheckBetterStream(CCurrentStream& current, CDemuxStream* stre
  
  void CVideoPlayer::Prepare()
  {
 +#ifdef HAVE_DVBRIDGE
 +  DVBRIDGE::SelectOutputSettings();
 +#endif
-   CFFmpegLog::SetLogLevel(1);
-   SetPlaySpeed(DVD_PLAYSPEED_NORMAL);
-   m_processInfo->SetSpeed(1.0);
-@@ -2143,6 +2158,15 @@ bool CVideoPlayer::ShouldDeferSync(bool ready, std::chrono::steady_clock::time_p
+   // A file opened in place reaches here without OnStartup, so the previous item's selection
+   // must be forgotten before its streams open.
+   ForgetSubtitleSelection();
+@@ -2154,6 +2169,15 @@ bool CVideoPlayer::ShouldDeferSync(bool ready, std::chrono::steady_clock::time_p
  
  void CVideoPlayer::HandlePlaySpeed()
  {
@@ -2092,7 +2092,7 @@ index 41fac039ee..91d53e5662 100644
    const bool isInMenu = IsInMenuInternal();
    const bool tolerateStall =
        isInMenu || (m_CurrentVideo.hint.flags & StreamFlags::FLAG_STILL_IMAGES);
-@@ -3014,6 +3038,9 @@ void CVideoPlayer::OnExit()
+@@ -3032,6 +3056,9 @@ void CVideoPlayer::OnExit()
    });
  
    // destroy objects
@@ -2102,7 +2102,7 @@ index 41fac039ee..91d53e5662 100644
    m_renderManager.Flush(false, false);
    m_pDemuxer.reset();
    m_pSubtitleDemuxer.reset();
-@@ -3087,6 +3114,9 @@ void CVideoPlayer::HandleMessages()
+@@ -3105,6 +3132,9 @@ void CVideoPlayer::HandleMessages()
  
        FlushBuffers(DVD_NOPTS_VALUE, true, true);
        m_renderManager.Flush(false, false);
@@ -2112,7 +2112,7 @@ index 41fac039ee..91d53e5662 100644
        m_pDemuxer.reset();
        m_pSubtitleDemuxer.reset();
        m_subtitleDemuxerMap.clear();
-@@ -3614,6 +3644,10 @@ void CVideoPlayer::HandleMessages()
+@@ -3641,6 +3671,10 @@ void CVideoPlayer::HandleMessages()
      {
        CLog::Log(LOGDEBUG, "CVideoPlayer - CDVDMsg::PLAYER_ABORT");
        m_bAbortRequest = true;
@@ -2123,7 +2123,7 @@ index 41fac039ee..91d53e5662 100644
      }
      else if (pMsg->IsType(CDVDMsg::PLAYER_SET_UPDATE_STREAM_DETAILS))
        m_updateStreamDetails = true;
-@@ -4455,10 +4489,7 @@ bool CVideoPlayer::OpenVideoStream(CDVDStreamInfo& hint, bool reset)
+@@ -4502,10 +4536,7 @@ bool CVideoPlayer::OpenVideoStream(CDVDStreamInfo& hint, bool reset)
                                                     (double)DVD_TIME_BASE * hint.fpsscale /
                                                     (hint.fpsrate * (hint.interlaced ? 2 : 1)));
  
@@ -2136,7 +2136,7 @@ index 41fac039ee..91d53e5662 100644
        CServiceBroker::GetWinSystem()->GetGfxContext().SetVideoResolution(res, false);
        m_renderManager.TriggerUpdateResolution(framerate, hint.width, hint.height, hint.stereo_mode,
 diff --git a/xbmc/cores/VideoPlayer/VideoPlayer.h b/xbmc/cores/VideoPlayer/VideoPlayer.h
-index c14f8070b9..853e5d6467 100644
+index 58195f8ed824b5e507e0761071ad8cc8245912af..3b34d99cb24f91ceebea98b12aab546287dec505 100644
 --- a/xbmc/cores/VideoPlayer/VideoPlayer.h
 +++ b/xbmc/cores/VideoPlayer/VideoPlayer.h
 @@ -10,6 +10,7 @@
@@ -2147,7 +2147,7 @@ index c14f8070b9..853e5d6467 100644
  #include "Edl.h"
  #include "FileItem.h"
  #include "IVideoPlayer.h"
-@@ -422,6 +423,14 @@ protected:
+@@ -430,6 +431,14 @@ protected:
    bool OpenStream(CCurrentStream& current, int64_t demuxerId, int iStream, int source, bool reset = true);
    bool OpenAudioStream(CDVDStreamInfo& hint, bool reset = true);
    bool OpenVideoStream(CDVDStreamInfo& hint, bool reset = true);
@@ -2163,7 +2163,7 @@ index c14f8070b9..853e5d6467 100644
    bool OpenTeletextStream(CDVDStreamInfo& hint);
    bool OpenRadioRDSStream(CDVDStreamInfo& hint);
 diff --git a/xbmc/cores/VideoPlayer/VideoPlayerVideo.cpp b/xbmc/cores/VideoPlayer/VideoPlayerVideo.cpp
-index 94e97dd2e0..60b514151d 100644
+index 51ca08050efcd32648d20876e7ac1cae9df6e368..c46910fb5be2cdbd0726ee0062fe9b66514dc1f7 100644
 --- a/xbmc/cores/VideoPlayer/VideoPlayerVideo.cpp
 +++ b/xbmc/cores/VideoPlayer/VideoPlayerVideo.cpp
 @@ -7,6 +7,14 @@
@@ -2197,7 +2197,7 @@ index 94e97dd2e0..60b514151d 100644
    CLog::Log(LOGDEBUG, "CVideoPlayerVideo::OpenStream - open stream with codec: {}",
              avcodec_get_name(hint.codec));
  
-@@ -311,6 +328,22 @@ inline MsgQueueReturnCode CVideoPlayerVideo::GetMessage(std::shared_ptr<CDVDMsg>
+@@ -313,6 +330,22 @@ inline MsgQueueReturnCode CVideoPlayerVideo::GetMessage(std::shared_ptr<CDVDMsg>
    return ret;
  }
  
@@ -2220,7 +2220,7 @@ index 94e97dd2e0..60b514151d 100644
  void CVideoPlayerVideo::Process()
  {
    CLog::Log(LOGINFO, "running thread: video_thread");
-@@ -330,6 +363,9 @@ void CVideoPlayerVideo::Process()
+@@ -332,6 +365,9 @@ void CVideoPlayerVideo::Process()
  
    while (!m_bStop)
    {
@@ -2230,7 +2230,7 @@ index 94e97dd2e0..60b514151d 100644
      auto timeout = std::chrono::duration_cast<std::chrono::milliseconds>(
          std::chrono::duration<double, std::micro>(m_stalled ? frametime : frametime * 10));
      int iPriority = 0;
-@@ -351,6 +387,15 @@ void CVideoPlayerVideo::Process()
+@@ -353,6 +389,15 @@ void CVideoPlayerVideo::Process()
  
      onlyPrioMsgs = false;
  
@@ -2246,7 +2246,7 @@ index 94e97dd2e0..60b514151d 100644
      if (MSGQ_IS_ERROR(ret))
      {
        if (!m_messageQueue.ReceivedAbortRequest())
-@@ -372,6 +417,9 @@ void CVideoPlayerVideo::Process()
+@@ -374,6 +419,9 @@ void CVideoPlayerVideo::Process()
        }
        // don't ask for a new frame if we can't deliver it to renderer
        else if ((m_speed != DVD_PLAYSPEED_PAUSE ||
@@ -2256,7 +2256,7 @@ index 94e97dd2e0..60b514151d 100644
                  m_processInfo.IsFrameAdvance() ||
                  m_syncState != IDVDStreamPlayer::SYNC_INSYNC) && !m_paused)
        {
-@@ -672,6 +720,14 @@ bool CVideoPlayerVideo::ProcessDecoderOutput(double &frametime, double &pts)
+@@ -705,6 +753,14 @@ bool CVideoPlayerVideo::ProcessDecoderOutput(double &frametime, double &pts)
  
    if (decoderState == CDVDVideoCodec::VC_EOF)
    {
@@ -2271,7 +2271,7 @@ index 94e97dd2e0..60b514151d 100644
      if (m_syncState == IDVDStreamPlayer::SYNC_STARTING)
      {
        SStartMsg msg;
-@@ -775,6 +831,9 @@ bool CVideoPlayerVideo::ProcessDecoderOutput(double &frametime, double &pts)
+@@ -808,6 +864,9 @@ bool CVideoPlayerVideo::ProcessDecoderOutput(double &frametime, double &pts)
      }
  
      if (m_syncState == IDVDStreamPlayer::SYNC_STARTING &&
@@ -2281,7 +2281,7 @@ index 94e97dd2e0..60b514151d 100644
          m_outputSate != OUTPUT_DROPPED &&
          !(m_picture.iFlags & DVP_FLAG_DROPPED))
      {
-@@ -858,8 +917,63 @@ void CVideoPlayerVideo::ProcessOverlays(const VideoPicture* pSource, double pts)
+@@ -891,8 +950,63 @@ void CVideoPlayerVideo::ProcessOverlays(const VideoPicture* pSource, double pts)
    }
  }
  
@@ -2346,7 +2346,7 @@ index 94e97dd2e0..60b514151d 100644
  
    if (m_processInfo.GetVideoStereoMode() != pPicture->stereoMode)
 diff --git a/xbmc/cores/VideoPlayer/VideoPlayerVideo.h b/xbmc/cores/VideoPlayer/VideoPlayerVideo.h
-index 3368212d36..419c318337 100644
+index 91e4af7b098e6fffb1e9ff563419f6053181f996..06d9d77d13f87cbd0c4728779085c4772be8863d 100644
 --- a/xbmc/cores/VideoPlayer/VideoPlayerVideo.h
 +++ b/xbmc/cores/VideoPlayer/VideoPlayerVideo.h
 @@ -20,6 +20,9 @@
@@ -2372,7 +2372,7 @@ index 3368212d36..419c318337 100644
    void ProcessOverlays(const VideoPicture* pSource, double pts);
    void OpenStream(CDVDStreamInfo& hint, std::unique_ptr<CDVDVideoCodec> codec);
  
-@@ -124,6 +133,12 @@ protected:
+@@ -127,6 +136,12 @@ protected:
    bool m_bRenderSubs;
    float m_fForcedAspectRatio;
    int m_speed;
@@ -2385,7 +2385,7 @@ index 3368212d36..419c318337 100644
    std::atomic_bool m_stalled = false;
    std::atomic_bool m_rewindStalled;
    bool m_paused;
-@@ -141,6 +156,9 @@ protected:
+@@ -144,6 +159,9 @@ protected:
    CDroppingStats m_droppingStats;
    CRenderManager& m_renderManager;
    VideoPicture m_picture;
@@ -2396,7 +2396,7 @@ index 3368212d36..419c318337 100644
    EOutputState m_outputSate{OUTPUT_NORMAL};
  };
 diff --git a/xbmc/cores/VideoPlayer/VideoRenderers/BaseRenderer.h b/xbmc/cores/VideoPlayer/VideoRenderers/BaseRenderer.h
-index 4efda66506..a7b5d62102 100644
+index 4efda665063b3fa8410d3011d50d91453b2da20d..a7b5d62102fa7346ffc4cb9d26e0fbd96739dd16 100644
 --- a/xbmc/cores/VideoPlayer/VideoRenderers/BaseRenderer.h
 +++ b/xbmc/cores/VideoPlayer/VideoRenderers/BaseRenderer.h
 @@ -17,9 +17,17 @@
@@ -2434,7 +2434,7 @@ index 4efda66506..a7b5d62102 100644
    virtual void RenderUpdate(
        int index, int index2, bool clear, unsigned int flags, unsigned int alpha) = 0;
 diff --git a/xbmc/cores/VideoPlayer/VideoRenderers/DVBridgeGLES.cpp b/xbmc/cores/VideoPlayer/VideoRenderers/DVBridgeGLES.cpp
-index b8ea213324..7669034e85 100644
+index b8ea2133245f479dee3b3c6196ce35c2013e91df..7669034e8548824246508635932a776da5a778f7 100644
 --- a/xbmc/cores/VideoPlayer/VideoRenderers/DVBridgeGLES.cpp
 +++ b/xbmc/cores/VideoPlayer/VideoRenderers/DVBridgeGLES.cpp
 @@ -2,18 +2,24 @@
@@ -3603,7 +3603,7 @@ index b8ea213324..7669034e85 100644
 +  return true;
 +}
 diff --git a/xbmc/cores/VideoPlayer/VideoRenderers/DVBridgeGLES.h b/xbmc/cores/VideoPlayer/VideoRenderers/DVBridgeGLES.h
-index d8d5dcf810..612a43adba 100644
+index d8d5dcf810510b86cf68975071018272541292ff..612a43adba77c643c0fdf299177489dc5ccb4d33 100644
 --- a/xbmc/cores/VideoPlayer/VideoRenderers/DVBridgeGLES.h
 +++ b/xbmc/cores/VideoPlayer/VideoRenderers/DVBridgeGLES.h
 @@ -3,6 +3,12 @@
@@ -3800,7 +3800,7 @@ index d8d5dcf810..612a43adba 100644
    bool m_directUsable = true;
    bool m_prepared = false;
 diff --git a/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/RendererDRMPRIME.cpp b/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/RendererDRMPRIME.cpp
-index 40556ef057..ac75f8e9d8 100644
+index 40556ef057a16efbac18936054a7bbec83a178a3..ac75f8e9d8a0b7faabaa13dd6f089e60b3331f4a 100644
 --- a/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/RendererDRMPRIME.cpp
 +++ b/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/RendererDRMPRIME.cpp
 @@ -9,6 +9,9 @@
@@ -3834,7 +3834,7 @@ index 40556ef057..ac75f8e9d8 100644
    m_iLastRenderBuffer = index;
  }
 diff --git a/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/RendererVAAPIGLES.cpp b/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/RendererVAAPIGLES.cpp
-index 7323778c74..70a03b1852 100644
+index 7323778c74822bfb635307a7ef42ac8dbf41d62e..70a03b1852ca35292d79c58cf3127de8503b738d 100644
 --- a/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/RendererVAAPIGLES.cpp
 +++ b/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/RendererVAAPIGLES.cpp
 @@ -77,7 +77,7 @@ CRendererVAAPIGLES::CRendererVAAPIGLES() = default;
@@ -4052,7 +4052,7 @@ index 7323778c74..70a03b1852 100644
  }
  
 diff --git a/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/RendererVAAPIGLES.h b/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/RendererVAAPIGLES.h
-index a3bb324803..4a8aa5bddd 100644
+index a3bb3248034943bd1a4e692877558be64df67b3b..4a8aa5bddd537c9abdf5a5d62e77b60e7510bc97 100644
 --- a/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/RendererVAAPIGLES.h
 +++ b/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/RendererVAAPIGLES.h
 @@ -10,6 +10,9 @@
@@ -4108,7 +4108,7 @@ index a3bb324803..4a8aa5bddd 100644
    static VAAPI::IVaapiWinSystem *m_pWinSystem;
  };
 diff --git a/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/VideoLayerBridgeDRMPRIME.cpp b/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/VideoLayerBridgeDRMPRIME.cpp
-index 54509e2ee5..8f6f315f81 100644
+index 54509e2ee584f7c1478248f0556aeac18eede807..8f6f315f81aea88791fa30c952e8a153d58353b5 100644
 --- a/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/VideoLayerBridgeDRMPRIME.cpp
 +++ b/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/VideoLayerBridgeDRMPRIME.cpp
 @@ -212,6 +212,9 @@ void CVideoLayerBridgeDRMPRIME::Configure(CVideoBufferDRMPRIME* buffer)
@@ -4180,7 +4180,7 @@ index 54509e2ee5..8f6f315f81 100644
 +}
 +#endif
 diff --git a/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/VideoLayerBridgeDRMPRIME.h b/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/VideoLayerBridgeDRMPRIME.h
-index 276cf279cc..425ad3ca31 100644
+index 276cf279ccf611f0e1778c788728ace03bb00d44..425ad3ca31d24b396b5a8f08c7b6e7f37ecd8e93 100644
 --- a/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/VideoLayerBridgeDRMPRIME.h
 +++ b/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/VideoLayerBridgeDRMPRIME.h
 @@ -39,6 +39,9 @@ public:
@@ -4202,7 +4202,7 @@ index 276cf279cc..425ad3ca31 100644
 +#endif
  };
 diff --git a/xbmc/cores/VideoPlayer/VideoRenderers/LinuxRendererGLES.cpp b/xbmc/cores/VideoPlayer/VideoRenderers/LinuxRendererGLES.cpp
-index 0990864206..5589003c17 100644
+index a1f77b7d2a07edfba29db0a4edd0e153340db46a..b00bef1fad948019969c9a8c24f476fc26e1dc79 100644
 --- a/xbmc/cores/VideoPlayer/VideoRenderers/LinuxRendererGLES.cpp
 +++ b/xbmc/cores/VideoPlayer/VideoRenderers/LinuxRendererGLES.cpp
 @@ -7,6 +7,9 @@
@@ -4278,7 +4278,7 @@ index 0990864206..5589003c17 100644
  #endif
    buf.doviPts = DVD_NOPTS_VALUE;
    if (buf.videoBuffer)
-@@ -611,6 +629,9 @@ void CLinuxRendererGLES::DrawBlackBars()
+@@ -551,6 +569,9 @@ void CLinuxRendererGLES::DrawBlackBars()
  
  void CLinuxRendererGLES::RenderUpdate(int index, int index2, bool clear, unsigned int flags, unsigned int alpha)
  {
@@ -4288,7 +4288,7 @@ index 0990864206..5589003c17 100644
    m_iYUVRenderBuffer = index;
  
    if (!m_bConfigured)
-@@ -680,7 +701,11 @@ void CLinuxRendererGLES::RenderUpdate(int index, int index2, bool clear, unsigne
+@@ -620,7 +641,11 @@ void CLinuxRendererGLES::RenderUpdate(int index, int index2, bool clear, unsigne
      }
    }
  
@@ -4301,7 +4301,7 @@ index 0990864206..5589003c17 100644
      ClearBackBuffer();
  
    VerifyGLState();
-@@ -729,7 +754,11 @@ void CLinuxRendererGLES::RenderUpdateVideo(bool clear, unsigned int flags, unsig
+@@ -669,7 +694,11 @@ void CLinuxRendererGLES::RenderUpdateVideo(bool clear, unsigned int flags, unsig
        m_pYUVBobShader->SetAlpha(1.0f);
    }
  
@@ -4314,7 +4314,7 @@ index 0990864206..5589003c17 100644
      ClearBackBuffer();
  
    VerifyGLState();
-@@ -1121,7 +1150,7 @@ void CLinuxRendererGLES::UnInit()
+@@ -1061,7 +1090,7 @@ void CLinuxRendererGLES::UnInit()
  #endif
  
    // YUV textures
@@ -4323,7 +4323,7 @@ index 0990864206..5589003c17 100644
    {
      DeleteTexture(i);
    }
-@@ -1227,10 +1256,22 @@ bool CLinuxRendererGLES::Render(unsigned int flags, int index)
+@@ -1167,10 +1196,22 @@ bool CLinuxRendererGLES::Render(unsigned int flags, int index)
    }
  
  #ifdef HAVE_DVBRIDGE
@@ -4346,7 +4346,7 @@ index 0990864206..5589003c17 100644
      return rendered;
    }
  #endif
-@@ -1267,6 +1308,10 @@ bool CLinuxRendererGLES::Render(unsigned int flags, int index)
+@@ -1207,6 +1248,10 @@ bool CLinuxRendererGLES::Render(unsigned int flags, int index)
    }
  
    AfterRenderHook(index);
@@ -4358,7 +4358,7 @@ index 0990864206..5589003c17 100644
  }
  
 diff --git a/xbmc/cores/VideoPlayer/VideoRenderers/LinuxRendererGLES.h b/xbmc/cores/VideoPlayer/VideoRenderers/LinuxRendererGLES.h
-index 5637f23876..518f5ec6b7 100644
+index 66af048aac3208f27e8abf8e5ceb067d4e541b72..ae42298e2551d2c2f120405f3d722c825cd23a1c 100644
 --- a/xbmc/cores/VideoPlayer/VideoRenderers/LinuxRendererGLES.h
 +++ b/xbmc/cores/VideoPlayer/VideoRenderers/LinuxRendererGLES.h
 @@ -78,6 +78,9 @@ public:
@@ -4399,7 +4399,7 @@ index 5637f23876..518f5ec6b7 100644
    void LoadPlane(CYuvPlane& plane, int type,
                   unsigned width,  unsigned height,
 diff --git a/xbmc/cores/VideoPlayer/VideoRenderers/OverlayRenderer.cpp b/xbmc/cores/VideoPlayer/VideoRenderers/OverlayRenderer.cpp
-index 986a2b8134..878e2c7c79 100644
+index f3d63e0e70a3c0ff24938f6ece44bb768d03c8dd..9f2f32feec4435358f9a473c7cf1960cffb35600 100644
 --- a/xbmc/cores/VideoPlayer/VideoRenderers/OverlayRenderer.cpp
 +++ b/xbmc/cores/VideoPlayer/VideoRenderers/OverlayRenderer.cpp
 @@ -302,7 +302,7 @@ void CRenderer::Render(COverlay* o)
@@ -4419,12 +4419,12 @@ index 986a2b8134..878e2c7c79 100644
 +  if (idx < 0 || idx >= MAX_RENDER_BUFFERS)
      return;
  
-   SubtitleResolution resolution;
+   UpdateSubtitleStyle();
 diff --git a/xbmc/cores/VideoPlayer/VideoRenderers/OverlayRenderer.h b/xbmc/cores/VideoPlayer/VideoRenderers/OverlayRenderer.h
-index 8b8a506974..c0e0dc8927 100644
+index 8977a27ed50f96de43e52ec34b5027a47865a156..02420c14a63413fd1836033d2b2a2830791b7fd1 100644
 --- a/xbmc/cores/VideoPlayer/VideoRenderers/OverlayRenderer.h
 +++ b/xbmc/cores/VideoPlayer/VideoRenderers/OverlayRenderer.h
-@@ -227,7 +227,7 @@ namespace OVERLAY {
+@@ -235,7 +235,7 @@ namespace OVERLAY {
      };
  
      mutable CCriticalSection m_section;
@@ -4434,7 +4434,7 @@ index 8b8a506974..c0e0dc8927 100644
      static unsigned int m_textureid;
      CRect m_rv; // Frame size
 diff --git a/xbmc/cores/VideoPlayer/VideoRenderers/RenderManager.cpp b/xbmc/cores/VideoPlayer/VideoRenderers/RenderManager.cpp
-index f27342f483..5b5272723b 100644
+index b12e07a95687da30afb9fff05b8432a98035461a..a226ddc6b976326cd5cbe3b1b701e4833ddfcdcf 100644
 --- a/xbmc/cores/VideoPlayer/VideoRenderers/RenderManager.cpp
 +++ b/xbmc/cores/VideoPlayer/VideoRenderers/RenderManager.cpp
 @@ -30,6 +30,11 @@
@@ -4449,7 +4449,7 @@ index f27342f483..5b5272723b 100644
  #ifdef HAVE_DVBRIDGE
  #include "cores/VideoPlayer/DVDCodecs/Video/DVPlaybackPolicy.h"
  #include "windowing/gbm/WinSystemGbmGLESContext.h"
-@@ -226,6 +231,9 @@ bool CRenderManager::Configure()
+@@ -223,6 +228,9 @@ bool CRenderManager::Configure()
      m_playerPort->UpdateVideoRender(m_pRenderer->VideoBypassesFramebuffer());
  
      m_queued.clear();
@@ -4459,7 +4459,7 @@ index f27342f483..5b5272723b 100644
      m_discard.clear();
      m_free.clear();
      m_presentsource = 0;
-@@ -300,6 +308,103 @@ bool CRenderManager::IsPresenting()
+@@ -297,6 +305,103 @@ bool CRenderManager::IsPresenting()
      return false;
  }
  
@@ -4563,7 +4563,7 @@ index f27342f483..5b5272723b 100644
  void CRenderManager::FrameMove()
  {
    bool firstFrame = false;
-@@ -324,8 +429,22 @@ void CRenderManager::FrameMove()
+@@ -321,8 +426,22 @@ void CRenderManager::FrameMove()
    }
    {
      std::unique_lock lock2(m_presentlock);
@@ -4587,7 +4587,7 @@ index f27342f483..5b5272723b 100644
      {
        m_presentstep = PRESENT_IDLE;
      }
-@@ -339,6 +458,10 @@ void CRenderManager::FrameMove()
+@@ -336,6 +455,10 @@ void CRenderManager::FrameMove()
  
      if (m_presentstep == PRESENT_FLIP)
      {
@@ -4598,7 +4598,7 @@ index f27342f483..5b5272723b 100644
        m_presentstep = PRESENT_FRAME;
        m_presentevent.notifyAll();
      }
-@@ -456,6 +579,9 @@ bool CRenderManager::Flush(bool wait, bool saveBuffers)
+@@ -453,6 +576,9 @@ bool CRenderManager::Flush(bool wait, bool saveBuffers)
      {
        m_overlays.Flush();
        m_debugRenderer.Flush();
@@ -4608,7 +4608,7 @@ index f27342f483..5b5272723b 100644
  
        if (!m_pRenderer->Flush(saveBuffers))
        {
-@@ -714,6 +840,11 @@ void CRenderManager::Render(bool clear, DWORD flags, DWORD alpha, bool gui)
+@@ -711,6 +837,11 @@ void CRenderManager::Render(bool clear, DWORD flags, DWORD alpha, bool gui)
  
    {
      std::unique_lock lock(m_presentlock);
@@ -4620,7 +4620,7 @@ index f27342f483..5b5272723b 100644
  
      if (m_presentstep == PRESENT_FRAME)
      {
-@@ -804,6 +935,15 @@ void CRenderManager::PresentBlend(bool clear, DWORD flags, DWORD alpha)
+@@ -801,6 +932,15 @@ void CRenderManager::PresentBlend(bool clear, DWORD flags, DWORD alpha)
    }
  }
  
@@ -4636,7 +4636,7 @@ index f27342f483..5b5272723b 100644
  void CRenderManager::UpdateLatencyTweak()
  {
    float fps = CServiceBroker::GetWinSystem()->GetGfxContext().GetFPS();
-@@ -947,6 +1087,10 @@ bool CRenderManager::AddVideoPicture(const VideoPicture& picture, volatile std::
+@@ -944,6 +1084,10 @@ bool CRenderManager::AddVideoPicture(const VideoPicture& picture, volatile std::
    m.presentfield = displayField;
    m.presentmethod = presentmethod;
    m.pts = picture.pts;
@@ -4647,7 +4647,7 @@ index f27342f483..5b5272723b 100644
    m_queued.push_back(m_free.front());
    m_free.pop_front();
    m_playerPort->UpdateRenderBuffers(m_queued.size(), m_discard.size(), m_free.size());
-@@ -1059,6 +1203,12 @@ int CRenderManager::WaitForBuffer(volatile std::atomic_bool& bStop,
+@@ -1056,6 +1200,12 @@ int CRenderManager::WaitForBuffer(volatile std::atomic_bool& bStop,
  
  void CRenderManager::PrepareNextRender()
  {
@@ -4660,7 +4660,7 @@ index f27342f483..5b5272723b 100644
    if (m_queued.empty())
    {
      CLog::Log(LOGERROR, "CRenderManager::PrepareNextRender - asked to prepare with nothing available");
-@@ -1067,19 +1217,23 @@ void CRenderManager::PrepareNextRender()
+@@ -1064,19 +1214,23 @@ void CRenderManager::PrepareNextRender()
      return;
    }
  
@@ -4691,7 +4691,7 @@ index f27342f483..5b5272723b 100644
  
    // While the clock is paused, frameOnScreen does not advance, so adding the display
    // latency would pick a frame ahead of the one actually shown. That only holds for
-@@ -1194,6 +1348,9 @@ void CRenderManager::PrepareNextRender()
+@@ -1193,6 +1347,9 @@ void CRenderManager::PrepareNextRender()
  void CRenderManager::DiscardBuffer()
  {
    std::unique_lock lock2(m_presentlock);
@@ -4702,7 +4702,7 @@ index f27342f483..5b5272723b 100644
    while(!m_queued.empty())
    {
 diff --git a/xbmc/cores/VideoPlayer/VideoRenderers/RenderManager.h b/xbmc/cores/VideoPlayer/VideoRenderers/RenderManager.h
-index b7abe611a2..aa4663eb63 100644
+index b7abe611a20439b5a7b65f2ae3dff26f714a9b83..aa4663eb63e191a94d5b3bfb93bcb5e1f445f351 100644
 --- a/xbmc/cores/VideoPlayer/VideoRenderers/RenderManager.h
 +++ b/xbmc/cores/VideoPlayer/VideoRenderers/RenderManager.h
 @@ -106,6 +106,14 @@ public:
@@ -4758,10 +4758,10 @@ index b7abe611a2..aa4663eb63 100644
    std::deque<int> m_free;
    std::deque<int> m_queued;
 diff --git a/xbmc/dialogs/CMakeLists.txt b/xbmc/dialogs/CMakeLists.txt
-index bd14222e37..843deadf35 100644
+index bb9b147ab43ee65f1b4d38c2b0a271604907d688..1e69d71f26337837c15928ecce19825fe5377d5f 100644
 --- a/xbmc/dialogs/CMakeLists.txt
 +++ b/xbmc/dialogs/CMakeLists.txt
-@@ -66,4 +66,11 @@ if(ENABLE_OPTICAL)
+@@ -68,4 +68,11 @@ if(ENABLE_OPTICAL)
    list(APPEND HEADERS GUIDialogPlayEject.h)
  endif()
  
@@ -4775,7 +4775,7 @@ index bd14222e37..843deadf35 100644
 +endif()
 diff --git a/xbmc/dialogs/DVPixelFormat.h b/xbmc/dialogs/DVPixelFormat.h
 new file mode 100644
-index 0000000000..17d77b4836
+index 0000000000000000000000000000000000000000..17d77b4836ac98f34ef9902ba603751410650bb4
 --- /dev/null
 +++ b/xbmc/dialogs/DVPixelFormat.h
 @@ -0,0 +1,29 @@
@@ -4810,7 +4810,7 @@ index 0000000000..17d77b4836
 +}
 diff --git a/xbmc/dialogs/DVPlaybackMenuLayout.h b/xbmc/dialogs/DVPlaybackMenuLayout.h
 new file mode 100644
-index 0000000000..1c9f81eb94
+index 0000000000000000000000000000000000000000..1c9f81eb94ab16aadece59a1ef196fee04db6c19
 --- /dev/null
 +++ b/xbmc/dialogs/DVPlaybackMenuLayout.h
 @@ -0,0 +1,13 @@
@@ -4829,7 +4829,7 @@ index 0000000000..1c9f81eb94
 +}
 diff --git a/xbmc/dialogs/DVPlaybackModes.cpp b/xbmc/dialogs/DVPlaybackModes.cpp
 new file mode 100644
-index 0000000000..2195124150
+index 0000000000000000000000000000000000000000..2195124150cd0fbcf68079cb1edcf77cd7805ce8
 --- /dev/null
 +++ b/xbmc/dialogs/DVPlaybackModes.cpp
 @@ -0,0 +1,186 @@
@@ -5021,7 +5021,7 @@ index 0000000000..2195124150
 +#endif
 diff --git a/xbmc/dialogs/DVPlaybackModes.h b/xbmc/dialogs/DVPlaybackModes.h
 new file mode 100644
-index 0000000000..658cd79a86
+index 0000000000000000000000000000000000000000..658cd79a8660262a8ff9e0b66005e3c9de0f2c07
 --- /dev/null
 +++ b/xbmc/dialogs/DVPlaybackModes.h
 @@ -0,0 +1,15 @@
@@ -5041,7 +5041,7 @@ index 0000000000..658cd79a86
 +};
 +#endif
 diff --git a/xbmc/dialogs/GUIDialogPlayerProcessInfo.cpp b/xbmc/dialogs/GUIDialogPlayerProcessInfo.cpp
-index 87ec544b45..4b2c75e53f 100644
+index 87ec544b452ee1be1ab803bb7a79890585fd43d3..4b2c75e53f785b64d35b4d24942c321634620436 100644
 --- a/xbmc/dialogs/GUIDialogPlayerProcessInfo.cpp
 +++ b/xbmc/dialogs/GUIDialogPlayerProcessInfo.cpp
 @@ -10,6 +10,25 @@
@@ -5285,7 +5285,7 @@ index 87ec544b45..4b2c75e53f 100644
    }
    return CGUIDialog::OnAction(action);
 diff --git a/xbmc/dialogs/GUIDialogPlayerProcessInfo.h b/xbmc/dialogs/GUIDialogPlayerProcessInfo.h
-index 74137709ac..2690c94a07 100644
+index 74137709acbe33f09f57eb336ecc83884c012190..2690c94a07ebcda7bf3e1cfad9a24c9089fffa39 100644
 --- a/xbmc/dialogs/GUIDialogPlayerProcessInfo.h
 +++ b/xbmc/dialogs/GUIDialogPlayerProcessInfo.h
 @@ -9,6 +9,9 @@
@@ -5313,7 +5313,7 @@ index 74137709ac..2690c94a07 100644
 +  unsigned int m_nextRefresh{0};
  };
 diff --git a/xbmc/dialogs/GUIDialogSelect.cpp b/xbmc/dialogs/GUIDialogSelect.cpp
-index 6fea1ed7b5..a3c7076137 100644
+index d6905188904f415d96e96e2915e52a2d25fb8e33..b250ddfe11808c875e7a299da3a6d500ad682a89 100644
 --- a/xbmc/dialogs/GUIDialogSelect.cpp
 +++ b/xbmc/dialogs/GUIDialogSelect.cpp
 @@ -12,9 +12,13 @@
@@ -5388,7 +5388,7 @@ index 6fea1ed7b5..a3c7076137 100644
    m_selectedItems.clear();
    for(int i = 0 ; i < m_vecList->Size(); i++)
 diff --git a/xbmc/dialogs/GUIDialogSelect.h b/xbmc/dialogs/GUIDialogSelect.h
-index ef32aa7e3c..c559925683 100644
+index ef32aa7e3cd51c0e7cda1e71245788fde7bc0309..c5599256833d88061e7acf3c7a87ea642a3efc18 100644
 --- a/xbmc/dialogs/GUIDialogSelect.h
 +++ b/xbmc/dialogs/GUIDialogSelect.h
 @@ -23,6 +23,7 @@ public:
@@ -5400,7 +5400,7 @@ index ef32aa7e3c..c559925683 100644
    bool OnBack(int actionID) override;
  
 diff --git a/xbmc/input/actions/ActionIDs.h b/xbmc/input/actions/ActionIDs.h
-index 16f1fdb760..e72226970f 100644
+index 16f1fdb760d42142765827b501414c57f1cfb1cf..e72226970f21827453b77628358846a40eb8247c 100644
 --- a/xbmc/input/actions/ActionIDs.h
 +++ b/xbmc/input/actions/ActionIDs.h
 @@ -464,6 +464,7 @@ constexpr const int ACTION_PLAYER_DECREASE_TEMPO = 267;
@@ -5412,7 +5412,7 @@ index 16f1fdb760..e72226970f 100644
  //! Open the dialog window to select a audio stream
  constexpr const int ACTION_DIALOG_SELECT_AUDIO = 271;
 diff --git a/xbmc/input/actions/ActionTranslator.cpp b/xbmc/input/actions/ActionTranslator.cpp
-index 242f63cae0..4d0f6296a8 100644
+index 242f63cae0e0d370d8ede75b432c231b00687532..4d0f6296a8bb949ed88b8be1624308dfdcafe9b9 100644
 --- a/xbmc/input/actions/ActionTranslator.cpp
 +++ b/xbmc/input/actions/ActionTranslator.cpp
 @@ -58,6 +58,7 @@ constexpr auto ActionMappings = make_map<ActionName, ActionID>({
@@ -5424,7 +5424,7 @@ index 242f63cae0..4d0f6296a8 100644
      {"dialogselectsubtitle", ACTION_DIALOG_SELECT_SUBTITLE},
      {"playerdebug", ACTION_PLAYER_DEBUG},
 diff --git a/xbmc/settings/CMakeLists.txt b/xbmc/settings/CMakeLists.txt
-index 72e0ffdc4b..b466064117 100644
+index 72e0ffdc4b957f4c5866ef894af76c48059b07b8..b46606411772503e2775de1c752b0b17537a0544 100644
 --- a/xbmc/settings/CMakeLists.txt
 +++ b/xbmc/settings/CMakeLists.txt
 @@ -53,3 +53,7 @@ if(TARGET ${APP_NAME_LC}::Bluray)
@@ -5436,7 +5436,7 @@ index 72e0ffdc4b..b466064117 100644
 +  target_link_libraries(${CORE_LIBRARY} PRIVATE dvbridge_core)
 +endif()
 diff --git a/xbmc/settings/SettingConditions.cpp b/xbmc/settings/SettingConditions.cpp
-index 1efd2a9937..4eefb2dd58 100644
+index da0eb793312e2fbb395b935e913e7ba4c1f1b498..5762998debce95d86bd852d249d56f44880a4710 100644
 --- a/xbmc/settings/SettingConditions.cpp
 +++ b/xbmc/settings/SettingConditions.cpp
 @@ -26,6 +26,13 @@
@@ -5466,7 +5466,7 @@ index 1efd2a9937..4eefb2dd58 100644
  #ifdef HAS_GL
    m_simpleConditions.emplace("has_gl");
  #endif
-@@ -489,6 +502,62 @@ void CSettingConditions::Initialize()
+@@ -492,6 +505,62 @@ void CSettingConditions::Initialize()
    m_complexConditions.try_emplace("lte", LessThanOrEqual);
  }
  
@@ -5530,7 +5530,7 @@ index 1efd2a9937..4eefb2dd58 100644
  {
    m_profileManager = nullptr;
 diff --git a/xbmc/settings/SettingConditions.h b/xbmc/settings/SettingConditions.h
-index 12628cad73..5a9f7ba18a 100644
+index 12628cad73955e80d7c80e7d640ee7d266f6f7b9..5a9f7ba18ad27cd7c9aeee03f1f46436f1ec9343 100644
 --- a/xbmc/settings/SettingConditions.h
 +++ b/xbmc/settings/SettingConditions.h
 @@ -9,6 +9,7 @@
@@ -5553,7 +5553,7 @@ index 12628cad73..5a9f7ba18a 100644
    static const CProfile& GetCurrentProfile();
  
 diff --git a/xbmc/settings/Settings.cpp b/xbmc/settings/Settings.cpp
-index 185632becc..80ba3ca93c 100644
+index c35ad9347d573f2df36322965ec7a212f64100d6..4f608a2ff62f865af6a9b3100f28a794cb607fe4 100644
 --- a/xbmc/settings/Settings.cpp
 +++ b/xbmc/settings/Settings.cpp
 @@ -7,6 +7,9 @@
@@ -5576,7 +5576,7 @@ index 185632becc..80ba3ca93c 100644
    // register any ISettingCallback implementations
    GetSettingsManager()->RegisterCallback(
        &CMediaSettings::GetInstance(),
-@@ -648,6 +654,9 @@ void CSettings::InitializeISettingCallbacks()
+@@ -649,6 +655,9 @@ void CSettings::InitializeISettingCallbacks()
  
  void CSettings::UninitializeISettingCallbacks()
  {
@@ -5587,7 +5587,7 @@ index 185632becc..80ba3ca93c 100644
    GetSettingsManager()->UnregisterCallback(&CDisplaySettings::GetInstance());
    GetSettingsManager()->UnregisterCallback(&g_charsetConverter);
 diff --git a/xbmc/settings/windows/GUIControlSettings.cpp b/xbmc/settings/windows/GUIControlSettings.cpp
-index 582c5d6067..20513bcd44 100644
+index 35ad252cb9c11b9cefb07df2804b632a67dd5e05..a61c9be4952277bb2699a4385b19e332daa8185e 100644
 --- a/xbmc/settings/windows/GUIControlSettings.cpp
 +++ b/xbmc/settings/windows/GUIControlSettings.cpp
 @@ -35,6 +35,9 @@
@@ -5613,10 +5613,10 @@ index 582c5d6067..20513bcd44 100644
    {
      case SettingOptionsSort::Ascending:
 diff --git a/xbmc/utils/CMakeLists.txt b/xbmc/utils/CMakeLists.txt
-index 2171b5bad8..a4fdab389e 100644
+index 67a605f96f92f79bf719c2a07a8ddfafae4db007..b21e0d6e1595627fb0d6364a877ebfbe8f412677 100644
 --- a/xbmc/utils/CMakeLists.txt
 +++ b/xbmc/utils/CMakeLists.txt
-@@ -260,6 +260,9 @@ if("gbm" IN_LIST CORE_PLATFORM_NAME_LC OR "wayland" IN_LIST CORE_PLATFORM_NAME_L
+@@ -264,6 +264,9 @@ if("gbm" IN_LIST CORE_PLATFORM_NAME_LC OR "wayland" IN_LIST CORE_PLATFORM_NAME_L
  endif()
  
  core_add_library(utils)
@@ -5628,7 +5628,7 @@ index 2171b5bad8..a4fdab389e 100644
    if(HAVE_SSE2)
 diff --git a/xbmc/utils/DVRenderUsage.h b/xbmc/utils/DVRenderUsage.h
 new file mode 100644
-index 0000000000..a5a0cd2d0b
+index 0000000000000000000000000000000000000000..a5a0cd2d0ba8d5eb01bc92ab4f6181f7e9bf8961
 --- /dev/null
 +++ b/xbmc/utils/DVRenderUsage.h
 @@ -0,0 +1,135 @@
@@ -5768,7 +5768,7 @@ index 0000000000..a5a0cd2d0b
 +};
 +}
 diff --git a/xbmc/video/PlayerController.cpp b/xbmc/video/PlayerController.cpp
-index e585ae8cf2..88bddc1ada 100644
+index e585ae8cf22d9534083ed8efb4db902326ff78e7..88bddc1ada62e05f8123172ba8437ffaff35b2fb 100644
 --- a/xbmc/video/PlayerController.cpp
 +++ b/xbmc/video/PlayerController.cpp
 @@ -14,6 +14,9 @@
@@ -5793,7 +5793,7 @@ index e585ae8cf2..88bddc1ada 100644
        {
          //! @todo combine processing of ACTION_SHOW_SUBTITLES with ACTION_NEXT_SUBTITLE and the other stream actions
 diff --git a/xbmc/video/dialogs/GUIDialogVideoSettings.cpp b/xbmc/video/dialogs/GUIDialogVideoSettings.cpp
-index 4f4275922b..58e72b42a4 100644
+index 4f4275922b1be8d8d3ded9dabd0e52d844af5bc2..58e72b42a4c769a75050905fd0ff14a5dbd3e258 100644
 --- a/xbmc/video/dialogs/GUIDialogVideoSettings.cpp
 +++ b/xbmc/video/dialogs/GUIDialogVideoSettings.cpp
 @@ -14,6 +14,9 @@
@@ -5833,7 +5833,7 @@ index 4f4275922b..58e72b42a4 100644
    AddButton(groupSaveAsDefault, SETTING_VIDEO_CALIBRATION, 214, SettingLevel::Basic);
  }
 diff --git a/xbmc/windowing/gbm/WinSystemGbm.cpp b/xbmc/windowing/gbm/WinSystemGbm.cpp
-index d87879891f..5804c8128b 100644
+index d87879891feac688b0e46e0441e032dc15282450..5804c8128b6ab6cab3de5bedf0767d8c528e4856 100644
 --- a/xbmc/windowing/gbm/WinSystemGbm.cpp
 +++ b/xbmc/windowing/gbm/WinSystemGbm.cpp
 @@ -707,6 +707,34 @@ bool CWinSystemGbm::SetHDR(const VideoPicture* videoPicture)
@@ -5872,7 +5872,7 @@ index d87879891f..5804c8128b 100644
  {
    auto drm = std::dynamic_pointer_cast<CDRMAtomic>(m_DRM);
 diff --git a/xbmc/windowing/gbm/WinSystemGbm.h b/xbmc/windowing/gbm/WinSystemGbm.h
-index 07894e9bb2..12799a775c 100644
+index 07894e9bb2508e71ae4d49526c307d059874435a..12799a775c3735260ccf0fc54e6b0da3429d6978 100644
 --- a/xbmc/windowing/gbm/WinSystemGbm.h
 +++ b/xbmc/windowing/gbm/WinSystemGbm.h
 @@ -91,6 +91,10 @@ protected:
@@ -5887,7 +5887,7 @@ index 07894e9bb2..12799a775c 100644
  
    std::shared_ptr<CDRMUtils> m_DRM;
 diff --git a/xbmc/windowing/gbm/WinSystemGbmEGLContext.cpp b/xbmc/windowing/gbm/WinSystemGbmEGLContext.cpp
-index cb6df88400..185ef13371 100644
+index cb6df88400f4e477534907b4b66bad3fd9f92267..185ef133712859d6ee02f8979121ac50001f1fcc 100644
 --- a/xbmc/windowing/gbm/WinSystemGbmEGLContext.cpp
 +++ b/xbmc/windowing/gbm/WinSystemGbmEGLContext.cpp
 @@ -186,6 +186,27 @@ bool CWinSystemGbmEGLContext::CreateNewWindow(const std::string& name,
@@ -6031,7 +6031,7 @@ index cb6df88400..185ef13371 100644
  
  bool CWinSystemGbmEGLContext::DestroyWindowSystem()
 diff --git a/xbmc/windowing/gbm/WinSystemGbmEGLContext.h b/xbmc/windowing/gbm/WinSystemGbmEGLContext.h
-index d382c87f9c..1ef6c4bc8b 100644
+index d382c87f9c381acb2827f669bb796f56835e4041..1ef6c4bc8b171ba30c05df9346dfdd0da8d45bec 100644
 --- a/xbmc/windowing/gbm/WinSystemGbmEGLContext.h
 +++ b/xbmc/windowing/gbm/WinSystemGbmEGLContext.h
 @@ -14,6 +14,9 @@
@@ -6077,7 +6077,7 @@ index d382c87f9c..1ef6c4bc8b 100644
    std::unique_ptr<KODI::UTILS::EGL::CEGLFence> m_eglFence;
  
 diff --git a/xbmc/windowing/gbm/WinSystemGbmGLESContext.cpp b/xbmc/windowing/gbm/WinSystemGbmGLESContext.cpp
-index a64781c1d4..c295e94f30 100644
+index c24174d39baff3c31cbe12281a976285c9a5e8fd..9681d728bc8d46b1598220a451f192f3e334fd83 100644
 --- a/xbmc/windowing/gbm/WinSystemGbmGLESContext.cpp
 +++ b/xbmc/windowing/gbm/WinSystemGbmGLESContext.cpp
 @@ -7,6 +7,9 @@
@@ -6284,7 +6284,7 @@ index a64781c1d4..c295e94f30 100644
    if (dvComposite)
    {
      if (!m_dvFrame || !m_dvBridge)
-@@ -493,29 +606,44 @@ bool NativeDVEligible(bool source, bool software, bool interlaced, bool stereo)
+@@ -490,29 +603,44 @@ bool NativeDVEligible(bool source, bool software, bool interlaced, bool stereo)
    if (!source || software)
      return false;
    auto* window = dynamic_cast<CWinSystemGbmGLESContext*>(CServiceBroker::GetWinSystem());
@@ -6338,7 +6338,7 @@ index a64781c1d4..c295e94f30 100644
  }
  
  bool CWinSystemGbmGLESContext::DVBridgeRequested(const VideoPicture* picture)
-@@ -525,11 +653,474 @@ bool CWinSystemGbmGLESContext::DVBridgeRequested(const VideoPicture* picture)
+@@ -522,11 +650,474 @@ bool CWinSystemGbmGLESContext::DVBridgeRequested(const VideoPicture* picture)
  
  int CWinSystemGbmGLESContext::VideoOutputBitDepth(const VideoPicture* picture) const
  {
@@ -6814,7 +6814,7 @@ index a64781c1d4..c295e94f30 100644
    const auto failure = [this](const char* stage) {
      if (DVBRIDGE::DiagnosticsEnabled() &&
          m_dvSetupFailures.Record(DVBRIDGE::DiagnosticNowMs(), stage))
-@@ -538,51 +1129,405 @@ bool CWinSystemGbmGLESContext::BeginDVBridge()
+@@ -535,51 +1126,405 @@ bool CWinSystemGbmGLESContext::BeginDVBridge()
            GetOutputBitDepth(), m_renderableType);
      return false;
    };
@@ -7232,7 +7232,7 @@ index a64781c1d4..c295e94f30 100644
      return true;
    if (m_dvState.Captured())
    {
-@@ -592,7 +1537,7 @@ bool CWinSystemGbmGLESContext::EndDVBridge()
+@@ -589,7 +1534,7 @@ bool CWinSystemGbmGLESContext::EndDVBridge()
      glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
      glClearColor(0, 0, 0, 1);
      glClear(GL_COLOR_BUFFER_BIT);
@@ -7241,7 +7241,7 @@ index a64781c1d4..c295e94f30 100644
      if (!m_eglContext.TrySwapBuffers() || !FlipDVBridgePage(m_dvState, true))
      {
        if (DVBRIDGE::DiagnosticsEnabled() &&
-@@ -602,8 +1547,13 @@ bool CWinSystemGbmGLESContext::EndDVBridge()
+@@ -599,8 +1544,13 @@ bool CWinSystemGbmGLESContext::EndDVBridge()
        return false;
      }
    }
@@ -7256,7 +7256,7 @@ index a64781c1d4..c295e94f30 100644
    if (DVBRIDGE::DiagnosticsEnabled() &&
        m_dvSetupFailures.Recovered(DVBRIDGE::DiagnosticNowMs()))
      CLog::Log(LOGINFO, "DVBridge: normal display restored after failures={}", m_dvSetupFailures.Count());
-@@ -616,7 +1566,38 @@ bool CWinSystemGbmGLESContext::DestroyWindowSystem()
+@@ -613,7 +1563,38 @@ bool CWinSystemGbmGLESContext::DestroyWindowSystem()
    if (!EndDVBridge())
      return false;
    m_dvBridge.reset();
@@ -7296,7 +7296,7 @@ index a64781c1d4..c295e94f30 100644
  }
  #endif
  
-@@ -632,5 +1613,15 @@ bool CWinSystemGbmGLESContext::CreateContext()
+@@ -629,5 +1610,15 @@ bool CWinSystemGbmGLESContext::CreateContext()
      CLog::Log(LOGERROR, "EGL context creation failed");
      return false;
    }
@@ -7313,7 +7313,7 @@ index a64781c1d4..c295e94f30 100644
    return true;
  }
 diff --git a/xbmc/windowing/gbm/WinSystemGbmGLESContext.h b/xbmc/windowing/gbm/WinSystemGbmGLESContext.h
-index 3667cabb56..326986be7e 100644
+index 3667cabb5627aa8d839bf427366a8f85fd1ab61a..326986be7e0519a340145ab5ed225fc1a97dc56f 100644
 --- a/xbmc/windowing/gbm/WinSystemGbmGLESContext.h
 +++ b/xbmc/windowing/gbm/WinSystemGbmGLESContext.h
 @@ -14,8 +14,11 @@
@@ -7443,7 +7443,7 @@ index 3667cabb56..326986be7e 100644
  #endif
  };
 diff --git a/xbmc/windowing/gbm/drm/DRMAtomic.cpp b/xbmc/windowing/gbm/drm/DRMAtomic.cpp
-index b1aa75c270..e51f17e20c 100644
+index b1aa75c2701499df257efd5905d9c9e3a6b9003d..e51f17e20c1346085eb6b5b5ad8b4e437203b9be 100644
 --- a/xbmc/windowing/gbm/drm/DRMAtomic.cpp
 +++ b/xbmc/windowing/gbm/drm/DRMAtomic.cpp
 @@ -363,6 +363,9 @@ bool CDRMAtomic::FlipPageTransactional(struct gbm_bo* bo, bool restore)
@@ -7469,7 +7469,7 @@ index b1aa75c270..e51f17e20c 100644
  
  bool CDRMAtomic::InitDrm()
 diff --git a/xbmc/windowing/gbm/drm/DRMAtomic.h b/xbmc/windowing/gbm/drm/DRMAtomic.h
-index 4e26e4cd2e..7ea6b1e71d 100644
+index 4e26e4cd2e013072405287c101f0f985169cbe2d..7ea6b1e71dcc29c0a24123543ccc99624367ff16 100644
 --- a/xbmc/windowing/gbm/drm/DRMAtomic.h
 +++ b/xbmc/windowing/gbm/drm/DRMAtomic.h
 @@ -32,6 +32,9 @@ public:
@@ -7493,10 +7493,10 @@ index 4e26e4cd2e..7ea6b1e71d 100644
    bool m_propertyFailure = false;
    bool m_dvRestoring = false;
 diff --git a/xbmc/windowing/gbm/drm/DRMUtils.cpp b/xbmc/windowing/gbm/drm/DRMUtils.cpp
-index 804f87d84c..ed3c765016 100644
+index 8d149b20c7a4bb273de017e419b398127c52a916..96bb99cd1c0148bfca722836a229c6aac4726d23 100644
 --- a/xbmc/windowing/gbm/drm/DRMUtils.cpp
 +++ b/xbmc/windowing/gbm/drm/DRMUtils.cpp
-@@ -132,15 +132,18 @@ uint32_t CDRMUtils::DrmOpaqueFbGetFromBo(struct gbm_bo* bo)
+@@ -135,15 +135,18 @@ uint32_t CDRMUtils::DrmOpaqueFbGetFromBo(struct gbm_bo* bo)
    auto* fb = DrmFbGetFromBo(bo);
    if (!fb)
      return 0;
@@ -7518,7 +7518,7 @@ index 804f87d84c..ed3c765016 100644
    uint32_t handles[4]{}, strides[4]{}, offsets[4]{};
    uint64_t modifiers[4]{};
  #if defined(HAS_GBM_MODIFIERS)
-@@ -162,7 +165,7 @@ uint32_t CDRMUtils::DrmOpaqueFbGetFromBo(struct gbm_bo* bo)
+@@ -165,7 +168,7 @@ uint32_t CDRMUtils::DrmOpaqueFbGetFromBo(struct gbm_bo* bo)
                                   modifiers[0] != DRM_FORMAT_MOD_INVALID
                               ? DRM_MODE_FB_MODIFIERS : 0;
    const int result = drmModeAddFB2WithModifiers(

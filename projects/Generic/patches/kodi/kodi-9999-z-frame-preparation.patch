@@ -38,10 +38,10 @@ From CroqueMr/libreelec-x86-DV R1.0.0-Beta2 (kodi-9999-z-frame-preparation.patch
  create mode 100644 xbmc/windowing/gbm/drm/DVBridgeDisplayRoute.h
 
 diff --git a/addons/resource.language.en_gb/resources/strings.po b/addons/resource.language.en_gb/resources/strings.po
-index ce914ff04d..61811ebc11 100644
+index 21c08b0315c9dc05c1477ba55936095ebca1ee8d..5b5018cb346ee4ab1e2ff2bce9d266acffb2ede7 100644
 --- a/addons/resource.language.en_gb/resources/strings.po
 +++ b/addons/resource.language.en_gb/resources/strings.po
-@@ -26975,7 +26975,7 @@ msgstr ""
+@@ -27079,7 +27079,7 @@ msgstr ""
  
  #: system/settings/settings.xml
  msgctxt "#40817"
@@ -50,7 +50,7 @@ index ce914ff04d..61811ebc11 100644
  msgstr ""
  
  #: addons/skin.estuary/xml/IncludesDVProcessInfo.xml
-@@ -27126,17 +27126,25 @@ msgid "Set peak and gamut before choosing Expert or Enhanced. Standard and Basic
+@@ -27230,17 +27230,25 @@ msgid "Set peak and gamut before choosing Expert or Enhanced. Standard and Basic
  msgstr ""
  
  msgctxt "#40855"
@@ -79,7 +79,7 @@ index ce914ff04d..61811ebc11 100644
  msgid "Show the accepted playback mode once when a video starts."
  msgstr ""
 diff --git a/system/settings/settings.xml b/system/settings/settings.xml
-index 8017c5a49e..98e606eee9 100755
+index 81b641d634cdcfd00d6608e092655f3497b7751a..8c8b157d7a91e8f96ea4739eabb0d1145cc4954e 100755
 --- a/system/settings/settings.xml
 +++ b/system/settings/settings.xml
 @@ -79,6 +79,12 @@
@@ -107,7 +107,7 @@ index 8017c5a49e..98e606eee9 100755
        <group id="1" label="14230">
          <setting id="videoplayer.autoplaynextitem" type="list[integer]" label="13433" help="36152">
 diff --git a/system/shaders/GLES/2.0/gles_gui_composite.frag b/system/shaders/GLES/2.0/gles_gui_composite.frag
-index 4cfd4fdd07..4586b388b6 100644
+index 4cfd4fdd071d6599899005d7265815dd946a3b77..4586b388b6aa9f4070f7ffe3030799a545474d24 100644
 --- a/system/shaders/GLES/2.0/gles_gui_composite.frag
 +++ b/system/shaders/GLES/2.0/gles_gui_composite.frag
 @@ -15,6 +15,7 @@ uniform sampler2D u_lutDegamma; // sRGB -> linear LUT (IEC 61966-2-1)
@@ -132,10 +132,10 @@ index 4cfd4fdd07..4586b388b6 100644
    vec3 linear = vec3(
      texture2D(u_lutDegamma, vec2(gui.r, 0.5)).r,
 diff --git a/xbmc/cores/AudioEngine/Engines/ActiveAE/ActiveAE.cpp b/xbmc/cores/AudioEngine/Engines/ActiveAE/ActiveAE.cpp
-index b8fe8bf071..d5adfe2957 100644
+index de0a69002d4ac8bc028f3bff679ad2298d0413c4..a680180747998fd6b13c336ff08355a42273f5b3 100644
 --- a/xbmc/cores/AudioEngine/Engines/ActiveAE/ActiveAE.cpp
 +++ b/xbmc/cores/AudioEngine/Engines/ActiveAE/ActiveAE.cpp
-@@ -452,7 +452,7 @@ void CActiveAE::StateMachine(int signal, Protocol *port, Message *msg)
+@@ -464,7 +464,7 @@ void CActiveAE::StateMachine(int signal, Protocol *port, Message *msg)
            return;
          case CActiveAEDataProtocol::FREESTREAM:
            MsgStreamFree *msgStreamFree;
@@ -145,7 +145,7 @@ index b8fe8bf071..d5adfe2957 100644
            msg->Reply(CActiveAEDataProtocol::ACC);
            return;
 diff --git a/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVOutputSettings.h b/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVOutputSettings.h
-index 55f1349925..dc02aa7572 100644
+index 55f1349925c28adfc80cc418a97e8361b9119278..dc02aa75721e2698930109e3031e1f69f6c6f09d 100644
 --- a/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVOutputSettings.h
 +++ b/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVOutputSettings.h
 @@ -138,4 +138,16 @@ inline bool EnhancedInfoEnabled()
@@ -166,7 +166,7 @@ index 55f1349925..dc02aa7572 100644
 +}
  } // namespace DVBRIDGE
 diff --git a/xbmc/cores/VideoPlayer/VideoRenderers/DVBridgeGLES.cpp b/xbmc/cores/VideoPlayer/VideoRenderers/DVBridgeGLES.cpp
-index 7669034e85..9948a2ca86 100644
+index 7669034e8548824246508635932a776da5a778f7..9948a2ca865699aa3cefb7f19db5a9548b7b7c61 100644
 --- a/xbmc/cores/VideoPlayer/VideoRenderers/DVBridgeGLES.cpp
 +++ b/xbmc/cores/VideoPlayer/VideoRenderers/DVBridgeGLES.cpp
 @@ -14,6 +14,7 @@ extern "C"
@@ -645,7 +645,7 @@ index 7669034e85..9948a2ca86 100644
    DVBRIDGE::StreamSnapshot::Output output{m_pendingInfo,m_outputBits,peak,
        m_hdr10 && !m_advanced && m_hdr10Session && m_hdr10Session->output.level6};
 diff --git a/xbmc/cores/VideoPlayer/VideoRenderers/DVBridgeGLES.h b/xbmc/cores/VideoPlayer/VideoRenderers/DVBridgeGLES.h
-index 612a43adba..ebb4432888 100644
+index 612a43adba77c643c0fdf299177489dc5ccb4d33..ebb4432888e0ad7abcea856cd3c1cf8c757c06df 100644
 --- a/xbmc/cores/VideoPlayer/VideoRenderers/DVBridgeGLES.h
 +++ b/xbmc/cores/VideoPlayer/VideoRenderers/DVBridgeGLES.h
 @@ -3,6 +3,7 @@
@@ -728,7 +728,7 @@ index 612a43adba..ebb4432888 100644
    bool m_packed = false;
    unsigned m_pendingInfo = 0;
 diff --git a/xbmc/cores/VideoPlayer/VideoRenderers/LinuxRendererGLES.cpp b/xbmc/cores/VideoPlayer/VideoRenderers/LinuxRendererGLES.cpp
-index 5589003c17..a211fd583f 100644
+index b00bef1fad948019969c9a8c24f476fc26e1dc79..9373fb75f1ce89957bd30a5043e5260a43610ce9 100644
 --- a/xbmc/cores/VideoPlayer/VideoRenderers/LinuxRendererGLES.cpp
 +++ b/xbmc/cores/VideoPlayer/VideoRenderers/LinuxRendererGLES.cpp
 @@ -477,6 +477,12 @@ bool CLinuxRendererGLES::Flush(bool saveBuffers)
@@ -744,7 +744,7 @@ index 5589003c17..a211fd583f 100644
      for (int i = 0; i < m_NumYUVBuffers; i++)
      {
        DeleteTexture(i);
-@@ -1135,15 +1141,17 @@ void CLinuxRendererGLES::UnInit()
+@@ -1075,15 +1081,17 @@ void CLinuxRendererGLES::UnInit()
  
    glFinish();
  
@@ -765,7 +765,7 @@ index 5589003c17..a211fd583f 100644
      }
      m_dvRequested = false;
    }
-@@ -1158,11 +1166,14 @@ void CLinuxRendererGLES::UnInit()
+@@ -1098,11 +1106,14 @@ void CLinuxRendererGLES::UnInit()
    if (m_bConfigured)
    {
      m_hdrFboActive = false;
@@ -785,7 +785,7 @@ index 5589003c17..a211fd583f 100644
  
    // cleanup framebuffer object if it was in use
 diff --git a/xbmc/cores/VideoPlayer/VideoRenderers/OverlayRenderer.cpp b/xbmc/cores/VideoPlayer/VideoRenderers/OverlayRenderer.cpp
-index 878e2c7c79..b75e24f31c 100644
+index 9f2f32feec4435358f9a473c7cf1960cffb35600..d7f467b21ec15c54986131a83c1d51e1f4896b96 100644
 --- a/xbmc/cores/VideoPlayer/VideoRenderers/OverlayRenderer.cpp
 +++ b/xbmc/cores/VideoPlayer/VideoRenderers/OverlayRenderer.cpp
 @@ -25,6 +25,9 @@
@@ -827,7 +827,7 @@ index 878e2c7c79..b75e24f31c 100644
    std::unique_lock lock(m_section);
  
 diff --git a/xbmc/cores/VideoPlayer/VideoRenderers/OverlayRendererGLES.cpp b/xbmc/cores/VideoPlayer/VideoRenderers/OverlayRendererGLES.cpp
-index 68a7673f28..7d741e5e69 100644
+index 7d98bad8fa7bec3529ccdec56914a43cf982f3e6..b365373a6644772d701185fa631d6667d677cbf4 100644
 --- a/xbmc/cores/VideoPlayer/VideoRenderers/OverlayRendererGLES.cpp
 +++ b/xbmc/cores/VideoPlayer/VideoRenderers/OverlayRendererGLES.cpp
 @@ -24,6 +24,9 @@
@@ -871,7 +871,7 @@ index 68a7673f28..7d741e5e69 100644
          CServiceBroker::GetWinSystem()->UseLimitedColor())
      {
        for (uint32_t& px : rgba)
-@@ -388,6 +406,28 @@ void COverlayGlyphGLES::Render(SRenderState& state)
+@@ -383,6 +401,28 @@ void COverlayGlyphGLES::Render(SRenderState& state)
    if (m_texture == 0 || m_vertexCount == 0)
      return;
  
@@ -900,16 +900,16 @@ index 68a7673f28..7d741e5e69 100644
    glEnable(GL_BLEND);
  
    glBindTexture(GL_TEXTURE_2D, m_texture);
-@@ -493,6 +533,7 @@ void COverlayTextureGLES::Render(SRenderState& state)
+@@ -488,6 +528,7 @@ void COverlayTextureGLES::Render(SRenderState& state)
    CRenderSystemGLES* renderSystem =
        dynamic_cast<CRenderSystemGLES*>(CServiceBroker::GetRenderSystem());
    renderSystem->EnableGUIShader(ShaderMethodGLES::SM_TEXTURE_NOBLEND);
 +  RecordSubtitleBounds(rd, m_texture);
-   GLint posLoc = renderSystem->GUIShaderGetPos();
-   GLint tex0Loc = renderSystem->GUIShaderGetCoord0();
    GLint depthLoc = renderSystem->GUIShaderGetDepth();
+ 
+   // Tell the shader this texture is premultiplied so its limited-range
 diff --git a/xbmc/cores/VideoPlayer/VideoRenderers/RenderManager.cpp b/xbmc/cores/VideoPlayer/VideoRenderers/RenderManager.cpp
-index 5b5272723b..e34c9c9235 100644
+index a226ddc6b976326cd5cbe3b1b701e4833ddfcdcf..8c29863648b062eb50103ebc1c1394319131d27e 100644
 --- a/xbmc/cores/VideoPlayer/VideoRenderers/RenderManager.cpp
 +++ b/xbmc/cores/VideoPlayer/VideoRenderers/RenderManager.cpp
 @@ -30,6 +30,7 @@
@@ -928,7 +928,7 @@ index 5b5272723b..e34c9c9235 100644
  }
  
  CRenderManager::CRenderManager(CDVDClock &clock, IRenderMsg *player) :
-@@ -329,19 +331,30 @@ bool CRenderManager::PrepareHDR10AILookahead()
+@@ -326,19 +328,30 @@ bool CRenderManager::PrepareHDR10AILookahead()
      const auto successor = std::next(queue.begin());
      const auto& head = m_Queue[queue.front()];
      double cutoff = head.pts;
@@ -964,7 +964,7 @@ index 5b5272723b..e34c9c9235 100644
      const double delay = std::isfinite(speed) && speed > 0 ?
          remaining / speed : 0;
      deadline = DVBRIDGE::DiagnosticNowMs() + static_cast<uint64_t>(std::ceil(delay / 1000.0));
-@@ -363,7 +376,7 @@ bool CRenderManager::GetHDR10AIStartTime(double& pts)
+@@ -360,7 +373,7 @@ bool CRenderManager::GetHDR10AIStartTime(double& pts)
    std::unique_lock lock(m_presentlock);
    if (!m_pRenderer || !m_pRenderer->HDR10AIQueueEligible() ||
        !m_aiQueueReady || m_aiStartPts == DVD_NOPTS_VALUE ||
@@ -973,7 +973,7 @@ index 5b5272723b..e34c9c9235 100644
      return false;
    pts = m_aiStartPts;
    return true;
-@@ -398,6 +411,11 @@ void CRenderManager::EndHDR10AIQueue()
+@@ -395,6 +408,11 @@ void CRenderManager::EndHDR10AIQueue()
  
  void CRenderManager::ResetHDR10AIQueue()
  {
@@ -985,7 +985,7 @@ index 5b5272723b..e34c9c9235 100644
    m_aiStartPts = DVD_NOPTS_VALUE;
    m_aiEnd = false;
    m_aiQueueReady = true;
-@@ -429,6 +447,17 @@ void CRenderManager::FrameMove()
+@@ -426,6 +444,17 @@ void CRenderManager::FrameMove()
    }
    {
      std::unique_lock lock2(m_presentlock);
@@ -1003,7 +1003,7 @@ index 5b5272723b..e34c9c9235 100644
  #ifdef CB1_HAS_HDR10_AI
      if (m_aiStartPts == DVD_NOPTS_VALUE ||
          (m_pRenderer->HDR10AILookahead() && m_dvdClock.IsPaused()) ||
-@@ -441,6 +470,9 @@ void CRenderManager::FrameMove()
+@@ -438,6 +467,9 @@ void CRenderManager::FrameMove()
  #endif
  
      if (m_queued.empty()
@@ -1013,7 +1013,7 @@ index 5b5272723b..e34c9c9235 100644
  #ifdef CB1_HAS_HDR10_AI
          && !(m_presentstep == PRESENT_FRAME && m_pRenderer->HDR10AIFramePending())
  #endif
-@@ -453,7 +485,11 @@ void CRenderManager::FrameMove()
+@@ -450,7 +482,11 @@ void CRenderManager::FrameMove()
        m_presentTimer.Set(1000ms);
      }
  
@@ -1026,7 +1026,7 @@ index 5b5272723b..e34c9c9235 100644
        PrepareNextRender();
  
      if (m_presentstep == PRESENT_FLIP)
-@@ -524,6 +560,9 @@ void CRenderManager::PreInit()
+@@ -521,6 +557,9 @@ void CRenderManager::PreInit()
    m_QueueSize   = 2;
    m_QueueSkip   = 0;
    m_presentstep = PRESENT_IDLE;
@@ -1036,7 +1036,7 @@ index 5b5272723b..e34c9c9235 100644
    m_bRenderGUI = true;
  
    m_initEvent.Set();
-@@ -591,6 +630,9 @@ bool CRenderManager::Flush(bool wait, bool saveBuffers)
+@@ -588,6 +627,9 @@ bool CRenderManager::Flush(bool wait, bool saveBuffers)
          m_presentsource = 0;
          m_presentsourcePast = -1;
          m_presentstep = PRESENT_IDLE;
@@ -1046,7 +1046,7 @@ index 5b5272723b..e34c9c9235 100644
          for (int i = 1; i < m_QueueSize; i++)
            m_free.push_back(i);
        }
-@@ -737,7 +779,7 @@ RESOLUTION CRenderManager::GetResolution()
+@@ -734,7 +776,7 @@ RESOLUTION CRenderManager::GetResolution()
    if (m_renderState == STATE_UNCONFIGURED)
      return res;
  
@@ -1055,7 +1055,7 @@ index 5b5272723b..e34c9c9235 100644
    {
      res = CResolutionUtils::ChooseBestResolution(m_fps, m_picture.iWidth, m_picture.iHeight,
                                                   !m_picture.stereoMode.empty(), m_nativeDVRate);
-@@ -840,6 +882,14 @@ void CRenderManager::Render(bool clear, DWORD flags, DWORD alpha, bool gui)
+@@ -837,6 +879,14 @@ void CRenderManager::Render(bool clear, DWORD flags, DWORD alpha, bool gui)
  
    {
      std::unique_lock lock(m_presentlock);
@@ -1070,7 +1070,7 @@ index 5b5272723b..e34c9c9235 100644
  #ifdef CB1_HAS_HDR10_AI
      // A GUI-only pass cannot complete the selected AI video picture.
      if ((!presented && m_pRenderer->HDR10AILookahead()) ||
-@@ -963,11 +1013,16 @@ void CRenderManager::UpdateResolution()
+@@ -960,11 +1010,16 @@ void CRenderManager::UpdateResolution()
    {
      if (CServiceBroker::GetWinSystem()->GetGfxContext().IsFullScreenVideo() && CServiceBroker::GetWinSystem()->GetGfxContext().IsFullScreenRoot())
      {
@@ -1088,9 +1088,9 @@ index 5b5272723b..e34c9c9235 100644
          UpdateLatencyTweak();
          if (m_pRenderer)
            m_pRenderer->Update();
-@@ -1250,19 +1305,52 @@ void CRenderManager::PrepareNextRender()
+@@ -1249,19 +1304,52 @@ void CRenderManager::PrepareNextRender()
    const double nextFramePts =
-       m_dvdClock.GetClockSpeed() < 0 ? renderPts : m_Queue[m_queued.front()].pts;
+       (!clockPaused && m_dvdClock.GetClockSpeed() < 0) ? renderPts : m_Queue[m_queued.front()].pts;
  
 +  bool cb1Async = false;
 +  std::optional<double> completionAge;
@@ -1150,7 +1150,7 @@ index 5b5272723b..e34c9c9235 100644
      }
      if (!isPaused)
        renderPts += frametime / 2 - m_clockSync.m_syncOffset;
-@@ -1278,6 +1366,11 @@ void CRenderManager::PrepareNextRender()
+@@ -1277,6 +1365,11 @@ void CRenderManager::PrepareNextRender()
                frameOnScreen, renderPts, nextFramePts, (renderPts - nextFramePts),
                renderPts >= nextFramePts, m_forceNext);
  
@@ -1162,7 +1162,7 @@ index 5b5272723b..e34c9c9235 100644
    bool combined = false;
    if (m_presentsourcePast >= 0)
    {
-@@ -1292,14 +1385,20 @@ void CRenderManager::PrepareNextRender()
+@@ -1291,14 +1384,20 @@ void CRenderManager::PrepareNextRender()
      auto iter = m_queued.begin();
      int idx = *iter;
      ++iter;
@@ -1185,7 +1185,7 @@ index 5b5272723b..e34c9c9235 100644
          break;
        idx = *iter;
        ++iter;
-@@ -1317,7 +1416,11 @@ void CRenderManager::PrepareNextRender()
+@@ -1316,7 +1415,11 @@ void CRenderManager::PrepareNextRender()
        m_queued.pop_front();
      }
  
@@ -1198,7 +1198,7 @@ index 5b5272723b..e34c9c9235 100644
                                              static_cast<double>(m_fps / DVD_TIME_BASE));
      if (lateframes)
        m_lateframes += lateframes;
-@@ -1333,7 +1436,8 @@ void CRenderManager::PrepareNextRender()
+@@ -1332,7 +1435,8 @@ void CRenderManager::PrepareNextRender()
  
      m_playerPort->UpdateRenderBuffers(m_queued.size(), m_discard.size(), m_free.size());
    }
@@ -1209,7 +1209,7 @@ index 5b5272723b..e34c9c9235 100644
      m_lateframes = 0;
      m_presentstep = PRESENT_FLIP;
 diff --git a/xbmc/cores/VideoPlayer/VideoRenderers/RenderManager.h b/xbmc/cores/VideoPlayer/VideoRenderers/RenderManager.h
-index aa4663eb63..61735b1c68 100644
+index aa4663eb63e191a94d5b3bfb93bcb5e1f445f351..61735b1c6827a62efba78e07d7683d5e0a24554b 100644
 --- a/xbmc/cores/VideoPlayer/VideoRenderers/RenderManager.h
 +++ b/xbmc/cores/VideoPlayer/VideoRenderers/RenderManager.h
 @@ -253,6 +253,9 @@ protected:
@@ -1231,7 +1231,7 @@ index aa4663eb63..61735b1c68 100644
    CClockSync m_clockSync;
  };
 diff --git a/xbmc/dialogs/DVPlaybackModes.cpp b/xbmc/dialogs/DVPlaybackModes.cpp
-index 2195124150..b88711bbf4 100644
+index 2195124150cd0fbcf68079cb1edcf77cd7805ce8..b88711bbf4ba8396e6e7a5be89e2d42996979ab5 100644
 --- a/xbmc/dialogs/DVPlaybackModes.cpp
 +++ b/xbmc/dialogs/DVPlaybackModes.cpp
 @@ -28,7 +28,7 @@ CDVPlaybackModes& CDVPlaybackModes::GetInstance()
@@ -1244,7 +1244,7 @@ index 2195124150..b88711bbf4 100644
  
  bool CDVPlaybackModes::ConfigureProfile()
 diff --git a/xbmc/rendering/gles/GuiCompositeShaderGLES.cpp b/xbmc/rendering/gles/GuiCompositeShaderGLES.cpp
-index 77dc71381a..ec602c6b7c 100644
+index 77dc71381a6a9959e9e9c2f6b9f3959ec1d4bb22..ec602c6b7ced381c2a1ed2be7da3af4c3a75794d 100644
 --- a/xbmc/rendering/gles/GuiCompositeShaderGLES.cpp
 +++ b/xbmc/rendering/gles/GuiCompositeShaderGLES.cpp
 @@ -63,6 +63,7 @@ void CGuiCompositeShaderGLES::OnCompiledAndLinked()
@@ -1264,7 +1264,7 @@ index 77dc71381a..ec602c6b7c 100644
    glActiveTexture(GL_TEXTURE1);
    glBindTexture(GL_TEXTURE_2D, m_lutDegammaTexId);
 diff --git a/xbmc/rendering/gles/GuiCompositeShaderGLES.h b/xbmc/rendering/gles/GuiCompositeShaderGLES.h
-index 9a1f83f745..336a0f8b76 100644
+index 9a1f83f745d74faf1ac5bbf1aebfa8fdbf383d73..336a0f8b764909af5547731af90d5780960b1893 100644
 --- a/xbmc/rendering/gles/GuiCompositeShaderGLES.h
 +++ b/xbmc/rendering/gles/GuiCompositeShaderGLES.h
 @@ -20,11 +20,14 @@ public:
@@ -1297,7 +1297,7 @@ index 9a1f83f745..336a0f8b76 100644
 +  GLint m_hInputPQ{-1};
  };
 diff --git a/xbmc/utils/DVBridgeKernelLog.h b/xbmc/utils/DVBridgeKernelLog.h
-index 77d0e8f711..502d3bfb00 100644
+index 77d0e8f7117eba712cfcb6c77e0c907a743828d9..502d3bfb006617913a5c4035a49e9c06723f5ce4 100644
 --- a/xbmc/utils/DVBridgeKernelLog.h
 +++ b/xbmc/utils/DVBridgeKernelLog.h
 @@ -32,14 +32,23 @@ public:
@@ -1346,7 +1346,7 @@ index 77d0e8f711..502d3bfb00 100644
      m_pendingLost=0;
      return result;
 diff --git a/xbmc/windowing/Resolution.cpp b/xbmc/windowing/Resolution.cpp
-index 19e46b20fd..286b60c799 100644
+index 9238a67704160292f58802f808407bbf1fdd0f36..6ea0d46856370e9864f6c46d7892f5d221a2788a 100644
 --- a/xbmc/windowing/Resolution.cpp
 +++ b/xbmc/windowing/Resolution.cpp
 @@ -20,6 +20,7 @@
@@ -1406,7 +1406,7 @@ index 19e46b20fd..286b60c799 100644
    {
      if (!FindResolutionFromOverride(fps, width, is3D, res, weight, true)) //if that fails find it from a fallback
 diff --git a/xbmc/windowing/Resolution.h b/xbmc/windowing/Resolution.h
-index 7ea624dbe8..4a10b58697 100644
+index 7ea624dbe8e40942f4ddd966d3bf1a0ae40fa052..4a10b58697029dfe496273e65e171224b6cf3b64 100644
 --- a/xbmc/windowing/Resolution.h
 +++ b/xbmc/windowing/Resolution.h
 @@ -118,6 +118,7 @@ public:
@@ -1418,7 +1418,7 @@ index 7ea624dbe8..4a10b58697 100644
                                          bool allowNativeProgressiveRates = false);
    static bool HasWhitelist();
 diff --git a/xbmc/windowing/gbm/DVWindowRetirement.h b/xbmc/windowing/gbm/DVWindowRetirement.h
-index 42bcc2717d..1a57f34abb 100644
+index 42bcc2717d5134245bf08d0d8f6553b828d32bd7..1a57f34abb412b0d6e1db2a43dba5b5a7e4cc569 100644
 --- a/xbmc/windowing/gbm/DVWindowRetirement.h
 +++ b/xbmc/windowing/gbm/DVWindowRetirement.h
 @@ -3,6 +3,7 @@
@@ -1446,7 +1446,7 @@ index 42bcc2717d..1a57f34abb 100644
      const auto context = eglGetCurrentContext();
      const auto draw = eglGetCurrentSurface(EGL_DRAW);
 diff --git a/xbmc/windowing/gbm/WinSystemGbm.cpp b/xbmc/windowing/gbm/WinSystemGbm.cpp
-index 5804c8128b..5b2f3842c1 100644
+index 5804c8128b6ab6cab3de5bedf0767d8c528e4856..5b2f3842c12b4db8ee1dacb2449a5551a8addbcc 100644
 --- a/xbmc/windowing/gbm/WinSystemGbm.cpp
 +++ b/xbmc/windowing/gbm/WinSystemGbm.cpp
 @@ -307,21 +307,48 @@ bool CWinSystemGbm::SetFullScreen(bool fullScreen, RESOLUTION_INFO& res, bool bl
@@ -1525,7 +1525,7 @@ index 5804c8128b..5b2f3842c1 100644
    {
      surface.EndTransactionalMode();
 diff --git a/xbmc/windowing/gbm/WinSystemGbm.h b/xbmc/windowing/gbm/WinSystemGbm.h
-index 12799a775c..53053adbd9 100644
+index 12799a775c3735260ccf0fc54e6b0da3429d6978..53053adbd941f8f2069c639fcfc89328646b83f7 100644
 --- a/xbmc/windowing/gbm/WinSystemGbm.h
 +++ b/xbmc/windowing/gbm/WinSystemGbm.h
 @@ -52,8 +52,10 @@ public:
@@ -1542,7 +1542,7 @@ index 12799a775c..53053adbd9 100644
  
    bool CanDoWindowed() override { return false; }
 diff --git a/xbmc/windowing/gbm/WinSystemGbmEGLContext.cpp b/xbmc/windowing/gbm/WinSystemGbmEGLContext.cpp
-index 185ef13371..9e7da83101 100644
+index 185ef133712859d6ee02f8979121ac50001f1fcc..9e7da831015073b307c61de078332ed3dd20b38e 100644
 --- a/xbmc/windowing/gbm/WinSystemGbmEGLContext.cpp
 +++ b/xbmc/windowing/gbm/WinSystemGbmEGLContext.cpp
 @@ -7,6 +7,9 @@
@@ -1575,7 +1575,7 @@ index 185ef13371..9e7da83101 100644
      CDVWindowRetirement::Keep(std::move(m_nativeDVRetirement),egl,std::move(resources));
    }
 diff --git a/xbmc/windowing/gbm/WinSystemGbmGLESContext.cpp b/xbmc/windowing/gbm/WinSystemGbmGLESContext.cpp
-index abf9fe3929..cbafb8977a 100644
+index cb3217673f696b1582078fd46de0fe08ad70d58b..8aaacb73bac5f8b9632d566033146682693c2cdb 100644
 --- a/xbmc/windowing/gbm/WinSystemGbmGLESContext.cpp
 +++ b/xbmc/windowing/gbm/WinSystemGbmGLESContext.cpp
 @@ -43,12 +43,18 @@ extern "C"
@@ -1826,7 +1826,7 @@ index abf9fe3929..cbafb8977a 100644
    // D2P with no new render: the cached PQ frame is already in the GUI plane
    // back buffer from the prior composite. Skip the shader pass entirely; Flip
    // will skip eglSwapBuffers too (hasRendered==false because Render was not
-@@ -571,8 +678,6 @@ void CWinSystemGbmGLESContext::CompositeGui()
+@@ -569,8 +676,6 @@ void CWinSystemGbmGLESContext::CompositeGui()
    // END GUI target projection
  
    m_compositeShader->SetProjection(proj);
@@ -1835,11 +1835,11 @@ index abf9fe3929..cbafb8977a 100644
    GLint posLoc = m_compositeShader->GetPosLoc();
    GLint texLoc = m_compositeShader->GetTexLoc();
  
-@@ -585,12 +690,37 @@ void CWinSystemGbmGLESContext::CompositeGui()
-   glEnableVertexAttribArray(posLoc);
-   glEnableVertexAttribArray(texLoc);
+@@ -581,13 +686,38 @@ void CWinSystemGbmGLESContext::CompositeGui()
+     glEnableVertexAttribArray(loc);
+   }
  
--  glDrawElements(GL_TRIANGLE_STRIP, 4, GL_UNSIGNED_BYTE, idx);
+-  glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 +  // PQ subtitles keep their original luminance and premultiplied alpha.
 +#ifdef HAVE_DVBRIDGE
 +  if (hasPQSubtitles)
@@ -1849,7 +1849,7 @@ index abf9fe3929..cbafb8977a 100644
 +    glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 +    m_compositeShader->SetInputPQ(true);
 +    m_compositeShader->Enable();
-+    glDrawElements(GL_TRIANGLE_STRIP, 4, GL_UNSIGNED_BYTE, idx);
++    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 +    m_compositeShader->Disable();
 +  }
 +#endif
@@ -1863,19 +1863,20 @@ index abf9fe3929..cbafb8977a 100644
 +      glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 +    m_compositeShader->SetInputPQ(false);
 +    m_compositeShader->Enable();
-+    glDrawElements(GL_TRIANGLE_STRIP, 4, GL_UNSIGNED_BYTE, idx);
++    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 +    m_compositeShader->Disable();
 +  }
 +  m_compositeShader->SetInputPQ(false);
  
    glDisableVertexAttribArray(posLoc);
    glDisableVertexAttribArray(texLoc);
+   glBindBuffer(GL_ARRAY_BUFFER, 0);
  
 -  m_compositeShader->Disable();
  #ifdef HAVE_DVBRIDGE
    if (dvComposite)
    {
-@@ -645,7 +775,21 @@ bool DVBRIDGE::WantsNativeOutput(const CDVDStreamInfo& stream)
+@@ -642,7 +772,21 @@ bool DVBRIDGE::WantsNativeOutput(const CDVDStreamInfo& stream)
  bool DVBRIDGE::WantsNativeOutput(const VideoPicture* picture)
  {
    auto* window = dynamic_cast<CWinSystemGbmGLESContext*>(CServiceBroker::GetWinSystem());
@@ -1898,7 +1899,7 @@ index abf9fe3929..cbafb8977a 100644
  }
  
  bool CWinSystemGbmGLESContext::DVBridgeRequested(const VideoPicture* picture)
-@@ -717,15 +861,19 @@ void CWinSystemGbmGLESContext::RefreshDVOutputCapabilities()
+@@ -714,15 +858,19 @@ void CWinSystemGbmGLESContext::RefreshDVOutputCapabilities()
        }
      }
    }
@@ -1919,7 +1920,7 @@ index abf9fe3929..cbafb8977a 100644
    if (!caps.nativeDV && !caps.hdr10) return false;
    if (!caps.processingKnown) return true;
    const auto mode = preferences.Policy().mode;
-@@ -735,6 +883,21 @@ bool CWinSystemGbmGLESContext::CanRetainDVSource() const
+@@ -732,6 +880,21 @@ bool CWinSystemGbmGLESContext::CanRetainDVSource() const
         caps.processing[DVBRIDGE_MODE_HDR10_BASIC].usable);
  }
  
@@ -1941,7 +1942,7 @@ index abf9fe3929..cbafb8977a 100644
  void CWinSystemGbmGLESContext::ObserveDVImport(DVBRIDGE::SourceBinding binding,
                                                dvbridge_geometry geometry, bool usable)
  {
-@@ -754,16 +917,21 @@ void CWinSystemGbmGLESContext::ObserveDVImport(DVBRIDGE::SourceBinding binding,
+@@ -751,16 +914,21 @@ void CWinSystemGbmGLESContext::ObserveDVImport(DVBRIDGE::SourceBinding binding,
  }
  
  DVBRIDGE::OutputCapabilities CWinSystemGbmGLESContext::GetDVOutputCapabilities(
@@ -1966,7 +1967,7 @@ index abf9fe3929..cbafb8977a 100644
    if (!picture) return caps;
    caps.sourceKnown = true;
    caps.isDV = picture->doviSourceInfo.profile || picture->hdrType == StreamHdrType::HDR_TYPE_DOLBYVISION;
-@@ -1010,19 +1178,19 @@ DVBRIDGE::OutputReason CWinSystemGbmGLESContext::ConsumeDVPlaybackFailure(DVBRID
+@@ -1007,19 +1175,19 @@ DVBRIDGE::OutputReason CWinSystemGbmGLESContext::ConsumeDVPlaybackFailure(DVBRID
    return m_dvFatalReason;
  }
  
@@ -1989,7 +1990,7 @@ index abf9fe3929..cbafb8977a 100644
    const auto stream = picture.doviMetadata.Binding().stream;
    if (!stream) return false;
    if (m_failedHDR10SetupRestore && !EndDVBridge())
-@@ -1132,15 +1300,16 @@ bool CWinSystemGbmGLESContext::BeginDVBridge()
+@@ -1129,15 +1297,16 @@ bool CWinSystemGbmGLESContext::BeginDVBridge()
      return false;
    };
    const bool hdr10 = m_dvSelection.route == DVBRIDGE::OutputRoute::HDR10;
@@ -2008,7 +2009,7 @@ index abf9fe3929..cbafb8977a 100644
      return failure("atomic-output-unavailable");
    CDVWindowRetirement::PollOnce();
    if (CDVBridgeGLES::Context::NewContextBlocked()) return failure("context-retained");
-@@ -1165,13 +1334,15 @@ bool CWinSystemGbmGLESContext::BeginDVBridge()
+@@ -1162,13 +1331,15 @@ bool CWinSystemGbmGLESContext::BeginDVBridge()
  
  bool CWinSystemGbmGLESContext::SetVideoOutput(const VideoPicture* picture)
  {
@@ -2026,7 +2027,7 @@ index abf9fe3929..cbafb8977a 100644
        (!capabilities.processingKnown || (picture->strDVELType == "FEL" && !picture->doviEnhancement)))
      return true; // Configure must reach UploadTexture before source-dependent activation.
    m_dvSelection = SelectedDVOutput(picture);
-@@ -1198,6 +1369,8 @@ bool CWinSystemGbmGLESContext::SetVideoOutput(const VideoPicture* picture)
+@@ -1195,6 +1366,8 @@ bool CWinSystemGbmGLESContext::SetVideoOutput(const VideoPicture* picture)
        if (m_dvBridge)
        {
          m_dvBridge->Cancel();
@@ -2035,7 +2036,7 @@ index abf9fe3929..cbafb8977a 100644
          m_dvOutputRetiring = true;
          if (!m_dvContext->FenceLastUse()) return false;
        }
-@@ -1234,6 +1407,9 @@ bool CWinSystemGbmGLESContext::SetVideoOutput(const VideoPicture* picture)
+@@ -1231,6 +1404,9 @@ bool CWinSystemGbmGLESContext::SetVideoOutput(const VideoPicture* picture)
  
  bool CWinSystemGbmGLESContext::PrepareDVOutputFrame(const VideoPicture& picture)
  {
@@ -2045,7 +2046,7 @@ index abf9fe3929..cbafb8977a 100644
    if (m_dvRollbackFailed || !RecoverDVActivation())
    {
      if (m_dvRollbackFailed)
-@@ -1259,8 +1435,6 @@ bool CWinSystemGbmGLESContext::PrepareDVOutputFrame(const VideoPicture& picture)
+@@ -1256,8 +1432,6 @@ bool CWinSystemGbmGLESContext::PrepareDVOutputFrame(const VideoPicture& picture)
        m_dvContext && !m_dvContext->StopHDR10AI()) return false;
  #endif
    if (capabilities.isDV && preferences.output != DVBRIDGE::OutputMode::Disabled &&
@@ -2054,7 +2055,7 @@ index abf9fe3929..cbafb8977a 100644
        (!capabilities.processingKnown || (picture.strDVELType == "FEL" && !picture.doviEnhancement)))
      return false;
    auto selectionCapabilities = capabilities;
-@@ -1320,6 +1494,7 @@ bool CWinSystemGbmGLESContext::PrepareDVOutputFrame(const VideoPicture& picture)
+@@ -1317,6 +1491,7 @@ bool CWinSystemGbmGLESContext::PrepareDVOutputFrame(const VideoPicture& picture)
        (m_dvSelection.route == DVBRIDGE::OutputRoute::HDR10) == m_hdrConversion)
    {
      // Same-format policies keep the renderer and its committed history intact.
@@ -2062,7 +2063,7 @@ index abf9fe3929..cbafb8977a 100644
      m_dvConfiguredOutput = m_dvSelection.policy.mode;
      return true;
    }
-@@ -1421,12 +1596,55 @@ unsigned int KODI::WINDOWING::GBM::GetDVBridgeScreenshotFramebuffer(CWinSystemBa
+@@ -1418,12 +1593,55 @@ unsigned int KODI::WINDOWING::GBM::GetDVBridgeScreenshotFramebuffer(CWinSystemBa
    return gbm ? gbm->GetDVBridgeScreenshotFramebuffer() : 0;
  }
  
@@ -2118,7 +2119,7 @@ index abf9fe3929..cbafb8977a 100644
    m_dvFrame = false;
    if (!BeginDVBridge())
      return false;
-@@ -1435,8 +1653,37 @@ bool CWinSystemGbmGLESContext::RenderDVBridge(const CDVBridgeGLES::Layer& layer,
+@@ -1432,8 +1650,37 @@ bool CWinSystemGbmGLESContext::RenderDVBridge(const CDVBridgeGLES::Layer& layer,
        KODI::RENDERING::CAPTURE::CaptureContent::COMPOSITE).empty();
    const bool overlayFree = !capturing &&
        (!m_guiWillRender || GetGUIElementCount() == 0) && !m_dvOverlays;
@@ -2156,7 +2157,7 @@ index abf9fe3929..cbafb8977a 100644
  #ifdef CB1_HAS_HDR10_AI
    const bool aiFrame = !metadata.Data();
    cb1_ai_result prediction{};
-@@ -1448,10 +1695,10 @@ bool CWinSystemGbmGLESContext::RenderDVBridge(const CDVBridgeGLES::Layer& layer,
+@@ -1445,10 +1692,10 @@ bool CWinSystemGbmGLESContext::RenderDVBridge(const CDVBridgeGLES::Layer& layer,
  #ifdef CB1_HAS_HDR10_AI
      if (aiFrame)
        return m_dvBridge->PrepareHDR10AIFrame(layer, geometry, preferences,
@@ -2169,7 +2170,7 @@ index abf9fe3929..cbafb8977a 100644
    };
  #ifdef CB1_HAS_HDR10_AI
    const double refresh = m_DRM->GetCurrentMode().fRefreshRate;
-@@ -1505,6 +1752,7 @@ bool CWinSystemGbmGLESContext::RenderDVBridge(const CDVBridgeGLES::Layer& layer,
+@@ -1502,6 +1749,7 @@ bool CWinSystemGbmGLESContext::RenderDVBridge(const CDVBridgeGLES::Layer& layer,
    // A paused final surface is already committed scanout, not a fresh resolve.
    const bool reused = status == CDVBridgeGLES::FrameStatus::Reused;
    m_dvFrame = status == CDVBridgeGLES::FrameStatus::Ready;
@@ -2177,7 +2178,7 @@ index abf9fe3929..cbafb8977a 100644
    if (m_dvFrame && m_hdrConversion)
    {
      if (const auto* policy = m_dvBridge->HDR10Output())
-@@ -1526,11 +1774,102 @@ bool CWinSystemGbmGLESContext::RenderDVBridge(const CDVBridgeGLES::Layer& layer,
+@@ -1523,11 +1771,102 @@ bool CWinSystemGbmGLESContext::RenderDVBridge(const CDVBridgeGLES::Layer& layer,
      }
    }
    glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -2280,7 +2281,7 @@ index abf9fe3929..cbafb8977a 100644
    if (m_failedHDR10SetupRestore && !RestoreFailedHDR10Setup())
      return false;
    if (m_hdrDeepColorPrevious)
-@@ -1563,10 +1902,13 @@ bool CWinSystemGbmGLESContext::EndDVBridge()
+@@ -1560,10 +1899,13 @@ bool CWinSystemGbmGLESContext::EndDVBridge()
      if (DVBRIDGE::DiagnosticsEnabled())
        CLog::Log(LOGINFO, "DVBridge HDR10: native link policy restored");
    }
@@ -2295,7 +2296,7 @@ index abf9fe3929..cbafb8977a 100644
    if (m_dvState.Captured())
    {
      // Restore signaling with a clean ordinary framebuffer, never tunnel pixels.
-@@ -1596,6 +1938,7 @@ bool CWinSystemGbmGLESContext::EndDVBridge()
+@@ -1593,6 +1935,7 @@ bool CWinSystemGbmGLESContext::EndDVBridge()
        m_dvSetupFailures.Recovered(DVBRIDGE::DiagnosticNowMs()))
      CLog::Log(LOGINFO, "DVBridge: normal display restored after failures={}", m_dvSetupFailures.Count());
    SetGuiCompositing(0);
@@ -2303,7 +2304,7 @@ index abf9fe3929..cbafb8977a 100644
    return true;
  }
  
-@@ -1609,6 +1952,7 @@ bool CWinSystemGbmGLESContext::DestroyWindowSystem()
+@@ -1606,6 +1949,7 @@ bool CWinSystemGbmGLESContext::DestroyWindowSystem()
    std::lock_guard lock(m_dvCapabilityMutex);
    const auto generation = m_dvCapabilities.generation + 1;
    m_dvCapabilities = {};
@@ -2311,7 +2312,7 @@ index abf9fe3929..cbafb8977a 100644
    m_dvCapabilities.generation = generation;
    m_dvImportBinding = {};
    return true;
-@@ -1616,6 +1960,7 @@ bool CWinSystemGbmGLESContext::DestroyWindowSystem()
+@@ -1613,6 +1957,7 @@ bool CWinSystemGbmGLESContext::DestroyWindowSystem()
  
  bool CWinSystemGbmGLESContext::RetireDVContext()
  {
@@ -2319,7 +2320,7 @@ index abf9fe3929..cbafb8977a 100644
    if (m_dvBridge) m_dvBridge->Cancel();
    m_dvBridge.reset();
    if (!m_dvContext || !m_dvContext->GL()) return true;
-@@ -1625,7 +1970,7 @@ bool CWinSystemGbmGLESContext::RetireDVContext()
+@@ -1622,7 +1967,7 @@ bool CWinSystemGbmGLESContext::RetireDVContext()
      if (!m_dvContext->FenceLastUse()) return false;
    }
    if (m_dvContext->Poll() != DVBRIDGE_DV_IDLE || !m_dvContext->Close()) return false;
@@ -2328,7 +2329,7 @@ index abf9fe3929..cbafb8977a 100644
    m_dvShutdownFence = false;
    return true;
  }
-@@ -1656,6 +2001,7 @@ bool CWinSystemGbmGLESContext::CreateContext()
+@@ -1653,6 +1998,7 @@ bool CWinSystemGbmGLESContext::CreateContext()
      std::lock_guard lock(m_dvCapabilityMutex);
      const auto generation = m_dvCapabilities.generation + 1;
      m_dvCapabilities = {};
@@ -2337,7 +2338,7 @@ index abf9fe3929..cbafb8977a 100644
      m_dvImportBinding = {};
      m_dvImportUsable = false;
 diff --git a/xbmc/windowing/gbm/WinSystemGbmGLESContext.h b/xbmc/windowing/gbm/WinSystemGbmGLESContext.h
-index 9ba2c043a3..16acd9f16e 100644
+index 9ba2c043a3b26c4fe4bc0e79c72914ac15c6bb04..16acd9f16e194e19c61325f49d8f94d2e698e04e 100644
 --- a/xbmc/windowing/gbm/WinSystemGbmGLESContext.h
 +++ b/xbmc/windowing/gbm/WinSystemGbmGLESContext.h
 @@ -48,6 +48,10 @@ public:
@@ -2448,7 +2449,7 @@ index 9ba2c043a3..16acd9f16e 100644
  };
  
 diff --git a/xbmc/windowing/gbm/drm/DRMAtomic.cpp b/xbmc/windowing/gbm/drm/DRMAtomic.cpp
-index e51f17e20c..d36e0e18e8 100644
+index e51f17e20c1346085eb6b5b5ad8b4e437203b9be..d36e0e18e8a3c5d676ef98517b405e595514f2fe 100644
 --- a/xbmc/windowing/gbm/drm/DRMAtomic.cpp
 +++ b/xbmc/windowing/gbm/drm/DRMAtomic.cpp
 @@ -16,14 +16,12 @@
@@ -2645,7 +2646,7 @@ index e51f17e20c..d36e0e18e8 100644
    m_active = active;
  
 diff --git a/xbmc/windowing/gbm/drm/DRMAtomic.h b/xbmc/windowing/gbm/drm/DRMAtomic.h
-index 7ea6b1e71d..8b48900572 100644
+index 7ea6b1e71dcc29c0a24123543ccc99624367ff16..8b489005725555939a20f6b81b97e9bbb568f963 100644
 --- a/xbmc/windowing/gbm/drm/DRMAtomic.h
 +++ b/xbmc/windowing/gbm/drm/DRMAtomic.h
 @@ -34,6 +34,7 @@ public:
@@ -2691,7 +2692,7 @@ index 7ea6b1e71d..8b48900572 100644
    bool m_lastPageAccepted{};
  #endif
 diff --git a/xbmc/windowing/gbm/drm/DRMUtils.cpp b/xbmc/windowing/gbm/drm/DRMUtils.cpp
-index ed3c765016..7cbed97612 100644
+index 96bb99cd1c0148bfca722836a229c6aac4726d23..2299c9589d96a2aaf0d133779706d0f622dda496 100644
 --- a/xbmc/windowing/gbm/drm/DRMUtils.cpp
 +++ b/xbmc/windowing/gbm/drm/DRMUtils.cpp
 @@ -16,6 +16,8 @@
@@ -2703,7 +2704,7 @@ index ed3c765016..7cbed97612 100644
  #include "utils/DVBridgeDiagnosticState.h"
  #endif
  
-@@ -27,6 +29,28 @@ namespace
+@@ -30,6 +32,28 @@ namespace
  {
  const std::string SETTING_VIDEOSCREEN_LIMITGUISIZE = "videoscreen.limitguisize";
  
@@ -2732,7 +2733,7 @@ index ed3c765016..7cbed97612 100644
  void DrmFbDestroyCallback(gbm_bo* bo, void* data)
  {
    drm_fb* fb = static_cast<drm_fb*>(data);
-@@ -55,6 +79,9 @@ bool CDRMUtils::SetMode(const RESOLUTION_INFO& res)
+@@ -58,6 +82,9 @@ bool CDRMUtils::SetMode(const RESOLUTION_INFO& res)
    if (!m_connector->CheckConnector())
      return false;
  
@@ -2742,7 +2743,7 @@ index ed3c765016..7cbed97612 100644
    m_mode = m_connector->GetModeForIndex(std::atoi(res.strId.c_str()));
    m_width = res.iWidth;
    m_height = res.iHeight;
-@@ -544,6 +571,18 @@ bool CDRMUtils::OpenDrm(bool needConnector)
+@@ -547,6 +574,18 @@ bool CDRMUtils::OpenDrm(bool needConnector)
      }
  
      PrintDrmDeviceInfo(device);
@@ -2761,7 +2762,7 @@ index ed3c765016..7cbed97612 100644
  
      const char* renderPath = drmGetRenderDeviceNameFromFd(m_fd);
  
-@@ -739,6 +778,9 @@ bool CDRMUtils::FindConnector()
+@@ -742,6 +781,9 @@ bool CDRMUtils::FindConnector()
    CLog::LogF(LOGINFO, "Using connector: {}", connector->get()->GetName());
  
    m_connector = connector->get();
@@ -2773,7 +2774,7 @@ index ed3c765016..7cbed97612 100644
  
 diff --git a/xbmc/windowing/gbm/drm/DVBridgeDisplayRoute.h b/xbmc/windowing/gbm/drm/DVBridgeDisplayRoute.h
 new file mode 100644
-index 0000000000..b929a054d4
+index 0000000000000000000000000000000000000000..b929a054d450d9043d72cbaea762848d44850266
 --- /dev/null
 +++ b/xbmc/windowing/gbm/drm/DVBridgeDisplayRoute.h
 @@ -0,0 +1,131 @@
@@ -2909,7 +2910,7 @@ index 0000000000..b929a054d4
 +};
 +}
 diff --git a/xbmc/windowing/gbm/drm/DVBridgeKernelLogReader.h b/xbmc/windowing/gbm/drm/DVBridgeKernelLogReader.h
-index 461280aba0..a22f20de87 100644
+index 461280aba04df86a17477a983193a7d56b64466e..a22f20de871c3a4d4e290502c80dafa7a13509af 100644
 --- a/xbmc/windowing/gbm/drm/DVBridgeKernelLogReader.h
 +++ b/xbmc/windowing/gbm/drm/DVBridgeKernelLogReader.h
 @@ -3,18 +3,23 @@

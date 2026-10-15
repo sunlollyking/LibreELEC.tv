@@ -108,10 +108,10 @@ Subject: [PATCH] Dolby Vision R1.0.0-Beta3 over Beta2 (CroqueMr/libreelec-x86-DV
  create mode 100644 xbmc/cores/VideoPlayer/VideoRenderers/DVBridgeVAScaler.h
 
 diff --git a/addons/resource.language.en_gb/resources/strings.po b/addons/resource.language.en_gb/resources/strings.po
-index 71dc605..82a76b8 100644
+index 5b5018cb346ee4ab1e2ff2bce9d266acffb2ede7..cede395b9f58b98c1892794e3fd85cd89ff81858 100644
 --- a/addons/resource.language.en_gb/resources/strings.po
 +++ b/addons/resource.language.en_gb/resources/strings.po
-@@ -14487,7 +14487,7 @@ msgstr ""
+@@ -14494,7 +14494,7 @@ msgstr ""
  #: xbmc/playlists/SmartPlayList.cpp
  #: addons/skin.estuary/xml/DialogPlayerProcessInfo.xml
  msgctxt "#20478"
@@ -120,7 +120,7 @@ index 71dc605..82a76b8 100644
  msgstr ""
  
  #. Used in the smart playlist editor to define a watched mode
-@@ -26962,7 +26962,7 @@ msgstr ""
+@@ -27054,7 +27054,7 @@ msgstr ""
  
  #: system/settings/settings.xml
  msgctxt "#40812"
@@ -129,7 +129,7 @@ index 71dc605..82a76b8 100644
  msgstr ""
  
  #: system/settings/settings.xml
-@@ -26972,7 +26972,7 @@ msgstr ""
+@@ -27064,7 +27064,7 @@ msgstr ""
  
  #: system/settings/settings.xml
  msgctxt "#40814"
@@ -138,7 +138,7 @@ index 71dc605..82a76b8 100644
  msgstr ""
  
  #: system/settings/settings.xml
-@@ -26997,7 +26997,7 @@ msgstr ""
+@@ -27089,7 +27089,7 @@ msgstr ""
  
  #: system/settings/settings.xml
  msgctxt "#40819"
@@ -147,7 +147,7 @@ index 71dc605..82a76b8 100644
  msgstr ""
  
  msgctxt "#40820"
-@@ -27157,16 +27157,24 @@ msgctxt "#40901"
+@@ -27249,16 +27249,24 @@ msgctxt "#40901"
  msgid "Prepare at most one next CB1 frame while the current frame is presented. Native and fallback playback stay unchanged. Applies to the next video."
  msgstr ""
  
@@ -174,7 +174,7 @@ index 71dc605..82a76b8 100644
  msgstr ""
  
  msgctxt "#40863"
-@@ -27186,11 +27194,11 @@ msgid "HDR10 Native"
+@@ -27278,11 +27286,11 @@ msgid "HDR10 Native"
  msgstr ""
  
  msgctxt "#40867"
@@ -188,7 +188,7 @@ index 71dc605..82a76b8 100644
  msgstr ""
  
  msgctxt "#40870"
-@@ -27198,11 +27206,11 @@ msgid "AI-assisted HDR10 to Dolby Vision conversion. Reference preserves grading
+@@ -27290,11 +27298,11 @@ msgid "AI-assisted HDR10 to Dolby Vision conversion. Reference preserves grading
  msgstr ""
  
  msgctxt "#40871"
@@ -202,13 +202,13 @@ index 71dc605..82a76b8 100644
  msgstr ""
  
  msgctxt "#40875"
-@@ -27212,3 +27220,4 @@ msgstr ""
+@@ -27304,3 +27312,4 @@ msgstr ""
  msgctxt "#40876"
  msgid "Playback modes | Source: {0}"
  msgstr ""
 +
 diff --git a/system/settings/settings.xml b/system/settings/settings.xml
-index f968058..d0bee11 100755
+index 8c8b157d7a91e8f96ea4739eabb0d1145cc4954e..b52a3303e0df27df6259b6edcf0fb174f6df8026 100755
 --- a/system/settings/settings.xml
 +++ b/system/settings/settings.xml
 @@ -97,6 +97,10 @@
@@ -223,10 +223,10 @@ index f968058..d0bee11 100755
        <group id="1" label="14230">
          <setting id="videoplayer.autoplaynextitem" type="list[integer]" label="13433" help="36152">
 diff --git a/xbmc/cores/AudioEngine/Engines/ActiveAE/ActiveAE.cpp b/xbmc/cores/AudioEngine/Engines/ActiveAE/ActiveAE.cpp
-index d5adfe2..10dfb86 100644
+index a680180747998fd6b13c336ff08355a42273f5b3..70a26061b35230724cb19c9bf161d07c3be05b64 100644
 --- a/xbmc/cores/AudioEngine/Engines/ActiveAE/ActiveAE.cpp
 +++ b/xbmc/cores/AudioEngine/Engines/ActiveAE/ActiveAE.cpp
-@@ -405,6 +405,9 @@ void CActiveAE::StateMachine(int signal, Protocol *port, Message *msg)
+@@ -417,6 +417,9 @@ void CActiveAE::StateMachine(int signal, Protocol *port, Message *msg)
            return;
          case CActiveAEControlProtocol::DISPLAYRESET:
            return;
@@ -237,7 +237,7 @@ index d5adfe2..10dfb86 100644
            m_sink.m_controlPort.SendOutMessage(CSinkControlProtocol::APPFOCUSED, msg->data, sizeof(bool));
            return;
 diff --git a/xbmc/cores/FFmpeg.h b/xbmc/cores/FFmpeg.h
-index 1cce966..dc7b97c 100644
+index 1cce966448cd1d4d286849c301415aa0eeae4bfa..dc7b97ccd55a535b5e6433ded74d121b062fd562 100644
 --- a/xbmc/cores/FFmpeg.h
 +++ b/xbmc/cores/FFmpeg.h
 @@ -22,6 +22,11 @@ extern "C"
@@ -253,7 +253,7 @@ index 1cce966..dc7b97c 100644
  {
  
 diff --git a/xbmc/cores/VideoPlayer/DVDCodecs/DVDFactoryCodec.cpp b/xbmc/cores/VideoPlayer/DVDCodecs/DVDFactoryCodec.cpp
-index 041c0d1..a8ddc00 100644
+index 041c0d169eb168b2fcf88a9c769b8fc1a72d3bb5..a8ddc0002cd547f79625ff68100a422def5c0535 100644
 --- a/xbmc/cores/VideoPlayer/DVDCodecs/DVDFactoryCodec.cpp
 +++ b/xbmc/cores/VideoPlayer/DVDCodecs/DVDFactoryCodec.cpp
 @@ -71,6 +71,13 @@ std::unique_ptr<CDVDVideoCodec> CDVDFactoryCodec::CreateVideoCodec(CDVDStreamInf
@@ -271,7 +271,7 @@ index 041c0d1..a8ddc00 100644
  #ifdef HAVE_DVBRIDGE
    if (DVBRIDGE::RetainsDVSource(hint))
 diff --git a/xbmc/cores/VideoPlayer/DVDCodecs/Overlay/DVDOverlay.h b/xbmc/cores/VideoPlayer/DVDCodecs/Overlay/DVDOverlay.h
-index 1f37ab3..d8f6359 100644
+index 1f37ab387f50d7fadbacc23e2e57ea2042ae4889..d8f635927e1f3eeb44f96526ffda899d67042885 100644
 --- a/xbmc/cores/VideoPlayer/DVDCodecs/Overlay/DVDOverlay.h
 +++ b/xbmc/cores/VideoPlayer/DVDCodecs/Overlay/DVDOverlay.h
 @@ -22,6 +22,14 @@ enum DVDOverlayType
@@ -342,7 +342,7 @@ index 1f37ab3..d8f6359 100644
  
  using VecOverlays = std::vector<std::shared_ptr<CDVDOverlay>>;
 diff --git a/xbmc/cores/VideoPlayer/DVDCodecs/Video/CMakeLists.txt b/xbmc/cores/VideoPlayer/DVDCodecs/Video/CMakeLists.txt
-index 6568a05..da574ad 100644
+index 6568a05a6638031f2a0e05ac0f9b9e28800056a7..da574ada1ea00c65cd259f187c0b5fab811a6659 100644
 --- a/xbmc/cores/VideoPlayer/DVDCodecs/Video/CMakeLists.txt
 +++ b/xbmc/cores/VideoPlayer/DVDCodecs/Video/CMakeLists.txt
 @@ -1,11 +1,13 @@
@@ -362,7 +362,7 @@ index 6568a05..da574ad 100644
  if(TARGET ffmpeg::libpostproc)
    list(APPEND SOURCES DVDVideoPPFFmpeg.cpp)
 diff --git a/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVDVideoCodecFFmpeg.cpp b/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVDVideoCodecFFmpeg.cpp
-index 153ae53..02c86b8 100644
+index e3b11fcb09bb63b8c1a0b9d87e33b613bf241336..ab7f72300207f631c0058393112cd2cde4fe3461 100644
 --- a/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVDVideoCodecFFmpeg.cpp
 +++ b/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVDVideoCodecFFmpeg.cpp
 @@ -276,7 +276,10 @@ enum AVPixelFormat CDVDVideoCodecFFmpeg::GetFormat(struct AVCodecContext * avctx
@@ -377,7 +377,7 @@ index 153ae53..02c86b8 100644
        (avctx->codec_id == AV_CODEC_ID_VC1 && avctx->profile == AV_PROFILE_UNKNOWN))
    {
      AVPixelFormat defaultFmt = avcodec_default_get_format(avctx, fmt);
-@@ -455,6 +458,44 @@ bool CDVDVideoCodecFFmpeg::Open(CDVDStreamInfo &hints, CDVDCodecOptions &options
+@@ -458,6 +461,44 @@ bool CDVDVideoCodecFFmpeg::Open(CDVDStreamInfo &hints, CDVDCodecOptions &options
      av_opt_set(m_pCodecContext, it->m_name.c_str(), it->m_value.c_str(), 0);
    }
  
@@ -422,7 +422,7 @@ index 153ae53..02c86b8 100644
    if (avcodec_open2(m_pCodecContext, pCodec, nullptr) < 0)
    {
      CLog::Log(LOGDEBUG,"CDVDVideoCodecFFmpeg::Open() Unable to open codec");
-@@ -1024,8 +1065,13 @@ CDVDVideoCodec::VCReturn CDVDVideoCodecFFmpeg::GetBasePicture(VideoPicture* pVid
+@@ -1027,8 +1068,13 @@ CDVDVideoCodec::VCReturn CDVDVideoCodecFFmpeg::GetBasePicture(VideoPicture* pVid
          need_reopen = true;
      }
  
@@ -437,7 +437,7 @@ index 153ae53..02c86b8 100644
      {
        m_filters = m_filters_next;
  
-@@ -1103,6 +1149,7 @@ void CDVDVideoCodecFFmpeg::Reset()
+@@ -1106,6 +1152,7 @@ void CDVDVideoCodecFFmpeg::Reset()
      m_pHardware->Reset();
  
    m_filters = "";
@@ -445,7 +445,7 @@ index 153ae53..02c86b8 100644
    FilterClose();
    m_dropCtrl.Reset(false);
  }
-@@ -1179,6 +1226,10 @@ bool CDVDVideoCodecFFmpeg::GetPictureCommon(VideoPicture* pVideoPicture)
+@@ -1182,6 +1229,10 @@ bool CDVDVideoCodecFFmpeg::GetPictureCommon(VideoPicture* pVideoPicture)
    {
      pVideoPicture->stereoMode = (const char*)entry->value;
    }
@@ -456,7 +456,7 @@ index 153ae53..02c86b8 100644
    else
      pVideoPicture->stereoMode.clear();
  
-@@ -1450,7 +1501,7 @@ int CDVDVideoCodecFFmpeg::FilterOpen(const std::string& filters, bool scale)
+@@ -1453,7 +1504,7 @@ int CDVDVideoCodecFFmpeg::FilterOpen(const std::string& filters, bool scale)
    if (m_pFilterGraph)
      FilterClose();
  
@@ -465,7 +465,7 @@ index 153ae53..02c86b8 100644
      return 0;
  
    if (m_pHardware)
-@@ -1508,7 +1559,20 @@ int CDVDVideoCodecFFmpeg::FilterOpen(const std::string& filters, bool scale)
+@@ -1511,7 +1562,20 @@ int CDVDVideoCodecFFmpeg::FilterOpen(const std::string& filters, bool scale)
      return result;
    }
  
@@ -487,7 +487,7 @@ index 153ae53..02c86b8 100644
    {
      AVFilterInOut* outputs = avfilter_inout_alloc();
      AVFilterInOut* inputs  = avfilter_inout_alloc();
-@@ -1523,7 +1587,22 @@ int CDVDVideoCodecFFmpeg::FilterOpen(const std::string& filters, bool scale)
+@@ -1526,7 +1590,22 @@ int CDVDVideoCodecFFmpeg::FilterOpen(const std::string& filters, bool scale)
      inputs->pad_idx = 0;
      inputs->next = nullptr;
  
@@ -511,7 +511,7 @@ index 153ae53..02c86b8 100644
      avfilter_inout_free(&outputs);
      avfilter_inout_free(&inputs);
  
-@@ -1559,6 +1638,8 @@ int CDVDVideoCodecFFmpeg::FilterOpen(const std::string& filters, bool scale)
+@@ -1562,6 +1641,8 @@ int CDVDVideoCodecFFmpeg::FilterOpen(const std::string& filters, bool scale)
      return result;
    }
  
@@ -520,7 +520,7 @@ index 153ae53..02c86b8 100644
    if (CServiceBroker::GetLogging().CanLogComponent(LOGVIDEO))
    {
      char* graphDump = avfilter_graph_dump(m_pFilterGraph, nullptr);
-@@ -1575,6 +1656,8 @@ int CDVDVideoCodecFFmpeg::FilterOpen(const std::string& filters, bool scale)
+@@ -1578,6 +1659,8 @@ int CDVDVideoCodecFFmpeg::FilterOpen(const std::string& filters, bool scale)
  
  void CDVDVideoCodecFFmpeg::FilterClose()
  {
@@ -529,7 +529,7 @@ index 153ae53..02c86b8 100644
    if (m_pFilterGraph)
    {
      CLog::Log(LOGDEBUG, LOGVIDEO, "CDVDVideoCodecFFmpeg::FilterClose - Freeing filter graph");
-@@ -1582,6 +1665,7 @@ void CDVDVideoCodecFFmpeg::FilterClose()
+@@ -1585,6 +1668,7 @@ void CDVDVideoCodecFFmpeg::FilterClose()
  
      // Disposed by above code
      m_pFilterIn = nullptr;
@@ -537,7 +537,7 @@ index 153ae53..02c86b8 100644
      m_pFilterOut = nullptr;
    }
  }
-@@ -1592,7 +1676,14 @@ CDVDVideoCodec::VCReturn CDVDVideoCodecFFmpeg::FilterProcess(AVFrame* frame)
+@@ -1595,7 +1679,14 @@ CDVDVideoCodec::VCReturn CDVDVideoCodecFFmpeg::FilterProcess(AVFrame* frame)
  
    if (frame || (m_codecControlFlags & DVD_CODEC_CTRL_DRAIN))
    {
@@ -554,7 +554,7 @@ index 153ae53..02c86b8 100644
      {
        CLog::Log(LOGERROR, "CDVDVideoCodecFFmpeg::FilterProcess - av_buffersrc_add_frame");
 diff --git a/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVDVideoCodecFFmpeg.h b/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVDVideoCodecFFmpeg.h
-index 57b827f..630fdd6 100644
+index 57b827fd9624d8fe2436c185d75459399269bfee..630fdd68d663d1386a8eabfa42ba18c7a6401b32 100644
 --- a/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVDVideoCodecFFmpeg.h
 +++ b/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVDVideoCodecFFmpeg.h
 @@ -10,6 +10,7 @@
@@ -584,7 +584,7 @@ index 57b827f..630fdd6 100644
  
    int m_iPictureWidth = 0;
 diff --git a/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVOutputSelection.h b/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVOutputSelection.h
-index d7bff03..bc26225 100644
+index d7bff033cab6976b9dcfeb2d48f23572cafddcf7..bc26225536357a3a2de74e2f151a630376d63a0e 100644
 --- a/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVOutputSelection.h
 +++ b/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVOutputSelection.h
 @@ -19,6 +19,8 @@ inline OutputSelection SelectOutput(const OutputPreferences& preferences,
@@ -597,7 +597,7 @@ index d7bff03..bc26225 100644
    {
      if (preferences.hdr10Source == HDR10SourceMode::Native) return result;
 diff --git a/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVOutputSettings.h b/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVOutputSettings.h
-index dc02aa7..b9708d6 100644
+index dc02aa75721e2698930109e3031e1f69f6c6f09d..b9708d6c888f9113af389a6a43b7e5af4c6a9d04 100644
 --- a/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVOutputSettings.h
 +++ b/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVOutputSettings.h
 @@ -29,6 +29,9 @@ struct OutputPreferences
@@ -639,7 +639,7 @@ index dc02aa7..b9708d6 100644
 +}
  } // namespace DVBRIDGE
 diff --git a/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVPlaybackInfo.h b/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVPlaybackInfo.h
-index f154fdc..b48bdab 100644
+index f154fdc001c216d20d8b50611181ad15fd8410b2..b48bdabaad0c79c1deb3262b37e9788335ca5955 100644
 --- a/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVPlaybackInfo.h
 +++ b/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVPlaybackInfo.h
 @@ -15,6 +15,7 @@ struct ModeAdmission { bool usable{}; OutputReason reason{OutputReason::None}; }
@@ -695,7 +695,7 @@ index f154fdc..b48bdab 100644
      if (output.fallback)
 diff --git a/xbmc/cores/VideoPlayer/DVDCodecs/Video/MultiviewFramePairer.cpp b/xbmc/cores/VideoPlayer/DVDCodecs/Video/MultiviewFramePairer.cpp
 new file mode 100644
-index 0000000..4cf758f
+index 0000000000000000000000000000000000000000..4cf758f41da64b0a851a5ff67862326bffbf5624
 --- /dev/null
 +++ b/xbmc/cores/VideoPlayer/DVDCodecs/Video/MultiviewFramePairer.cpp
 @@ -0,0 +1,169 @@
@@ -870,7 +870,7 @@ index 0000000..4cf758f
 +}
 diff --git a/xbmc/cores/VideoPlayer/DVDCodecs/Video/MultiviewFramePairer.h b/xbmc/cores/VideoPlayer/DVDCodecs/Video/MultiviewFramePairer.h
 new file mode 100644
-index 0000000..793ad58
+index 0000000000000000000000000000000000000000..793ad58f6fe6b64f3738573ce7797e181a16f78b
 --- /dev/null
 +++ b/xbmc/cores/VideoPlayer/DVDCodecs/Video/MultiviewFramePairer.h
 @@ -0,0 +1,82 @@
@@ -958,7 +958,7 @@ index 0000000..793ad58
 +};
 diff --git a/xbmc/cores/VideoPlayer/DVDDemuxers/BlurayOffsetMetadata.cpp b/xbmc/cores/VideoPlayer/DVDDemuxers/BlurayOffsetMetadata.cpp
 new file mode 100644
-index 0000000..e0783bc
+index 0000000000000000000000000000000000000000..e0783bc2d849384ccab87f8a22f7102b7d4181ad
 --- /dev/null
 +++ b/xbmc/cores/VideoPlayer/DVDDemuxers/BlurayOffsetMetadata.cpp
 @@ -0,0 +1,257 @@
@@ -1221,7 +1221,7 @@ index 0000000..e0783bc
 +} // namespace KODI::VIDEO::BLURAY
 diff --git a/xbmc/cores/VideoPlayer/DVDDemuxers/BlurayOffsetMetadata.h b/xbmc/cores/VideoPlayer/DVDDemuxers/BlurayOffsetMetadata.h
 new file mode 100644
-index 0000000..ef73078
+index 0000000000000000000000000000000000000000..ef73078646dc467fca48aac28a0fec0fa0bbcdaa
 --- /dev/null
 +++ b/xbmc/cores/VideoPlayer/DVDDemuxers/BlurayOffsetMetadata.h
 @@ -0,0 +1,118 @@
@@ -1344,7 +1344,7 @@ index 0000000..ef73078
 +
 +} // namespace KODI::VIDEO::BLURAY
 diff --git a/xbmc/cores/VideoPlayer/DVDDemuxers/CMakeLists.txt b/xbmc/cores/VideoPlayer/DVDDemuxers/CMakeLists.txt
-index 09798c3..ef6f745 100644
+index 09798c3bd835a1cb3976438d0756a5f28ad2f259..ef6f745f488b74e7d1ffb9a96a6537e5bac8bea8 100644
 --- a/xbmc/cores/VideoPlayer/DVDDemuxers/CMakeLists.txt
 +++ b/xbmc/cores/VideoPlayer/DVDDemuxers/CMakeLists.txt
 @@ -1,4 +1,5 @@
@@ -1380,7 +1380,7 @@ index 09798c3..ef6f745 100644
  if(ENABLE_DVBRIDGE)
    target_include_directories(dvddemuxers PRIVATE "${DVBRIDGE_SOURCE_DIR}")
 diff --git a/xbmc/cores/VideoPlayer/DVDDemuxers/DVDDemux.h b/xbmc/cores/VideoPlayer/DVDDemuxers/DVDDemux.h
-index c256e06..5c56ba1 100644
+index e928f920d7843ff062dc6867523129fc6157a28a..82ae5fd4caf1b74455140747d16a8d549494ef39 100644
 --- a/xbmc/cores/VideoPlayer/DVDDemuxers/DVDDemux.h
 +++ b/xbmc/cores/VideoPlayer/DVDDemuxers/DVDDemux.h
 @@ -177,6 +177,7 @@ public:
@@ -1393,7 +1393,7 @@ index c256e06..5c56ba1 100644
  #ifdef HAVE_DVBRIDGE
 diff --git a/xbmc/cores/VideoPlayer/DVDDemuxers/DVDDemuxBluray3D.cpp b/xbmc/cores/VideoPlayer/DVDDemuxers/DVDDemuxBluray3D.cpp
 new file mode 100644
-index 0000000..606a35a
+index 0000000000000000000000000000000000000000..606a35a5d767b7f190765c0bea3724a3b51ebc3a
 --- /dev/null
 +++ b/xbmc/cores/VideoPlayer/DVDDemuxers/DVDDemuxBluray3D.cpp
 @@ -0,0 +1,717 @@
@@ -2116,7 +2116,7 @@ index 0000000..606a35a
 +}
 diff --git a/xbmc/cores/VideoPlayer/DVDDemuxers/DVDDemuxBluray3D.h b/xbmc/cores/VideoPlayer/DVDDemuxers/DVDDemuxBluray3D.h
 new file mode 100644
-index 0000000..03ba752
+index 0000000000000000000000000000000000000000..03ba75249c18781e65a27c642cd36a3835088afb
 --- /dev/null
 +++ b/xbmc/cores/VideoPlayer/DVDDemuxers/DVDDemuxBluray3D.h
 @@ -0,0 +1,193 @@
@@ -2314,7 +2314,7 @@ index 0000000..03ba752
 +  bool m_resyncPending{false};
 +};
 diff --git a/xbmc/cores/VideoPlayer/DVDDemuxers/DVDDemuxFFmpeg.cpp b/xbmc/cores/VideoPlayer/DVDDemuxers/DVDDemuxFFmpeg.cpp
-index 0af180b..431302f 100644
+index 7a7ab1dba8ee905b2641f724a47379fbe29f20c6..ee52a44b766b1ddaa907160517e829ade9bc1fd0 100644
 --- a/xbmc/cores/VideoPlayer/DVDDemuxers/DVDDemuxFFmpeg.cpp
 +++ b/xbmc/cores/VideoPlayer/DVDDemuxers/DVDDemuxFFmpeg.cpp
 @@ -65,6 +65,7 @@ extern "C"
@@ -2324,7 +2324,7 @@ index 0af180b..431302f 100644
 +#include <libavutil/stereo3d.h>
  }
  
- using namespace KODI::UTILS;
+ using namespace KODI::LANGUAGE;
 @@ -499,6 +500,24 @@ bool CDVDDemuxFFmpeg::Open(const std::shared_ptr<CDVDInputStream>& pInput, bool
    if (iformat && (strcmp(iformat->name, "mjpeg") == 0) && m_ioContext->seekable == 0)
      av_opt_set_int(m_pFormatContext, "analyzeduration", 500000, 0);
@@ -2394,7 +2394,7 @@ index 0af180b..431302f 100644
  }
  
  void CDVDDemuxFFmpeg::Abort()
-@@ -1314,6 +1347,13 @@ DemuxPacket* CDVDDemuxFFmpeg::ReadInternal(bool keep)
+@@ -1315,6 +1348,13 @@ DemuxPacket* CDVDDemuxFFmpeg::ReadInternal(bool keep)
        return pPacket;
      }
  
@@ -2408,7 +2408,7 @@ index 0af180b..431302f 100644
      pPacket->iStreamId = stream->uniqueId;
      pPacket->demuxerId = GetDemuxerId();
    }
-@@ -1878,6 +1918,7 @@ void CDVDDemuxFFmpeg::DisposeStreams()
+@@ -1879,6 +1919,7 @@ void CDVDDemuxFFmpeg::DisposeStreams()
      delete it->second;
    m_streams.clear();
    m_parsers.clear();
@@ -2416,7 +2416,7 @@ index 0af180b..431302f 100644
  }
  
  CDemuxStream* CDVDDemuxFFmpeg::AddStream(int streamIdx)
-@@ -2078,13 +2119,56 @@ CDemuxStream* CDVDDemuxFFmpeg::AddStream(int streamIdx)
+@@ -2079,13 +2120,56 @@ CDemuxStream* CDVDDemuxFFmpeg::AddStream(int streamIdx)
          }
  
          // detect stereoscopic mode
@@ -2475,7 +2475,7 @@ index 0af180b..431302f 100644
  
          if (m_pInput->IsStreamType(DVDSTREAM_TYPE_DVD))
          {
-@@ -2150,6 +2234,11 @@ CDemuxStream* CDVDDemuxFFmpeg::AddStream(int streamIdx)
+@@ -2151,6 +2235,11 @@ CDemuxStream* CDVDDemuxFFmpeg::AddStream(int streamIdx)
  
            if (av_dict_get(pStream->metadata, "title", NULL, 0))
              st->m_description = av_dict_get(pStream->metadata, "title", NULL, 0)->value;
@@ -2487,7 +2487,7 @@ index 0af180b..431302f 100644
            break;
          }
        }
-@@ -2635,6 +2724,161 @@ std::string CDVDDemuxFFmpeg::GetStereoModeFromMetadata(AVDictionary* pMetadata)
+@@ -2636,6 +2725,161 @@ std::string CDVDDemuxFFmpeg::GetStereoModeFromMetadata(AVDictionary* pMetadata)
    return stereoMode;
  }
  
@@ -2650,7 +2650,7 @@ index 0af180b..431302f 100644
  {
    size_t i = 0;
 diff --git a/xbmc/cores/VideoPlayer/DVDDemuxers/DVDDemuxFFmpeg.h b/xbmc/cores/VideoPlayer/DVDDemuxers/DVDDemuxFFmpeg.h
-index 626017a..629b9ee 100644
+index 626017a0d42d8b84a1d4f50ff8ed17c066f17cd5..629b9ee34c78a5c8ae3c3bc495734e1c424aebc4 100644
 --- a/xbmc/cores/VideoPlayer/DVDDemuxers/DVDDemuxFFmpeg.h
 +++ b/xbmc/cores/VideoPlayer/DVDDemuxers/DVDDemuxFFmpeg.h
 @@ -8,11 +8,13 @@
@@ -2730,7 +2730,7 @@ index 626017a..629b9ee 100644
  
    // Due to limitations of ffmpeg, we only can detect a program change
 diff --git a/xbmc/cores/VideoPlayer/DVDDemuxers/DVDDemuxUtils.cpp b/xbmc/cores/VideoPlayer/DVDDemuxers/DVDDemuxUtils.cpp
-index 0824687..0242a5b 100644
+index 08246872c20dc9cc160f8e8937dc7e857d92a5f5..0242a5b48800a0df0c816edbfeeace45c3158c73 100644
 --- a/xbmc/cores/VideoPlayer/DVDDemuxers/DVDDemuxUtils.cpp
 +++ b/xbmc/cores/VideoPlayer/DVDDemuxers/DVDDemuxUtils.cpp
 @@ -20,6 +20,7 @@ extern "C"
@@ -2776,7 +2776,7 @@ index 0824687..0242a5b 100644
  {
    DemuxPacket *ret(AllocateDemuxPacket(iDataSize));
 diff --git a/xbmc/cores/VideoPlayer/DVDDemuxers/DVDDemuxUtils.h b/xbmc/cores/VideoPlayer/DVDDemuxers/DVDDemuxUtils.h
-index df30331..8bccf93 100644
+index df303319111cb848b09a7f61c511e6b0e16c5d21..8bccf934874be818d08295019a4c8a93e5ee5562 100644
 --- a/xbmc/cores/VideoPlayer/DVDDemuxers/DVDDemuxUtils.h
 +++ b/xbmc/cores/VideoPlayer/DVDDemuxers/DVDDemuxUtils.h
 @@ -38,6 +38,12 @@ public:
@@ -2793,7 +2793,7 @@ index df30331..8bccf93 100644
    static std::vector<ChapterFFmpeg> LoadChapters(std::span<AVChapter*> chapters);
  
 diff --git a/xbmc/cores/VideoPlayer/DVDDemuxers/DVDFactoryDemuxer.cpp b/xbmc/cores/VideoPlayer/DVDDemuxers/DVDFactoryDemuxer.cpp
-index 35ba376..70ca4bd 100644
+index 35ba376ad946b5725377a667636377b073e7f5b7..70ca4bd1ec2486236d21f76b1ce2e72f57bf0732 100644
 --- a/xbmc/cores/VideoPlayer/DVDDemuxers/DVDFactoryDemuxer.cpp
 +++ b/xbmc/cores/VideoPlayer/DVDDemuxers/DVDFactoryDemuxer.cpp
 @@ -17,6 +17,15 @@
@@ -2845,7 +2845,7 @@ index 35ba376..70ca4bd 100644
    if (demuxer->Open(pInputStream, fileinfo))
      return demuxer.release();
 diff --git a/xbmc/cores/VideoPlayer/DVDDemuxers/test/CMakeLists.txt b/xbmc/cores/VideoPlayer/DVDDemuxers/test/CMakeLists.txt
-index dbdbff9..d42936e 100644
+index dbdbff9c45c88e395e83c98f28a269f15cf4fea1..d42936e9303b1aee7ccfa79087d6e30f81fb597e 100644
 --- a/xbmc/cores/VideoPlayer/DVDDemuxers/test/CMakeLists.txt
 +++ b/xbmc/cores/VideoPlayer/DVDDemuxers/test/CMakeLists.txt
 @@ -1,3 +1,4 @@
@@ -2856,7 +2856,7 @@ index dbdbff9..d42936e 100644
  core_add_test_library(dvddemuxers_test)
 diff --git a/xbmc/cores/VideoPlayer/DVDDemuxers/test/TestBlurayOffsetMetadata.cpp b/xbmc/cores/VideoPlayer/DVDDemuxers/test/TestBlurayOffsetMetadata.cpp
 new file mode 100644
-index 0000000..3900af8
+index 0000000000000000000000000000000000000000..3900af8a0c6ad4b28d6a74bf463e3804f76ab69b
 --- /dev/null
 +++ b/xbmc/cores/VideoPlayer/DVDDemuxers/test/TestBlurayOffsetMetadata.cpp
 @@ -0,0 +1,259 @@
@@ -3120,7 +3120,7 @@ index 0000000..3900af8
 +  EXPECT_FALSE(ParseOffsetSequenceTag("4294967296").has_value());
 +}
 diff --git a/xbmc/cores/VideoPlayer/DVDInputStreams/CMakeLists.txt b/xbmc/cores/VideoPlayer/DVDInputStreams/CMakeLists.txt
-index 1cb7b33..c5063fc 100644
+index 1cb7b33378ba499f3fc09e2b580bd65c55b2d7b7..c5063fcd4c461b70313e05c66bb28b002bc37ba6 100644
 --- a/xbmc/cores/VideoPlayer/DVDInputStreams/CMakeLists.txt
 +++ b/xbmc/cores/VideoPlayer/DVDInputStreams/CMakeLists.txt
 @@ -29,8 +29,10 @@ set(HEADERS BlurayStateSerializer.h
@@ -3137,7 +3137,7 @@ index 1cb7b33..c5063fc 100644
  
  core_add_library(dvdinputstreams)
 diff --git a/xbmc/cores/VideoPlayer/DVDInputStreams/DVDInputStreamBluray.cpp b/xbmc/cores/VideoPlayer/DVDInputStreams/DVDInputStreamBluray.cpp
-index 16661d8..146f4ce 100644
+index d951e1e17947df0b620dae2dcd33738b53b8aad5..6b3850c6efdf85e57433fb70ce6a95e58fd0d16c 100644
 --- a/xbmc/cores/VideoPlayer/DVDInputStreams/DVDInputStreamBluray.cpp
 +++ b/xbmc/cores/VideoPlayer/DVDInputStreams/DVDInputStreamBluray.cpp
 @@ -10,11 +10,14 @@
@@ -3153,8 +3153,8 @@ index 16661d8..146f4ce 100644
  #include "filesystem/SpecialProtocol.h"
 +#include "filesystem/bluray/MPLSParser.h"
  #include "language/LangInfo.h"
+ #include "language/LanguageTag.h"
  #include "settings/Settings.h"
- #include "settings/SettingsComponent.h"
 @@ -27,10 +30,12 @@
  #include "video/VideoFileItemClassify.h"
  #include "video/VideoInfoTag.h"
@@ -3436,7 +3436,7 @@ index 16661d8..146f4ce 100644
  
    const std::string audioLang{g_langInfo.GetDVDAudioLanguage().AsIso6392T()};
 diff --git a/xbmc/cores/VideoPlayer/DVDInputStreams/DVDInputStreamBluray.h b/xbmc/cores/VideoPlayer/DVDInputStreams/DVDInputStreamBluray.h
-index 4a24d3e..390528c 100644
+index 4a24d3e21591ec4335dd5e8317bc5bc66b204a36..390528c9e2fb299f30e220edab9dd9e95629e71a 100644
 --- a/xbmc/cores/VideoPlayer/DVDInputStreams/DVDInputStreamBluray.h
 +++ b/xbmc/cores/VideoPlayer/DVDInputStreams/DVDInputStreamBluray.h
 @@ -10,6 +10,8 @@
@@ -3591,7 +3591,7 @@ index 4a24d3e..390528c 100644
  
 diff --git a/xbmc/cores/VideoPlayer/DVDInputStreams/DVDInputStreamBlurayFile.cpp b/xbmc/cores/VideoPlayer/DVDInputStreams/DVDInputStreamBlurayFile.cpp
 new file mode 100644
-index 0000000..c1c6d42
+index 0000000000000000000000000000000000000000..c1c6d42e2c26bd0f776ffc5910cba5751dbdb44e
 --- /dev/null
 +++ b/xbmc/cores/VideoPlayer/DVDInputStreams/DVDInputStreamBlurayFile.cpp
 @@ -0,0 +1,212 @@
@@ -3809,7 +3809,7 @@ index 0000000..c1c6d42
 +}
 diff --git a/xbmc/cores/VideoPlayer/DVDInputStreams/DVDInputStreamBlurayFile.h b/xbmc/cores/VideoPlayer/DVDInputStreams/DVDInputStreamBlurayFile.h
 new file mode 100644
-index 0000000..3917146
+index 0000000000000000000000000000000000000000..3917146714196b2c2f1e90427aa8ce74b44b4f94
 --- /dev/null
 +++ b/xbmc/cores/VideoPlayer/DVDInputStreams/DVDInputStreamBlurayFile.h
 @@ -0,0 +1,73 @@
@@ -3887,7 +3887,7 @@ index 0000000..3917146
 +  bool m_eof{false};
 +};
 diff --git a/xbmc/cores/VideoPlayer/DVDOverlayContainer.cpp b/xbmc/cores/VideoPlayer/DVDOverlayContainer.cpp
-index d5b2e08..ad83a74 100644
+index d5b2e087b38b26c4a94bee3ac41664e252c231f4..ad83a742cf9e9a1d990d6cbc3dfca78588a92c8b 100644
 --- a/xbmc/cores/VideoPlayer/DVDOverlayContainer.cpp
 +++ b/xbmc/cores/VideoPlayer/DVDOverlayContainer.cpp
 @@ -31,6 +31,12 @@ void CDVDOverlayContainer::ProcessAndAddOverlayIfValid(const std::shared_ptr<CDV
@@ -3930,7 +3930,7 @@ index d5b2e08..ad83a74 100644
  {
    return m_overlays.size();
 diff --git a/xbmc/cores/VideoPlayer/DVDOverlayContainer.h b/xbmc/cores/VideoPlayer/DVDOverlayContainer.h
-index e64e445..20b2d10 100644
+index e64e44571310684998fa4ad7280ccbd0b1adc6eb..20b2d10e05a7f16dc328bdc75375c21c240ead4c 100644
 --- a/xbmc/cores/VideoPlayer/DVDOverlayContainer.h
 +++ b/xbmc/cores/VideoPlayer/DVDOverlayContainer.h
 @@ -40,6 +40,11 @@ public:
@@ -3946,7 +3946,7 @@ index e64e445..20b2d10 100644
     * \brief Flush the overlays.
     */
 diff --git a/xbmc/cores/VideoPlayer/DVDStreamInfo.cpp b/xbmc/cores/VideoPlayer/DVDStreamInfo.cpp
-index 149666e..f9139b1 100644
+index 149666eec5b3e12bd52b8ef390de245729d022a4..f9139b19b5b92f3c23a0140bf40b48816698aab2 100644
 --- a/xbmc/cores/VideoPlayer/DVDStreamInfo.cpp
 +++ b/xbmc/cores/VideoPlayer/DVDStreamInfo.cpp
 @@ -68,6 +68,7 @@ void CDVDStreamInfo::Clear()
@@ -3984,10 +3984,10 @@ index 149666e..f9139b1 100644
  #ifdef HAVE_DVBRIDGE
      doviELConfig = withextradata ? stream->doviELConfig : FFmpegExtraData{};
 diff --git a/xbmc/cores/VideoPlayer/DVDStreamInfo.h b/xbmc/cores/VideoPlayer/DVDStreamInfo.h
-index ca706b9..4ab7854 100644
+index 8b65a11d1d0904b65b690cbb2ff6ace28f248ab1..c3fabd761c34c35a584452612e3f1146c7db6cd4 100644
 --- a/xbmc/cores/VideoPlayer/DVDStreamInfo.h
 +++ b/xbmc/cores/VideoPlayer/DVDStreamInfo.h
-@@ -79,6 +79,7 @@ public:
+@@ -82,6 +82,7 @@ public:
    std::shared_ptr<AVMasteringDisplayMetadata> masteringMetadata;
    std::shared_ptr<AVContentLightMetadata> contentLightMetadata;
    std::string stereo_mode; // stereoscopic 3d mode
@@ -3996,10 +3996,10 @@ index ca706b9..4ab7854 100644
  #ifdef HAVE_DVBRIDGE
    FFmpegExtraData doviELConfig;
 diff --git a/xbmc/cores/VideoPlayer/VideoPlayer.cpp b/xbmc/cores/VideoPlayer/VideoPlayer.cpp
-index 91d53e5..4110fd1 100644
+index aa2b722dff7171908db31c3ba2a9e6e29e959270..c1f0f7f14bf3518f699ec812733c9536be2d412c 100644
 --- a/xbmc/cores/VideoPlayer/VideoPlayer.cpp
 +++ b/xbmc/cores/VideoPlayer/VideoPlayer.cpp
-@@ -80,6 +80,7 @@
+@@ -81,6 +81,7 @@
  #include <limits>
  #include <memory>
  #include <mutex>
@@ -4007,7 +4007,7 @@ index 91d53e5..4110fd1 100644
  #include <ranges>
  #include <string_view>
  #include <utility>
-@@ -993,6 +994,18 @@ bool CVideoPlayer::OpenInputStream()
+@@ -994,6 +995,18 @@ bool CVideoPlayer::OpenInputStream()
      } // end loop over all subtitle files
    }
  
@@ -4026,7 +4026,7 @@ index 91d53e5..4110fd1 100644
    m_clock.Reset();
    m_dvd.Clear();
  
-@@ -1027,6 +1040,16 @@ bool CVideoPlayer::OpenDemuxStream()
+@@ -1028,6 +1041,16 @@ bool CVideoPlayer::OpenDemuxStream()
      return false;
    }
  
@@ -4043,7 +4043,7 @@ index 91d53e5..4110fd1 100644
    m_SelectionStreams.Clear(StreamType::NONE, STREAM_SOURCE_DEMUX);
    m_SelectionStreams.Clear(StreamType::NONE, STREAM_SOURCE_NAV);
    m_SelectionStreams.Update(m_pInputStream, m_pDemuxer.get());
-@@ -1057,6 +1080,14 @@ bool CVideoPlayer::OpenDemuxStream()
+@@ -1058,6 +1081,14 @@ bool CVideoPlayer::OpenDemuxStream()
  
  void CVideoPlayer::CloseDemuxer()
  {
@@ -4058,7 +4058,7 @@ index 91d53e5..4110fd1 100644
    m_pDemuxer.reset();
    m_SelectionStreams.Clear(StreamType::NONE, STREAM_SOURCE_DEMUX);
  
-@@ -3114,6 +3145,9 @@ void CVideoPlayer::HandleMessages()
+@@ -3132,6 +3163,9 @@ void CVideoPlayer::HandleMessages()
  
        FlushBuffers(DVD_NOPTS_VALUE, true, true);
        m_renderManager.Flush(false, false);
@@ -4068,7 +4068,7 @@ index 91d53e5..4110fd1 100644
  #ifdef HAVE_DVBRIDGE
        DVBRIDGE::PlaybackNotification::StartVideo();
  #endif
-@@ -4343,6 +4377,8 @@ bool CVideoPlayer::OpenStream(CCurrentStream& current, int64_t demuxerId, int iS
+@@ -4389,6 +4423,8 @@ bool CVideoPlayer::OpenStream(CCurrentStream& current, int64_t demuxerId, int iS
          hint.colorTransferCharacteristic = m_CurrentVideo.hint.colorTransferCharacteristic;
        }
        res = OpenSubtitleStream(hint);
@@ -4077,7 +4077,7 @@ index 91d53e5..4110fd1 100644
        break;
      case StreamType::TELETEXT:
        res = OpenTeletextStream(hint);
-@@ -4552,6 +4588,60 @@ bool CVideoPlayer::OpenVideoStream(CDVDStreamInfo& hint, bool reset)
+@@ -4599,6 +4635,60 @@ bool CVideoPlayer::OpenVideoStream(CDVDStreamInfo& hint, bool reset)
    return true;
  }
  
@@ -4139,7 +4139,7 @@ index 91d53e5..4110fd1 100644
  {
    IDVDStreamPlayer* player = GetStreamPlayer(m_CurrentSubtitle.player);
 diff --git a/xbmc/cores/VideoPlayer/VideoPlayer.h b/xbmc/cores/VideoPlayer/VideoPlayer.h
-index 853e5d6..e79b004 100644
+index 3b34d99cb24f91ceebea98b12aab546287dec505..257d828081e5e58129ae53940c305d145344ab0d 100644
 --- a/xbmc/cores/VideoPlayer/VideoPlayer.h
 +++ b/xbmc/cores/VideoPlayer/VideoPlayer.h
 @@ -20,6 +20,7 @@
@@ -4150,7 +4150,7 @@ index 853e5d6..e79b004 100644
  #include "cores/VideoPlayer/Interface/TimingConstants.h"
  #include "cores/VideoPlayer/VideoRenderers/RenderManager.h"
  #include "guilib/DispResource.h"
-@@ -401,7 +402,11 @@ public:
+@@ -408,7 +409,11 @@ public:
  
    void SetUpdateStreamDetails();
  
@@ -4162,7 +4162,7 @@ index 853e5d6..e79b004 100644
    friend class CSelectionStreams;
  
    void OnStartup() override;
-@@ -414,6 +419,7 @@ protected:
+@@ -421,6 +426,7 @@ protected:
    void UpdateRenderBuffers(int queued, int discard, int free) override;
    void UpdateGuiRender(bool gui) override;
    void UpdateVideoRender(bool video) override;
@@ -4170,7 +4170,7 @@ index 853e5d6..e79b004 100644
  
    virtual void CreatePlayers();
    void DestroyPlayers();
-@@ -619,7 +625,9 @@ protected:
+@@ -640,7 +646,9 @@ protected:
      }
    } m_SpeedState;
  
@@ -4181,7 +4181,7 @@ index 853e5d6..e79b004 100644
  
    CDVDMessageQueue m_messenger;
    std::unique_ptr<CJobQueue> m_outboundEvents;
-@@ -683,4 +691,13 @@ protected:
+@@ -704,4 +712,13 @@ protected:
    std::atomic<bool> m_displayLost;
  
    double m_messageQueueTimeSize{0.0};
@@ -4196,7 +4196,7 @@ index 853e5d6..e79b004 100644
 +  mutable CCriticalSection m_offsetMetadataSection;
  };
 diff --git a/xbmc/cores/VideoPlayer/VideoPlayerSubtitle.cpp b/xbmc/cores/VideoPlayer/VideoPlayerSubtitle.cpp
-index 6529b01..1e003fd 100644
+index 6529b0106580dc46029d2acaac6e72fa5e39b575..1e003fd2d557a3250f3f5bf1b024c6616d663da5 100644
 --- a/xbmc/cores/VideoPlayer/VideoPlayerSubtitle.cpp
 +++ b/xbmc/cores/VideoPlayer/VideoPlayerSubtitle.cpp
 @@ -47,6 +47,7 @@ std::shared_ptr<CDVDOverlayGroup> InitialiseNewOverlayGroup(std::shared_ptr<CDVD
@@ -4220,7 +4220,7 @@ index 6529b01..1e003fd 100644
  
  void CVideoPlayerSubtitle::Process(double pts, double offset)
 diff --git a/xbmc/cores/VideoPlayer/VideoPlayerVideo.cpp b/xbmc/cores/VideoPlayer/VideoPlayerVideo.cpp
-index 60b5141..1828e95 100644
+index c46910fb5be2cdbd0726ee0062fe9b66514dc1f7..067d59a4cdb2ae962065254517e0c846d36287e8 100644
 --- a/xbmc/cores/VideoPlayer/VideoPlayerVideo.cpp
 +++ b/xbmc/cores/VideoPlayer/VideoPlayerVideo.cpp
 @@ -33,6 +33,7 @@
@@ -4250,7 +4250,7 @@ index 60b5141..1828e95 100644
  class CDVDMsgVideoCodecChange : public CDVDMsg
  {
  public:
-@@ -249,6 +262,12 @@ void CVideoPlayerVideo::OpenStream(CDVDStreamInfo& hint, std::unique_ptr<CDVDVid
+@@ -251,6 +264,12 @@ void CVideoPlayerVideo::OpenStream(CDVDStreamInfo& hint, std::unique_ptr<CDVDVid
  
    m_pVideoCodec = std::move(codec);
    m_hints = hint;
@@ -4263,7 +4263,7 @@ index 60b5141..1828e95 100644
    m_stalled = m_messageQueue.GetPacketCount(CDVDMsg::DEMUXER_PACKET) == 0;
    m_rewindStalled = false;
    m_packets.clear();
-@@ -670,8 +689,19 @@ void CVideoPlayerVideo::UpdatePlayerInfo()
+@@ -703,8 +722,19 @@ void CVideoPlayerVideo::UpdatePlayerInfo()
  
  bool CVideoPlayerVideo::ProcessDecoderOutput(double &frametime, double &pts)
  {
@@ -4283,7 +4283,7 @@ index 60b5141..1828e95 100644
    if (decoderState == CDVDVideoCodec::VC_BUFFER)
    {
      return false;
-@@ -778,24 +808,25 @@ bool CVideoPlayerVideo::ProcessDecoderOutput(double &frametime, double &pts)
+@@ -811,24 +841,25 @@ bool CVideoPlayerVideo::ProcessDecoderOutput(double &frametime, double &pts)
        {
          case RenderStereoMode::SPLIT_VERTICAL:
            stereoMode = "left_right";
@@ -4315,7 +4315,7 @@ index 60b5141..1828e95 100644
      if (m_picture.pts != DVD_NOPTS_VALUE)
      {
 diff --git a/xbmc/cores/VideoPlayer/VideoRenderers/BaseRenderer.cpp b/xbmc/cores/VideoPlayer/VideoRenderers/BaseRenderer.cpp
-index 604999e..5eb6728 100644
+index eb0093d0bc600405b43ddf480f2e9e95b94c0499..a3ed17d28526aa4a7c69f145190c8c77eee7c926 100644
 --- a/xbmc/cores/VideoPlayer/VideoRenderers/BaseRenderer.cpp
 +++ b/xbmc/cores/VideoPlayer/VideoRenderers/BaseRenderer.cpp
 @@ -12,6 +12,7 @@
@@ -4396,7 +4396,7 @@ index 604999e..5eb6728 100644
  {
    EShaderFormat ret = SHADER_NONE;
 diff --git a/xbmc/cores/VideoPlayer/VideoRenderers/BaseRenderer.h b/xbmc/cores/VideoPlayer/VideoRenderers/BaseRenderer.h
-index a7b5d62..65f5c8e 100644
+index a7b5d62102fa7346ffc4cb9d26e0fbd96739dd16..65f5c8ecf23cf5170aca7e9b58e5c3f1f4d7476c 100644
 --- a/xbmc/cores/VideoPlayer/VideoRenderers/BaseRenderer.h
 +++ b/xbmc/cores/VideoPlayer/VideoRenderers/BaseRenderer.h
 @@ -19,6 +19,7 @@
@@ -4462,7 +4462,7 @@ index a7b5d62..65f5c8e 100644
    virtual void ReorderDrawPoints();
    virtual EShaderFormat GetShaderFormat();
 diff --git a/xbmc/cores/VideoPlayer/VideoRenderers/DVBridgeGLES.cpp b/xbmc/cores/VideoPlayer/VideoRenderers/DVBridgeGLES.cpp
-index 9948a2c..41450bc 100644
+index 9948a2ca865699aa3cefb7f19db5a9548b7b7c61..41450bcb6590b957f3fb95e29a58ef7bf12528db 100644
 --- a/xbmc/cores/VideoPlayer/VideoRenderers/DVBridgeGLES.cpp
 +++ b/xbmc/cores/VideoPlayer/VideoRenderers/DVBridgeGLES.cpp
 @@ -8,6 +8,7 @@ extern "C"
@@ -5076,7 +5076,7 @@ index 9948a2c..41450bc 100644
    return true;
  }
 diff --git a/xbmc/cores/VideoPlayer/VideoRenderers/DVBridgeGLES.h b/xbmc/cores/VideoPlayer/VideoRenderers/DVBridgeGLES.h
-index ebb4432..d4d0f07 100644
+index ebb4432888e0ad7abcea856cd3c1cf8c757c06df..d4d0f07ab7d02c6e46a8fa1a44c6b1cfba0e5e5f 100644
 --- a/xbmc/cores/VideoPlayer/VideoRenderers/DVBridgeGLES.h
 +++ b/xbmc/cores/VideoPlayer/VideoRenderers/DVBridgeGLES.h
 @@ -17,6 +17,7 @@ extern "C"
@@ -5155,7 +5155,7 @@ index ebb4432..d4d0f07 100644
    DVBRIDGE::DiagnosticFailures m_auditCreative;
 diff --git a/xbmc/cores/VideoPlayer/VideoRenderers/DVBridgeVAScaler.cpp b/xbmc/cores/VideoPlayer/VideoRenderers/DVBridgeVAScaler.cpp
 new file mode 100644
-index 0000000..afcd822
+index 0000000000000000000000000000000000000000..afcd8229daade05b397375e748794813b66f4e7a
 --- /dev/null
 +++ b/xbmc/cores/VideoPlayer/VideoRenderers/DVBridgeVAScaler.cpp
 @@ -0,0 +1,11 @@
@@ -5172,7 +5172,7 @@ index 0000000..afcd822
 +}
 diff --git a/xbmc/cores/VideoPlayer/VideoRenderers/DVBridgeVAScaler.h b/xbmc/cores/VideoPlayer/VideoRenderers/DVBridgeVAScaler.h
 new file mode 100644
-index 0000000..9721d9a
+index 0000000000000000000000000000000000000000..9721d9a48be2958b30511f6ec6df77fdac5a7b10
 --- /dev/null
 +++ b/xbmc/cores/VideoPlayer/VideoRenderers/DVBridgeVAScaler.h
 @@ -0,0 +1,16 @@
@@ -5193,7 +5193,7 @@ index 0000000..9721d9a
 +  std::unique_ptr<State> m_state;
 +};
 diff --git a/xbmc/cores/VideoPlayer/VideoRenderers/HDR10AISource.cpp b/xbmc/cores/VideoPlayer/VideoRenderers/HDR10AISource.cpp
-index 22c0283..5974174 100644
+index 22c02839459553878ba159c2c5523f78e44c5ddd..59741744d6c71a97476ab99fa412815ec516e5b3 100644
 --- a/xbmc/cores/VideoPlayer/VideoRenderers/HDR10AISource.cpp
 +++ b/xbmc/cores/VideoPlayer/VideoRenderers/HDR10AISource.cpp
 @@ -36,7 +36,7 @@ cb1_ai_status HDR10AISource::Collect()
@@ -5268,7 +5268,7 @@ index 22c0283..5974174 100644
        std::chrono::steady_clock::now()-started).count());
    const auto completed=now+std::min(elapsed,std::numeric_limits<uint64_t>::max()-now);
 diff --git a/xbmc/cores/VideoPlayer/VideoRenderers/HDR10AISource.h b/xbmc/cores/VideoPlayer/VideoRenderers/HDR10AISource.h
-index 83d43a7..5a24f54 100644
+index 83d43a7663e2e95b3392dc537a116a583eaa028b..5a24f54e4ed76c9a7ab50806d2e056a3b5099926 100644
 --- a/xbmc/cores/VideoPlayer/VideoRenderers/HDR10AISource.h
 +++ b/xbmc/cores/VideoPlayer/VideoRenderers/HDR10AISource.h
 @@ -54,6 +54,18 @@ public:
@@ -5299,7 +5299,7 @@ index 83d43a7..5a24f54 100644
 +  bool m_diagnosticFailure{};
  };
 diff --git a/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/DRMPRIMECaptureGLES.cpp b/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/DRMPRIMECaptureGLES.cpp
-index 7c62cdc..0a49297 100644
+index 7c62cdca688d69855340fb0362e20f24878e1cd6..0a4929761f15d2d6288504b4d822d5f327970d40 100644
 --- a/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/DRMPRIMECaptureGLES.cpp
 +++ b/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/DRMPRIMECaptureGLES.cpp
 @@ -110,7 +110,10 @@ bool CaptureDRMPRIMEVideo(CVideoBufferDRMPRIME* buffer,
@@ -5315,10 +5315,10 @@ index 7c62cdc..0a49297 100644
      glMatrixProject.PopLoad();
      glMatrixModview.PopLoad();
 diff --git a/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/RendererDRMPRIMEGLES.cpp b/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/RendererDRMPRIMEGLES.cpp
-index e1ccc81..3f17f5f 100644
+index 5f6f370e92e53650cfc375e13575d8fda267fa59..df010e3c4d1e41c5319b86f0bcce0659ec8bee4a 100644
 --- a/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/RendererDRMPRIMEGLES.cpp
 +++ b/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/RendererDRMPRIMEGLES.cpp
-@@ -446,6 +446,12 @@ bool CRendererDRMPRIMEGLES::ConfigChanged(const VideoPicture& picture)
+@@ -409,6 +409,12 @@ bool CRendererDRMPRIMEGLES::ConfigChanged(const VideoPicture& picture)
    return false;
  }
  
@@ -5331,37 +5331,21 @@ index e1ccc81..3f17f5f 100644
  void CRendererDRMPRIMEGLES::Render(unsigned int flags, int index)
  {
    BUFFER& buf = m_buffers[index];
-@@ -523,18 +529,19 @@ void CRendererDRMPRIMEGLES::Render(unsigned int flags, int index)
-       vert[i][2] = 0.0f;
-     }
- 
--    // Per-plane texcoords are 0..1; each EGL-imported texture covers the
+@@ -456,8 +462,11 @@ void CRendererDRMPRIMEGLES::Render(unsigned int flags, int index)
+     m_yuvShader->SetHeight(texSize.Height());
+     m_yuvShader->SetAlpha(1.0f);
+     m_yuvShader->SetMatrices(glMatrixProject.Get(), glMatrixModview.Get());
+-    // Per-plane texcoords stay at their 0..1 default; each EGL-imported texture covers the
 -    // whole plane regardless of chroma subsampling.
 +    // Per-plane texcoords are normalised; each EGL-imported texture covers the
 +    // whole plane regardless of chroma subsampling, so one crop fits all three.
 +    const CRect crop = GetNormalisedSourceRect();
-     for (int p = 0; p < 3; p++)
-     {
--      tex[p][0][0] = 0.0f;
--      tex[p][0][1] = 0.0f;
--      tex[p][1][0] = 1.0f;
--      tex[p][1][1] = 0.0f;
--      tex[p][2][0] = 1.0f;
--      tex[p][2][1] = 1.0f;
--      tex[p][3][0] = 0.0f;
--      tex[p][3][1] = 1.0f;
-+      tex[p][0][0] = crop.x1;
-+      tex[p][0][1] = crop.y1;
-+      tex[p][1][0] = crop.x2;
-+      tex[p][1][1] = crop.y1;
-+      tex[p][2][0] = crop.x2;
-+      tex[p][2][1] = crop.y2;
-+      tex[p][3][0] = crop.x1;
-+      tex[p][3][1] = crop.y2;
-     }
- 
-     glDrawElements(GL_TRIANGLE_STRIP, 4, GL_UNSIGNED_BYTE, idx);
-@@ -563,7 +570,8 @@ void CRendererDRMPRIMEGLES::Render(unsigned int flags, int index)
++    for (int plane = 0; plane < 3; plane++)
++      m_yuvShader->SetTextureRect(plane, crop);
+     m_yuvShader->SetQuadTransform(KODI::UTILS::GL::QuadTransform(
+         m_rotatedDestCoords[0], m_rotatedDestCoords[1], m_rotatedDestCoords[3]));
+     // SetConvertFullColorRange(false) was set at Configure time -> matrix
+@@ -503,7 +512,8 @@ void CRendererDRMPRIMEGLES::Render(unsigned int flags, int index)
    if (!texture)
      return;
  
@@ -5371,7 +5355,7 @@ index e1ccc81..3f17f5f 100644
  
    buf.fence->DestroyFence();
    buf.fence->CreateFence();
-@@ -571,7 +579,8 @@ void CRendererDRMPRIMEGLES::Render(unsigned int flags, int index)
+@@ -511,7 +521,8 @@ void CRendererDRMPRIMEGLES::Render(unsigned int flags, int index)
  
  void CRendererDRMPRIMEGLES::DrawTexture(CRenderSystemGLES& renderSystem,
                                          GLuint texture,
@@ -5381,46 +5365,18 @@ index e1ccc81..3f17f5f 100644
  {
    glBindTexture(GL_TEXTURE_EXTERNAL_OES, texture);
  
-@@ -596,29 +605,29 @@ void CRendererDRMPRIMEGLES::DrawTexture(CRenderSystemGLES& renderSystem,
-   vertex[0].x = dest[0].x;
-   vertex[0].y = dest[0].y;
-   vertex[0].z = 0.0f;
--  vertex[0].u1 = 0.0f;
--  vertex[0].v1 = 0.0f;
-+  vertex[0].u1 = crop.x1;
-+  vertex[0].v1 = crop.y1;
+@@ -521,8 +532,7 @@ void CRendererDRMPRIMEGLES::DrawTexture(CRenderSystemGLES& renderSystem,
  
-   // top right
-   vertex[1].x = dest[1].x;
-   vertex[1].y = dest[1].y;
-   vertex[1].z = 0.0f;
--  vertex[1].u1 = 1.0f;
--  vertex[1].v1 = 0.0f;
-+  vertex[1].u1 = crop.x2;
-+  vertex[1].v1 = crop.y1;
+   // dest holds the corners of a (possibly rotated) rectangle: top left, top right, bottom right,
+   // bottom left.
+-  const CRect texCoords(0.0f, 0.0f, 1.0f, 1.0f);
+-  renderSystem.DrawGUIQuad(dest[0], dest[1], dest[3], &texCoords);
++  renderSystem.DrawGUIQuad(dest[0], dest[1], dest[3], &crop);
  
-   // bottom right
-   vertex[2].x = dest[2].x;
-   vertex[2].y = dest[2].y;
-   vertex[2].z = 0.0f;
--  vertex[2].u1 = 1.0f;
--  vertex[2].v1 = 1.0f;
-+  vertex[2].u1 = crop.x2;
-+  vertex[2].v1 = crop.y2;
+   renderSystem.DisableGUIShader();
  
-   // bottom left
-   vertex[3].x = dest[3].x;
-   vertex[3].y = dest[3].y;
-   vertex[3].z = 0.0f;
--  vertex[3].u1 = 0.0f;
--  vertex[3].v1 = 1.0f;
-+  vertex[3].u1 = crop.x1;
-+  vertex[3].v1 = crop.y2;
- 
-   glGenBuffers(1, &vertexVBO);
-   glBindBuffer(GL_ARRAY_BUFFER, vertexVBO);
 diff --git a/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/RendererDRMPRIMEGLES.h b/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/RendererDRMPRIMEGLES.h
-index 8bd8688..49d3dd4 100644
+index 8bd868868878156d5bbcb76c0bf06b62a3bdce7b..49d3dd4177e5866f1d0fdfa881bb3b39be3a88a9 100644
 --- a/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/RendererDRMPRIMEGLES.h
 +++ b/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/RendererDRMPRIMEGLES.h
 @@ -44,10 +44,14 @@ public:
@@ -5454,7 +5410,7 @@ index 8bd8688..49d3dd4 100644
    bool m_passthroughHDR{false};
    bool m_hdrFboActive{false};
 diff --git a/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/RendererVAAPIGLES.cpp b/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/RendererVAAPIGLES.cpp
-index 70a03b1..061db0c 100644
+index 70a03b1852ca35292d79c58cf3127de8503b738d..061db0cc0015389a79f904a331d84c3e85d37722 100644
 --- a/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/RendererVAAPIGLES.cpp
 +++ b/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/RendererVAAPIGLES.cpp
 @@ -97,7 +97,7 @@ bool CRendererVAAPIGLES::Configure(const VideoPicture& picture, float fps, unsig
@@ -5630,7 +5586,7 @@ index 70a03b1..061db0c 100644
  #endif
    return true;
 diff --git a/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/RendererVAAPIGLES.h b/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/RendererVAAPIGLES.h
-index 4a8aa5b..3b2c28a 100644
+index 4a8aa5bddd537c9abdf5a5d62e77b60e7510bc97..3b2c28a8759a313cd870c2d0f228bc94d5f613b0 100644
 --- a/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/RendererVAAPIGLES.h
 +++ b/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/RendererVAAPIGLES.h
 @@ -53,6 +53,8 @@ public:
@@ -5652,7 +5608,7 @@ index 4a8aa5b..3b2c28a 100644
    void AfterRenderHook(int idx) override;
  
 diff --git a/xbmc/cores/VideoPlayer/VideoRenderers/LinuxRendererGLES.cpp b/xbmc/cores/VideoPlayer/VideoRenderers/LinuxRendererGLES.cpp
-index a211fd5..118af48 100644
+index 9373fb75f1ce89957bd30a5043e5260a43610ce9..e5212bb68faed073381bd6d06051b567160856f0 100644
 --- a/xbmc/cores/VideoPlayer/VideoRenderers/LinuxRendererGLES.cpp
 +++ b/xbmc/cores/VideoPlayer/VideoRenderers/LinuxRendererGLES.cpp
 @@ -18,6 +18,7 @@
@@ -5673,7 +5629,7 @@ index a211fd5..118af48 100644
    m_srcPrimaries = picture.color_primaries;
    m_srcColorBits = picture.colorBits;
    m_srcFullRange = picture.color_range == 1;
-@@ -1211,34 +1215,39 @@ bool CLinuxRendererGLES::UploadTexture(int index)
+@@ -1151,34 +1155,39 @@ bool CLinuxRendererGLES::UploadTexture(int index)
      return false;
    }
  
@@ -5734,7 +5690,7 @@ index a211fd5..118af48 100644
    }
  
    return ret;
-@@ -1736,8 +1745,6 @@ bool CLinuxRendererGLES::UploadPlanarYUVTexture(int source)
+@@ -1627,8 +1636,6 @@ bool CLinuxRendererGLES::UploadPlanarYUVTexture(int source)
  
    VerifyGLState();
  
@@ -5743,7 +5699,7 @@ index a211fd5..118af48 100644
    return true;
  }
  
-@@ -1941,8 +1948,6 @@ bool CLinuxRendererGLES::UploadNV12Texture(int source)
+@@ -1832,8 +1839,6 @@ bool CLinuxRendererGLES::UploadNV12Texture(int source)
  
    VerifyGLState();
  
@@ -5752,7 +5708,7 @@ index a211fd5..118af48 100644
    return true;
  }
  
-@@ -2098,8 +2103,6 @@ bool CLinuxRendererGLES::UploadPackedYUVTexture(int source)
+@@ -1989,8 +1994,6 @@ bool CLinuxRendererGLES::UploadPackedYUVTexture(int source)
  
    VerifyGLState();
  
@@ -5762,7 +5718,7 @@ index a211fd5..118af48 100644
  }
  
 diff --git a/xbmc/cores/VideoPlayer/VideoRenderers/OverlayRenderer.cpp b/xbmc/cores/VideoPlayer/VideoRenderers/OverlayRenderer.cpp
-index b75e24f..2990159 100644
+index d7f467b21ec15c54986131a83c1d51e1f4896b96..5565e04d8cf58846a1c1f94e887b643122372724 100644
 --- a/xbmc/cores/VideoPlayer/VideoRenderers/OverlayRenderer.cpp
 +++ b/xbmc/cores/VideoPlayer/VideoRenderers/OverlayRenderer.cpp
 @@ -186,6 +186,8 @@ void CRenderer::Render(int idx, float depth)
@@ -5810,7 +5766,7 @@ index b75e24f..2990159 100644
  bool CRenderer::HasVisibleOverlay(int idx) const
  {
    std::unique_lock lock(m_section);
-@@ -495,6 +520,7 @@ void CRenderer::PrepareOverlays(int idx)
+@@ -496,6 +521,7 @@ void CRenderer::PrepareOverlays(int idx)
  
    bool doMarkDirty = false;
    bool hasImageSpu = false;
@@ -5818,7 +5774,7 @@ index b75e24f..2990159 100644
    for (auto& e : m_buffers[idx])
    {
      // Clear last frame's cached output; libass may have invalidated the
-@@ -515,6 +541,7 @@ void CRenderer::PrepareOverlays(int idx)
+@@ -516,6 +542,7 @@ void CRenderer::PrepareOverlays(int idx)
      if (o.IsOverlayType(DVDOVERLAY_TYPE_IMAGE) || o.IsOverlayType(DVDOVERLAY_TYPE_SPU))
      {
        hasImageSpu = true;
@@ -5826,7 +5782,7 @@ index b75e24f..2990159 100644
        if (o.m_textureid == 0)
          doMarkDirty = true;
        continue;
-@@ -618,6 +645,8 @@ void CRenderer::PrepareOverlays(int idx)
+@@ -537,6 +564,8 @@ void CRenderer::PrepareOverlays(int idx)
      int currentChange = 0;
      e.renderedImages =
          ovAss.GetLibassHandler()->RenderImage(e.pts, rOpts, m_overlayStyle, &currentChange);
@@ -5835,7 +5791,7 @@ index b75e24f..2990159 100644
      if (currentChange > 0)
      {
        // Persist on the overlay so a skipped GUI render does not drop the change.
-@@ -633,6 +662,12 @@ void CRenderer::PrepareOverlays(int idx)
+@@ -552,6 +581,12 @@ void CRenderer::PrepareOverlays(int idx)
      doMarkDirty = true;
    m_prevHadImageSpu = hasImageSpu;
  
@@ -5849,7 +5805,7 @@ index b75e24f..2990159 100644
      MarkDirty();
  }
 diff --git a/xbmc/cores/VideoPlayer/VideoRenderers/OverlayRenderer.h b/xbmc/cores/VideoPlayer/VideoRenderers/OverlayRenderer.h
-index c0e0dc8..87c9fb9 100644
+index 02420c14a63413fd1836033d2b2a2830791b7fd1..9cb4ffe3c52e1d506c2e2212d1b8740b48c1553c 100644
 --- a/xbmc/cores/VideoPlayer/VideoRenderers/OverlayRenderer.h
 +++ b/xbmc/cores/VideoPlayer/VideoRenderers/OverlayRenderer.h
 @@ -19,6 +19,7 @@
@@ -5894,7 +5850,7 @@ index c0e0dc8..87c9fb9 100644
      std::shared_ptr<COverlay> Convert(SElement& e);
      // Build a COverlay (cached or freshly created) from the libass output
      // already produced by PrepareOverlays. Does not call ass_render_frame.
-@@ -234,6 +255,14 @@ namespace OVERLAY {
+@@ -242,6 +263,14 @@ namespace OVERLAY {
      CRect m_rs; // Source size
      CRect m_rd; // Video size, may be influenced by video settings (e.g. zoom)
      std::string m_stereomode;
@@ -5910,10 +5866,10 @@ index c0e0dc8..87c9fb9 100644
      int m_subtitlePosition{0};
      // The calibration line for MANUAL alignment and the frame height otherwise,
 diff --git a/xbmc/cores/VideoPlayer/VideoRenderers/RenderManager.cpp b/xbmc/cores/VideoPlayer/VideoRenderers/RenderManager.cpp
-index e34c9c9..b56eb14 100644
+index 8c29863648b062eb50103ebc1c1394319131d27e..9902d1d9a670dcd153c1375c5ee9c8e4f3c7f4d7 100644
 --- a/xbmc/cores/VideoPlayer/VideoRenderers/RenderManager.cpp
 +++ b/xbmc/cores/VideoPlayer/VideoRenderers/RenderManager.cpp
-@@ -311,14 +311,27 @@ bool CRenderManager::IsPresenting()
+@@ -308,14 +308,27 @@ bool CRenderManager::IsPresenting()
  }
  
  #ifdef CB1_HAS_HDR10_AI
@@ -5943,7 +5899,7 @@ index e34c9c9..b56eb14 100644
    const bool selected = m_presentstep == PRESENT_FLIP && m_pRenderer->HDR10AILookahead();
    if (paused || pending || selected) queue.push_front(m_presentsource);
    if (queue.empty()) return false;
-@@ -359,12 +372,77 @@ bool CRenderManager::PrepareHDR10AILookahead()
+@@ -356,12 +369,77 @@ bool CRenderManager::PrepareHDR10AILookahead()
          remaining / speed : 0;
      deadline = DVBRIDGE::DiagnosticNowMs() + static_cast<uint64_t>(std::ceil(delay / 1000.0));
    }
@@ -6023,7 +5979,7 @@ index e34c9c9..b56eb14 100644
  bool CRenderManager::HDR10AILookahead()
  {
    std::unique_lock lock(m_presentlock);
-@@ -375,8 +453,9 @@ bool CRenderManager::GetHDR10AIStartTime(double& pts)
+@@ -372,8 +450,9 @@ bool CRenderManager::GetHDR10AIStartTime(double& pts)
  {
    std::unique_lock lock(m_presentlock);
    if (!m_pRenderer || !m_pRenderer->HDR10AIQueueEligible() ||
@@ -6035,7 +5991,7 @@ index e34c9c9..b56eb14 100644
      return false;
    pts = m_aiStartPts;
    return true;
-@@ -411,6 +490,7 @@ void CRenderManager::EndHDR10AIQueue()
+@@ -408,6 +487,7 @@ void CRenderManager::EndHDR10AIQueue()
  
  void CRenderManager::ResetHDR10AIQueue()
  {
@@ -6043,7 +5999,7 @@ index e34c9c9..b56eb14 100644
    if (m_clockSync.m_cb1Phase)
    {
      m_clockSync.Reset();
-@@ -438,6 +518,9 @@ void CRenderManager::FrameMove()
+@@ -435,6 +515,9 @@ void CRenderManager::FrameMove()
        lock.unlock();
        if (!Configure())
          return;
@@ -6053,7 +6009,7 @@ index e34c9c9..b56eb14 100644
        UpdateLatencyTweak();
        firstFrame = true;
        FrameWait(50ms);
-@@ -459,14 +542,19 @@ void CRenderManager::FrameMove()
+@@ -456,14 +539,19 @@ void CRenderManager::FrameMove()
      }
  #endif
  #ifdef CB1_HAS_HDR10_AI
@@ -6078,7 +6034,7 @@ index e34c9c9..b56eb14 100644
  #endif
  
      if (m_queued.empty()
-@@ -496,13 +584,20 @@ void CRenderManager::FrameMove()
+@@ -493,13 +581,20 @@ void CRenderManager::FrameMove()
      {
  #ifdef CB1_HAS_HDR10_AI
        // Prepare metadata for the native selection, not the queue head it skipped.
@@ -6100,7 +6056,7 @@ index e34c9c9..b56eb14 100644
      for (std::deque<int>::iterator it = m_discard.begin(); it != m_discard.end(); )
      {
        // renderer may want to keep the frame for postprocessing
-@@ -516,6 +611,7 @@ void CRenderManager::FrameMove()
+@@ -513,6 +608,7 @@ void CRenderManager::FrameMove()
        else
          ++it;
      }
@@ -6108,7 +6064,7 @@ index e34c9c9..b56eb14 100644
  
      m_playerPort->UpdateRenderBuffers(m_queued.size(), m_discard.size(), m_free.size());
      m_bRenderGUI = true;
-@@ -524,9 +620,14 @@ void CRenderManager::FrameMove()
+@@ -521,9 +617,14 @@ void CRenderManager::FrameMove()
    m_playerPort->UpdateGuiRender(IsGuiLayer() || !m_pRenderer->VideoBypassesFramebuffer() ||
                                  firstFrame);
  
@@ -6124,7 +6080,7 @@ index e34c9c9..b56eb14 100644
    m_overlays.PrepareOverlays(m_presentsource);
  }
  
-@@ -572,12 +673,20 @@ void CRenderManager::UnInit()
+@@ -569,12 +670,20 @@ void CRenderManager::UnInit()
  {
    if (!CServiceBroker::GetAppMessenger()->IsProcessThread())
    {
@@ -6145,7 +6101,7 @@ index e34c9c9..b56eb14 100644
    }
  
    std::unique_lock lock(m_statelock);
-@@ -691,6 +800,13 @@ void CRenderManager::DeleteRenderer()
+@@ -688,6 +797,13 @@ void CRenderManager::DeleteRenderer()
      delete m_pRenderer;
      m_pRenderer = NULL;
    }
@@ -6159,7 +6115,7 @@ index e34c9c9..b56eb14 100644
  }
  
  void CRenderManager::ServiceVideoCaptures()
-@@ -801,6 +917,14 @@ void CRenderManager::Render(bool clear, DWORD flags, DWORD alpha, bool gui)
+@@ -798,6 +914,14 @@ void CRenderManager::Render(bool clear, DWORD flags, DWORD alpha, bool gui)
    if (!gui && m_pRenderer->IsGuiLayer())
      return;
  
@@ -6174,7 +6130,7 @@ index e34c9c9..b56eb14 100644
    bool presented = false;
    if (!gui || m_pRenderer->IsGuiLayer())
    {
-@@ -1007,6 +1131,15 @@ void CRenderManager::UpdateLatencyTweak()
+@@ -1004,6 +1128,15 @@ void CRenderManager::UpdateLatencyTweak()
                                                                                       isHDREnabled));
  }
  
@@ -6190,7 +6146,7 @@ index e34c9c9..b56eb14 100644
  void CRenderManager::UpdateResolution()
  {
    if (m_bTriggerUpdateResolution)
-@@ -1021,7 +1154,12 @@ void CRenderManager::UpdateResolution()
+@@ -1018,7 +1151,12 @@ void CRenderManager::UpdateResolution()
  #ifdef HAVE_DVBRIDGE
          if (m_nativeDVRate)
            if (auto* window = dynamic_cast<KODI::WINDOWING::GBM::CWinSystemGbmGLESContext*>(CServiceBroker::GetWinSystem()))
@@ -6203,7 +6159,7 @@ index e34c9c9..b56eb14 100644
  #endif
          UpdateLatencyTweak();
          if (m_pRenderer)
-@@ -1242,6 +1380,11 @@ int CRenderManager::WaitForBuffer(volatile std::atomic_bool& bStop,
+@@ -1239,6 +1377,11 @@ int CRenderManager::WaitForBuffer(volatile std::atomic_bool& bStop,
    XbmcThreads::EndTime<> endtime{timeout};
    while(m_free.empty())
    {
@@ -6216,7 +6172,7 @@ index e34c9c9..b56eb14 100644
      if (endtime.IsTimePast() || bStop)
      {
 diff --git a/xbmc/cores/VideoPlayer/VideoRenderers/RenderManager.h b/xbmc/cores/VideoPlayer/VideoRenderers/RenderManager.h
-index 61735b1..6b1ce66 100644
+index 61735b1c6827a62efba78e07d7683d5e0a24554b..6b1ce665dd32f9ccf09041cbb7599da8a2e3e8a3 100644
 --- a/xbmc/cores/VideoPlayer/VideoRenderers/RenderManager.h
 +++ b/xbmc/cores/VideoPlayer/VideoRenderers/RenderManager.h
 @@ -24,6 +24,8 @@
@@ -6272,7 +6228,7 @@ index 61735b1..6b1ce66 100644
    double m_aiStartPts{DVD_NOPTS_VALUE};
  #endif
 diff --git a/xbmc/dialogs/DVPlaybackModes.cpp b/xbmc/dialogs/DVPlaybackModes.cpp
-index b88711b..8250e77 100644
+index b88711bbf4ba8396e6e7a5be89e2d42996979ab5..8250e776d6082156c23bb9a79d29c4b1bb640512 100644
 --- a/xbmc/dialogs/DVPlaybackModes.cpp
 +++ b/xbmc/dialogs/DVPlaybackModes.cpp
 @@ -83,7 +83,7 @@ bool CDVPlaybackModes::ShowMenu()
@@ -6285,7 +6241,7 @@ index b88711b..8250e77 100644
  #ifdef CB1_HAS_HDR10_AI
    constexpr Choice hdr10Choices[]={{1,0,0,40867},{2,0,0,40871},{2,0,1,40872},
 diff --git a/xbmc/dialogs/GUIDialogPlayerProcessInfo.cpp b/xbmc/dialogs/GUIDialogPlayerProcessInfo.cpp
-index 4b2c75e..144d6ab 100644
+index 4b2c75e53f785b64d35b4d24942c321634620436..144d6abec645b304085ac4bc60d74ada9f1dadcb 100644
 --- a/xbmc/dialogs/GUIDialogPlayerProcessInfo.cpp
 +++ b/xbmc/dialogs/GUIDialogPlayerProcessInfo.cpp
 @@ -157,7 +157,7 @@ void CGUIDialogPlayerProcessInfo::Process(unsigned int currentTime, CDirtyRegion
@@ -6298,81 +6254,42 @@ index 4b2c75e..144d6ab 100644
      SetProperty("DV.Committed", active && data.output.stream ? StringUtils::Format("{} / {} / {}",
          data.output.stream,data.output.picture,data.output.revision) : "");
 diff --git a/xbmc/filesystem/BlurayDirectory.cpp b/xbmc/filesystem/BlurayDirectory.cpp
-index d13b7b4..60ceb72 100644
+index 05bb1df902e86bc8447b320e184cdc5bc5b9e6ff..6398c9f1b1513cdd73ffd692e98bd57d54f26011 100644
 --- a/xbmc/filesystem/BlurayDirectory.cpp
 +++ b/xbmc/filesystem/BlurayDirectory.cpp
-@@ -210,23 +210,57 @@ void RemoveDuplicatePlaylists(std::vector<PlaylistInformation>& playlists)
-   // so two playlists sharing a clip but offering different streams are not seen as identical.
+@@ -221,12 +221,15 @@ void RemoveDuplicatePlaylists(std::vector<PlaylistInformation>& playlists)
    // The duration is compared as well as the chapters, as two playlists can play the same clips
    // from the same chapter starts but to different out times (ie. they are distinct cuts).
--  std::unordered_set<unsigned int> duplicatePlaylists;
-+  std::map<unsigned int, unsigned int> duplicatePlaylists; // duplicate -> what it duplicates
-   for (size_t i = 0; i + 1 < playlists.size(); ++i)
-   {
-     for (size_t j = i + 1; j < playlists.size(); ++j)
-     {
--      if (playlists[i].duration == playlists[j].duration &&
--          playlists[i].audioStreams == playlists[j].audioStreams &&
--          playlists[i].pgStreams == playlists[j].pgStreams &&
--          playlists[i].chapters == playlists[j].chapters &&
+   // Kodi does not play the secondary video, so a picture-in-picture copy is a copy all the same -
+-  // but it is the one discarded, as it never leads the movie search. Of other copies the one with
+-  // a Dolby Vision enhancement layer is kept, then the lowest numbered.
++  // but it is the one discarded, as it never leads the movie search. Of other copies a 3D one is
++  // kept over the flat one it was built from, whose base view it already plays, then the one with
++  // a Dolby Vision enhancement layer, then the lowest numbered.
+   const auto isDiscarded{[](const PlaylistInformation& a, const PlaylistInformation& b)
+                          {
+                            if (a.hasSecondaryVideo != b.hasSecondaryVideo)
+                              return a.hasSecondaryVideo;
++                           if (a.dependentViewClips.empty() != b.dependentViewClips.empty())
++                             return a.dependentViewClips.empty();
+                            if (a.hasDolbyVision != b.hasDolbyVision)
+                              return b.hasDolbyVision;
+                            return a.playlist > b.playlist;
+@@ -241,7 +244,8 @@ void RemoveDuplicatePlaylists(std::vector<PlaylistInformation>& playlists)
+           playlists[i].audioStreams == playlists[j].audioStreams &&
+           playlists[i].pgStreams == playlists[j].pgStreams &&
+           playlists[i].chapters == playlists[j].chapters &&
 -          playlists[i].clips == playlists[j].clips)
-+      if (playlists[i].duration != playlists[j].duration ||
-+          playlists[i].audioStreams != playlists[j].audioStreams ||
-+          playlists[i].pgStreams != playlists[j].pgStreams ||
-+          playlists[i].chapters != playlists[j].chapters ||
-+          playlists[i].clips != playlists[j].clips)
-+        continue;
-+
-+      // None of that tells a 3D playlist from the 2D one beside it, nor one 3D presentation
-+      // from another: a 3D Blu-ray carries both presentations of its feature, and they differ
-+      // only in the playlist's extension data - same length, same chapters, same clip for the
-+      // base view, and the same streams exposed.
-+      if (AreDifferentStereoscopicPresentations(playlists[i], playlists[j]))
-+        continue;
-+
-+      const bool iIs3D{!playlists[i].dependentViewClips.empty()};
-+      const bool jIs3D{!playlists[j].dependentViewClips.empty()};
-+
-+      // Where only one is stereoscopic, keep that one. Its base view is the 2D presentation,
-+      // so a viewer who wants 2D loses nothing, while dropping it would leave a 3D disc with
-+      // no way to reach its second eye - and as the 3D playlist is usually the higher numbered
-+      // of the two, that is what keeping the lower number would do.
-+      if (iIs3D != jIs3D)
++          playlists[i].clips == playlists[j].clips &&
++          !AreDifferentStereoscopicPresentations(playlists[i], playlists[j]))
        {
--        duplicatePlaylists.emplace(std::max(playlists[i].playlist, playlists[j].playlist));
-+        const size_t drop{iIs3D ? j : i};
-+        const size_t keep{iIs3D ? i : j};
-+        duplicatePlaylists.try_emplace(playlists[drop].playlist, playlists[keep].playlist);
-+      }
-+      else
-+      {
-+        const auto [lower, higher]{std::minmax(playlists[i].playlist, playlists[j].playlist)};
-+        duplicatePlaylists.try_emplace(higher, lower);
-       }
-     }
-   }
--  std::erase_if(playlists, [&duplicatePlaylists](const PlaylistInformation& p)
--                { return duplicatePlaylists.contains(p.playlist); });
-+
-+  std::erase_if(playlists,
-+                [&duplicatePlaylists](const PlaylistInformation& p)
-+                {
-+                  const auto it{duplicatePlaylists.find(p.playlist)};
-+                  if (it == duplicatePlaylists.end())
-+                    return false;
-+
-+                  CLog::LogF(LOGDEBUG, "Discarding playlist {} - duplicate of playlist {}",
-+                             p.playlist, it->second);
-+                  return true;
-+                });
- }
- 
- bool SetStreamDetails(const CURL& url,
+         duplicatePlaylists.emplace(isDiscarded(playlists[i], playlists[j]) ? playlists[i].playlist
+                                                                            : playlists[j].playlist);
 diff --git a/xbmc/filesystem/DiscDirectoryHelper.cpp b/xbmc/filesystem/DiscDirectoryHelper.cpp
-index b7590c8..3f59441 100644
+index 142c5272d50c28d4a35b4927fc0c6a8b3ff33c38..d649a4d1f98b6dac4a6cdab3b0effdfddd887261 100644
 --- a/xbmc/filesystem/DiscDirectoryHelper.cpp
 +++ b/xbmc/filesystem/DiscDirectoryHelper.cpp
-@@ -2548,6 +2548,8 @@ bool IsSamePresentation(const PlaylistInformation& a,
+@@ -2549,6 +2549,8 @@ bool IsSamePresentation(const PlaylistInformation& a,
  {
    if (a.duration != b.duration)
      return false;
@@ -6381,22 +6298,21 @@ index b7590c8..3f59441 100644
    if (a.clips == b.clips)
      return true;
    if (aClipDurations.size() < 2 || a.chapters.size() != b.chapters.size() ||
-@@ -2607,6 +2609,13 @@ const PlaylistInformation& GetBestMoviePlaylist(const std::vector<PlaylistInform
- 
- bool IsRicherPresentation(const PlaylistInformation& a, const PlaylistInformation& b)
- {
+@@ -2611,6 +2613,12 @@ bool IsRicherPresentation(const PlaylistInformation& a, const PlaylistInformatio
+   // Streams a picture-in-picture copy adds go with the secondary video, which Kodi does not play
+   if (IsPictureInPicturePresentation(a) != IsPictureInPicturePresentation(b))
+     return !IsPictureInPicturePresentation(a);
 +  // A stereoscopic playlist is the flat one plus a second eye, so the flat one is what its base
 +  // view already plays. Dropping the other way round would leave a 3D disc with no way to reach
 +  // its second eye - and as the 3D playlist is usually the higher numbered of the pair, that is
 +  // what falling through to the playlist number would do.
 +  if (a.dependentViewClips.empty() != b.dependentViewClips.empty())
 +    return !a.dependentViewClips.empty();
-+
    if (a.audioStreams.size() != b.audioStreams.size())
      return a.audioStreams.size() > b.audioStreams.size();
    if (a.pgStreams.size() != b.pgStreams.size())
 diff --git a/xbmc/filesystem/DiscDirectoryHelper.h b/xbmc/filesystem/DiscDirectoryHelper.h
-index 01fa558..62e23f9 100644
+index 5160043dea91a240ec66892b8c8d73c46f8b354e..492daa4ed6c80e5d0cbbc05a1f59e0ca292c4beb 100644
 --- a/xbmc/filesystem/DiscDirectoryHelper.h
 +++ b/xbmc/filesystem/DiscDirectoryHelper.h
 @@ -124,6 +124,14 @@ struct PlaylistInformation
@@ -6414,13 +6330,14 @@ index 01fa558..62e23f9 100644
    //! Whether the playlist carries a secondary video stream, ie. it presents the content
    //! picture-in-picture (see IsPictureInPicturePresentation)
    bool hasSecondaryVideo{false};
-@@ -139,10 +147,32 @@ struct PlaylistInformation
+@@ -142,11 +150,33 @@ struct PlaylistInformation
      audioStreams.clear();
      pgStreams.clear();
      languages.clear();
 +    dependentViewClips.clear();
 +    baseViewIsRightEye = false;
      hasSecondaryVideo = false;
+     hasDolbyVision = false;
    }
  };
  
@@ -6448,7 +6365,7 @@ index 01fa558..62e23f9 100644
  {
    std::chrono::milliseconds duration{0ms};
 diff --git a/xbmc/filesystem/bluray/MPLSParser.cpp b/xbmc/filesystem/bluray/MPLSParser.cpp
-index a9a8c8d..3ea47fe 100644
+index ddeaed3e9920bc7db00e47d370eb19817fdbd916..4c8060f39e69fea51717172f9223c35fe9fa80c1 100644
 --- a/xbmc/filesystem/bluray/MPLSParser.cpp
 +++ b/xbmc/filesystem/bluray/MPLSParser.cpp
 @@ -701,6 +701,12 @@ constexpr unsigned int OFFSET_MPLS_PLAYLIST_MARK_POSITION = 12;
@@ -6585,7 +6502,7 @@ index a9a8c8d..3ea47fe 100644
    // Parse Playlist
    offset = playlistPosition;
 diff --git a/xbmc/filesystem/bluray/MPLSParser.h b/xbmc/filesystem/bluray/MPLSParser.h
-index 1942bac..ee71345 100644
+index 1942bacb19b919ca8588cfa58ef4218b319b5a5d..ee71345c35ee9213280b880b0ca07269f53517ee 100644
 --- a/xbmc/filesystem/bluray/MPLSParser.h
 +++ b/xbmc/filesystem/bluray/MPLSParser.h
 @@ -89,6 +89,9 @@ enum class STREAM_TYPE : unsigned int
@@ -6617,7 +6534,7 @@ index 1942bac..ee71345 100644
  
  class CMPLSParser
 diff --git a/xbmc/filesystem/bluray/PlaylistStructure.h b/xbmc/filesystem/bluray/PlaylistStructure.h
-index 1438718..a10fea5 100644
+index 1438718fcdd629582d46a825e1d7eeeeb012ddfb..a10fea5d5b7e5d0bb18c484f6826c7e703da805c 100644
 --- a/xbmc/filesystem/bluray/PlaylistStructure.h
 +++ b/xbmc/filesystem/bluray/PlaylistStructure.h
 @@ -37,6 +37,10 @@ struct BlurayPlaylistInformation
@@ -6632,7 +6549,7 @@ index 1438718..a10fea5 100644
    bool clipStreamsRead{false};
  };
 diff --git a/xbmc/filesystem/bluray/StreamParser.cpp b/xbmc/filesystem/bluray/StreamParser.cpp
-index 21debcc..1a8d7f0 100644
+index 53c31a634b1a7f34b8bfd727c8472e5e47092daf..2a01a807e979e320e572cff2923566202e6c44ec 100644
 --- a/xbmc/filesystem/bluray/StreamParser.cpp
 +++ b/xbmc/filesystem/bluray/StreamParser.cpp
 @@ -413,6 +413,13 @@ void CStreamParser::ConvertBlurayPlaylistInformation(const BlurayPlaylistInforma
@@ -6650,7 +6567,7 @@ index 21debcc..1a8d7f0 100644
    const DefaultStreams defaults{GetDefaultStreams(b)};
    const AspectRatioMap aspectRatios{GetClipAspectRatios(b)};
 diff --git a/xbmc/filesystem/test/TestBlurayDirectory.cpp b/xbmc/filesystem/test/TestBlurayDirectory.cpp
-index cb125ce..65c6ec6 100644
+index 93f192ffee1a8b37a301932a061df3bb04220a81..b2e8d0722a93e9345eac8983db167ae31c82e454 100644
 --- a/xbmc/filesystem/test/TestBlurayDirectory.cpp
 +++ b/xbmc/filesystem/test/TestBlurayDirectory.cpp
 @@ -40,13 +40,15 @@ namespace
@@ -6670,7 +6587,7 @@ index cb125ce..65c6ec6 100644
    return info;
  }
  
-@@ -228,6 +230,93 @@ TEST_F(TestBlurayDirectory, FilterPlaylists_RemovesAllCopiesOfADuplicate)
+@@ -268,6 +270,93 @@ TEST_F(TestBlurayDirectory, FilterPlaylists_RemovesAllCopiesOfADuplicate)
    EXPECT_EQ(PlaylistNumbers(playlists), (std::vector<unsigned int>{800u, 803u}));
  }
  
@@ -6765,10 +6682,10 @@ index cb125ce..65c6ec6 100644
  // on a playlist described differently to the one the disc holds
  TEST_F(TestBlurayDirectory, ProcessPlaylist_CarriesThePlaylistThrough)
 diff --git a/xbmc/filesystem/test/TestDiscDirectoryHelper.cpp b/xbmc/filesystem/test/TestDiscDirectoryHelper.cpp
-index d79a2a7..25889f4 100644
+index 6faf98015e3f29ab264368ddbe4510a4b52c642f..4dd747d06021410bcc1bd7506f141f815d0dc761 100644
 --- a/xbmc/filesystem/test/TestDiscDirectoryHelper.cpp
 +++ b/xbmc/filesystem/test/TestDiscDirectoryHelper.cpp
-@@ -4643,6 +4643,100 @@ TEST_F(TestDiscDirectoryHelper, GetMoviePlaylists_RemovesDuplicatesBuiltFromCopi
+@@ -4685,6 +4685,100 @@ TEST_F(TestDiscDirectoryHelper, GetMoviePlaylists_RemovesDuplicatesBuiltFromCopi
    EXPECT_TRUE(std::ranges::includes(returned, expected));
  }
  
@@ -6870,7 +6787,7 @@ index d79a2a7..25889f4 100644
  // chapters - two unrelated titles can run for the same length
  TEST_F(TestDiscDirectoryHelper, GetMoviePlaylists_KeepsPlaylistsSharingNoClip)
 diff --git a/xbmc/filesystem/test/TestStreamParser.cpp b/xbmc/filesystem/test/TestStreamParser.cpp
-index f180c8c..0984a71 100644
+index 671f83ba9d338d3f5ec152c7d0f4b43e1ce6f93e..e93a511b6fda53d4b4b461c402080bb666dac578 100644
 --- a/xbmc/filesystem/test/TestStreamParser.cpp
 +++ b/xbmc/filesystem/test/TestStreamParser.cpp
 @@ -74,6 +74,19 @@ BlurayPlaylistInformation MakePlaylist(unsigned int playlist,
@@ -6893,7 +6810,7 @@ index f180c8c..0984a71 100644
  std::vector<std::string> AudioLanguagesOf(const PlaylistInformation& p)
  {
    std::vector<std::string> languages;
-@@ -236,3 +249,46 @@ TEST(TestStreamParser, TheM2TSDisplayAspectRatioIsPreferredToTheClipsFrameFlag)
+@@ -255,3 +268,46 @@ TEST(TestStreamParser, TheM2TSDisplayAspectRatioIsPreferredToTheClipsFrameFlag)
    ASSERT_EQ(unsignalled.videoStreams.size(), 1U);
    EXPECT_FLOAT_EQ(unsignalled.videoStreams[0].videoAspectRatio, 16.0f / 9.0f);
  }
@@ -6941,7 +6858,7 @@ index f180c8c..0984a71 100644
 +  EXPECT_TRUE(right.baseViewIsRightEye);
 +}
 diff --git a/xbmc/guilib/StereoscopicsManager.cpp b/xbmc/guilib/StereoscopicsManager.cpp
-index 4fdf28d..224a556 100644
+index 4fdf28d8d16729036c1c011a782422858a3fd43e..224a55695d781d3b8b950b7f07b398513e7a3c6a 100644
 --- a/xbmc/guilib/StereoscopicsManager.cpp
 +++ b/xbmc/guilib/StereoscopicsManager.cpp
 @@ -19,6 +19,8 @@
@@ -7205,7 +7122,7 @@ index 4fdf28d..224a556 100644
    if (m_stereoModeSetByUser != RenderStereoMode::OFF)
      m_lastStereoModeSetByUser = m_stereoModeSetByUser;
 diff --git a/xbmc/guilib/StereoscopicsManager.h b/xbmc/guilib/StereoscopicsManager.h
-index f3e8e00..5037559 100644
+index f3e8e007e3c190ee0308f2459535a354a265d71f..50375593a24f3e97356000267a97c777e10ed64c 100644
 --- a/xbmc/guilib/StereoscopicsManager.h
 +++ b/xbmc/guilib/StereoscopicsManager.h
 @@ -16,7 +16,9 @@
@@ -7266,7 +7183,7 @@ index f3e8e00..5037559 100644
    void OnPlaybackStopped(void);
  
 diff --git a/xbmc/rendering/RenderSystemTypes.h b/xbmc/rendering/RenderSystemTypes.h
-index 38fce27..1aeed8d 100644
+index 38fce27490cd1fc2e9288372b477f7934e86eed4..1aeed8dd1c06e3940e70b154feb153c60dfdac96 100644
 --- a/xbmc/rendering/RenderSystemTypes.h
 +++ b/xbmc/rendering/RenderSystemTypes.h
 @@ -33,3 +33,10 @@ enum class RenderStereoMode
@@ -7281,10 +7198,10 @@ index 38fce27..1aeed8d 100644
 +constexpr float STEREO_FULL_SBS_MIN_ASPECT{2.4f};
 +constexpr float STEREO_FULL_TAB_MAX_ASPECT{1.3f};
 diff --git a/xbmc/settings/AdvancedSettings.cpp b/xbmc/settings/AdvancedSettings.cpp
-index 3b47e20..9d33d15 100644
+index a8791536b8719f485e19545312883a7741ff6ef4..273cddee6d81c76f9f1c1aedb803039d4fe7af90 100644
 --- a/xbmc/settings/AdvancedSettings.cpp
 +++ b/xbmc/settings/AdvancedSettings.cpp
-@@ -532,6 +532,7 @@ void CAdvancedSettings::Initialize()
+@@ -552,6 +552,7 @@ void CAdvancedSettings::Initialize()
    m_stereoscopicregex_3d = "[-. _]3d[-. _]";
    m_stereoscopicregex_sbs = "[-. _]h?sbs[-. _]";
    m_stereoscopicregex_tab = "[-. _]h?tab[-. _]";
@@ -7292,7 +7209,7 @@ index 3b47e20..9d33d15 100644
  
    m_logLevelHint = m_logLevel = LOG_LEVEL_NORMAL;
  
-@@ -683,6 +684,8 @@ void CAdvancedSettings::ParseSettingsFile(const std::string &file)
+@@ -703,6 +704,8 @@ void CAdvancedSettings::ParseSettingsFile(const std::string &file)
      XMLUtils::GetString(pElement, "stereoscopicregex3d", m_stereoscopicregex_3d);
      XMLUtils::GetString(pElement, "stereoscopicregexsbs", m_stereoscopicregex_sbs);
      XMLUtils::GetString(pElement, "stereoscopicregextab", m_stereoscopicregex_tab);
@@ -7302,10 +7219,10 @@ index 3b47e20..9d33d15 100644
      XMLUtils::GetFloat(pElement, "subsdelaystep", m_videoSubsDelayStep, 0, 1.0f);
      XMLUtils::GetFloat(pElement, "audiodelayrange", m_videoAudioDelayRange, 10, 600);
 diff --git a/xbmc/settings/AdvancedSettings.h b/xbmc/settings/AdvancedSettings.h
-index 7d4ac42..5564bd6 100644
+index f34450f4e7edb0d300a1931e18a5573dfa183052..96df7ad31f7cdf76523d431e5a6c93c4978262fc 100644
 --- a/xbmc/settings/AdvancedSettings.h
 +++ b/xbmc/settings/AdvancedSettings.h
-@@ -425,6 +425,11 @@ class CAdvancedSettings : public ISettingCallback, public ISettingsHandler
+@@ -430,6 +430,11 @@ class CAdvancedSettings : public ISettingCallback, public ISettingsHandler
      std::string m_stereoscopicregex_sbs;
      std::string m_stereoscopicregex_tab;
  
@@ -7318,10 +7235,10 @@ index 7d4ac42..5564bd6 100644
  
      std::string m_userAgent;
 diff --git a/xbmc/settings/DisplaySettings.cpp b/xbmc/settings/DisplaySettings.cpp
-index dacf5a9..50d5efc 100644
+index e7ee1f922817371316d669eeaf523719bb29202a..f2410fa13ede9ce6826dee23641f497850fef523 100644
 --- a/xbmc/settings/DisplaySettings.cpp
 +++ b/xbmc/settings/DisplaySettings.cpp
-@@ -35,6 +35,7 @@
+@@ -36,6 +36,7 @@
  #include <float.h>
  #include <mutex>
  #include <string>
@@ -7329,7 +7246,7 @@ index dacf5a9..50d5efc 100644
  #include <utility>
  #include <vector>
  
-@@ -81,6 +82,15 @@ std::string ModeFlagsToString(unsigned int flags, bool identifier)
+@@ -82,6 +83,15 @@ std::string ModeFlagsToString(unsigned int flags, bool identifier)
    return res;
  }
  
@@ -7345,7 +7262,7 @@ index dacf5a9..50d5efc 100644
  // True when this mode is uncalibrated. Only works for live modes; dead or stale modes are
  // considered non-default always.
  bool IsDefaultCalibration(const RESOLUTION_INFO& info)
-@@ -644,7 +654,13 @@ DisplayMode CDisplaySettings::GetCurrentDisplayMode() const
+@@ -662,7 +672,13 @@ DisplayMode CDisplaySettings::GetCurrentDisplayMode() const
    return DM_FULLSCREEN;
  }
  
@@ -7360,7 +7277,7 @@ index dacf5a9..50d5efc 100644
  {
    // find the closest match to these in our res vector.  If we have the screen, we score the res
    RESOLUTION bestRes = RES_DESKTOP;
-@@ -658,8 +674,13 @@ RESOLUTION CDisplaySettings::FindBestMatchingResolution(const std::map<RESOLUTIO
+@@ -676,8 +692,13 @@ RESOLUTION CDisplaySettings::FindBestMatchingResolution(const std::map<RESOLUTIO
      if ((info.dwFlags & D3DPRESENTFLAG_MODEMASK) != flags)
        continue;
  
@@ -7375,7 +7292,7 @@ index dacf5a9..50d5efc 100644
                    square_error(info.fRefreshRate, refreshrate));
      if (score < bestScore)
      {
-@@ -698,12 +719,15 @@ RESOLUTION CDisplaySettings::GetResolutionFromString(const std::string &strResol
+@@ -716,12 +737,15 @@ RESOLUTION CDisplaySettings::GetResolutionFromString(const std::string &strResol
      else if(StringUtils::Mid(strResolution, 20,3) == "tab")
        flags |= D3DPRESENTFLAG_MODE3DTB;
  
@@ -7392,7 +7309,7 @@ index dacf5a9..50d5efc 100644
    }
  
    return RES_DESKTOP;
-@@ -721,9 +745,11 @@ std::string CDisplaySettings::GetStringFromResolution(RESOLUTION resolution, flo
+@@ -739,9 +763,11 @@ std::string CDisplaySettings::GetStringFromResolution(RESOLUTION resolution, flo
      // also handle RES_DESKTOP resolutions with non-default refresh rates
      if (resolution != RES_DESKTOP || (refreshrate > 0.0f && refreshrate != info.fRefreshRate))
      {
@@ -7406,7 +7323,7 @@ index dacf5a9..50d5efc 100644
      }
    }
  
-@@ -743,6 +769,11 @@ void CDisplaySettings::SettingOptionsModesFiller(const std::shared_ptr<const CSe
+@@ -761,6 +787,11 @@ void CDisplaySettings::SettingOptionsModesFiller(const std::shared_ptr<const CSe
                                                   std::vector<StringSettingOption>& list,
                                                   std::string& current)
  {
@@ -7418,7 +7335,7 @@ index dacf5a9..50d5efc 100644
    for (auto index = static_cast<unsigned int>(RES_CUSTOM);
         index < CDisplaySettings::GetInstance().ResolutionInfoSize(); ++index)
    {
-@@ -753,10 +784,11 @@ void CDisplaySettings::SettingOptionsModesFiller(const std::shared_ptr<const CSe
+@@ -771,10 +802,11 @@ void CDisplaySettings::SettingOptionsModesFiller(const std::shared_ptr<const CSe
        const std::string screenmode =
            GetStringFromResolution(static_cast<RESOLUTION>(index), mode.fRefreshRate);
  
@@ -7435,7 +7352,7 @@ index dacf5a9..50d5efc 100644
    }
  
 diff --git a/xbmc/settings/DisplaySettings.h b/xbmc/settings/DisplaySettings.h
-index b44629b..b983b3f 100644
+index b44629bb68a6ab75820eadd9a2ad2b4026db5ac7..b983b3ff50ff779079cc24e9bc8403344e6ff81a 100644
 --- a/xbmc/settings/DisplaySettings.h
 +++ b/xbmc/settings/DisplaySettings.h
 @@ -146,7 +146,13 @@ protected:
@@ -7454,10 +7371,10 @@ index b44629b..b983b3f 100644
  private:
    // holds the real gui resolution
 diff --git a/xbmc/settings/SettingConditions.cpp b/xbmc/settings/SettingConditions.cpp
-index 4eefb2d..70a2d1c 100644
+index 5762998debce95d86bd852d249d56f44880a4710..7020a6bdd1db4190be73736fc7eb15a6276ae06f 100644
 --- a/xbmc/settings/SettingConditions.cpp
 +++ b/xbmc/settings/SettingConditions.cpp
-@@ -513,7 +513,7 @@ void CSettingConditions::DVOutputOptions(const std::shared_ptr<const CSetting>&
+@@ -516,7 +516,7 @@ void CSettingConditions::DVOutputOptions(const std::shared_ptr<const CSetting>&
    if (!caps.sourceKnown && !data.transaction.identity.Valid())
    {
      auto* window=dynamic_cast<KODI::WINDOWING::GBM::CWinSystemGbmGLESContext*>(CServiceBroker::GetWinSystem());
@@ -7467,7 +7384,7 @@ index 4eefb2d..70a2d1c 100644
    const auto& localizer=CServiceBroker::GetResourcesComponent().GetLocalizeStrings();
    const bool method=setting->GetId()=="dvbridge.hdr10method";
 diff --git a/xbmc/windowing/GraphicContext.cpp b/xbmc/windowing/GraphicContext.cpp
-index 482b8a9..473ea61 100644
+index 482b8a966714705db63ff458e4b8d745feebe9b1..473ea614330c367890c7d3e1fc78df5d60be0a06 100644
 --- a/xbmc/windowing/GraphicContext.cpp
 +++ b/xbmc/windowing/GraphicContext.cpp
 @@ -14,6 +14,7 @@
@@ -7539,7 +7456,7 @@ index 482b8a9..473ea61 100644
    }
  }
 diff --git a/xbmc/windowing/GraphicContext.h b/xbmc/windowing/GraphicContext.h
-index e31f777..96d89bd 100644
+index 60c49162ed9234d41ab1f6efc0cbc7e3e32d08c3..e2d8de8b7a06d4c30fcdcc939211d3c7475c93ab 100644
 --- a/xbmc/windowing/GraphicContext.h
 +++ b/xbmc/windowing/GraphicContext.h
 @@ -15,6 +15,7 @@
@@ -7572,7 +7489,7 @@ index e31f777..96d89bd 100644
    void RestoreCameraPosition();
    void SetStereoFactor(float factor);
    void RestoreStereoFactor();
-@@ -222,7 +236,7 @@ public:
+@@ -223,7 +237,7 @@ public:
  protected:
  
    void UpdateCameraPosition(const CPoint &camera, const float &factor);
@@ -7581,7 +7498,7 @@ index e31f777..96d89bd 100644
    void ApplyVideoResolution(RESOLUTION res);
    void UpdateInternalStateWithResolution(RESOLUTION res);
  
-@@ -268,7 +282,7 @@ protected:
+@@ -269,7 +283,7 @@ protected:
    std::stack<UITransform, std::vector<UITransform>> m_transforms;
    RenderStereoView m_stereoView = RenderStereoView::OFF;
    RenderStereoMode m_stereoMode = RenderStereoMode::OFF;
@@ -7591,7 +7508,7 @@ index e31f777..96d89bd 100644
    bool m_isTransferPQ{false};
    RENDER_ORDER m_renderOrder{RENDER_ORDER_ALL_BACK_TO_FRONT};
 diff --git a/xbmc/windowing/Resolution.cpp b/xbmc/windowing/Resolution.cpp
-index 286b60c..93567e1 100644
+index 6ea0d46856370e9864f6c46d7892f5d221a2788a..a909f9ca1283bee8285a485042d62148a4e09e80 100644
 --- a/xbmc/windowing/Resolution.cpp
 +++ b/xbmc/windowing/Resolution.cpp
 @@ -10,6 +10,8 @@
@@ -8187,7 +8104,7 @@ index 286b60c..93567e1 100644
        {
          CLog::Log(
 diff --git a/xbmc/windowing/Resolution.h b/xbmc/windowing/Resolution.h
-index 4a10b58..0e4993b 100644
+index 4a10b58697029dfe496273e65e171224b6cf3b64..0e4993b533e0cb7e1e518169f33d8f4fc465ed0e 100644
 --- a/xbmc/windowing/Resolution.h
 +++ b/xbmc/windowing/Resolution.h
 @@ -8,6 +8,8 @@
@@ -8243,7 +8160,7 @@ index 4a10b58..0e4993b 100644
    static float RefreshWeight(float refresh, float fps);
  };
 diff --git a/xbmc/windowing/gbm/WinSystemGbm.cpp b/xbmc/windowing/gbm/WinSystemGbm.cpp
-index 5b2f384..5bc1826 100644
+index 5b2f3842c12b4db8ee1dacb2449a5551a8addbcc..5bc18265e03d5e3578f09ad392dd0c2c181cebf0 100644
 --- a/xbmc/windowing/gbm/WinSystemGbm.cpp
 +++ b/xbmc/windowing/gbm/WinSystemGbm.cpp
 @@ -228,9 +228,10 @@ void CWinSystemGbm::UpdateResolutions()
@@ -8276,7 +8193,7 @@ index 5b2f384..5bc1826 100644
    }
  
 diff --git a/xbmc/windowing/gbm/WinSystemGbmEGLContext.cpp b/xbmc/windowing/gbm/WinSystemGbmEGLContext.cpp
-index 9e7da83..e9dc7b8 100644
+index 9e7da831015073b307c61de078332ed3dd20b38e..e9dc7b8d364b1901a22e9aff3e8c2bc8419c6164 100644
 --- a/xbmc/windowing/gbm/WinSystemGbmEGLContext.cpp
 +++ b/xbmc/windowing/gbm/WinSystemGbmEGLContext.cpp
 @@ -7,6 +7,7 @@
@@ -8357,7 +8274,7 @@ index 9e7da83..e9dc7b8 100644
      if (!m_GBM->GetDevice().CreateSurface(m_nWidth, m_nHeight, format, modifiers->data(),
                                            modifiers->size(),m_dvOutputSurface))
 diff --git a/xbmc/windowing/gbm/WinSystemGbmEGLContext.h b/xbmc/windowing/gbm/WinSystemGbmEGLContext.h
-index 1ef6c4b..b57ae09 100644
+index 1ef6c4bc8b171ba30c05df9346dfdd0da8d45bec..b57ae097198616c87f700840088c62c0434874dd 100644
 --- a/xbmc/windowing/gbm/WinSystemGbmEGLContext.h
 +++ b/xbmc/windowing/gbm/WinSystemGbmEGLContext.h
 @@ -46,6 +46,7 @@ public:
@@ -8369,7 +8286,7 @@ index 1ef6c4b..b57ae09 100644
  
  protected:
 diff --git a/xbmc/windowing/gbm/WinSystemGbmGLESContext.cpp b/xbmc/windowing/gbm/WinSystemGbmGLESContext.cpp
-index cbafb89..8ee69d4 100644
+index 8aaacb73bac5f8b9632d566033146682693c2cdb..948eae91403c00a9390407e8b96e36c5c872321d 100644
 --- a/xbmc/windowing/gbm/WinSystemGbmGLESContext.cpp
 +++ b/xbmc/windowing/gbm/WinSystemGbmGLESContext.cpp
 @@ -41,6 +41,8 @@ extern "C"
@@ -8424,7 +8341,7 @@ index cbafb89..8ee69d4 100644
    m_dvSubtitleDraws = 0;
    m_dvSubtitleContent = 0;
    m_dvPQSubtitleDraws = 0;
-@@ -934,8 +945,10 @@ DVBRIDGE::OutputCapabilities CWinSystemGbmGLESContext::GetDVOutputCapabilities(
+@@ -931,8 +942,10 @@ DVBRIDGE::OutputCapabilities CWinSystemGbmGLESContext::GetDVOutputCapabilities(
    }
    if (!picture) return caps;
    caps.sourceKnown = true;
@@ -8435,7 +8352,7 @@ index cbafb89..8ee69d4 100644
    if (caps.isHDR10)
    {
  #ifdef CB1_HAS_HDR10_AI
-@@ -1078,6 +1091,7 @@ bool CWinSystemGbmGLESContext::PrepareHDR10AIQueue(const VideoPicture& picture,
+@@ -1075,6 +1088,7 @@ bool CWinSystemGbmGLESContext::PrepareHDR10AIQueue(const VideoPicture& picture,
          CB1_L1L3_BUNDLE_DIR, DVBRIDGE::DiagnosticNowMs(), end, &prediction, paused,
          presentationDeadline);
    }
@@ -8443,7 +8360,7 @@ index cbafb89..8ee69d4 100644
    if (decision == HDR10AISource::Decision::Prepare &&
        (!m_dvBridge || !m_dvBridge->CommittedHDR10AI()))
    {
-@@ -1087,13 +1101,15 @@ bool CWinSystemGbmGLESContext::PrepareHDR10AIQueue(const VideoPicture& picture,
+@@ -1084,13 +1098,15 @@ bool CWinSystemGbmGLESContext::PrepareHDR10AIQueue(const VideoPicture& picture,
        m_aiReady = true;
      }
      auto status = CDVBridgeGLES::FrameStatus::Pending;
@@ -8460,7 +8377,7 @@ index cbafb89..8ee69d4 100644
      decision = m_dvContext->HDR10AI().Preparation(binding, result, DVBRIDGE::DiagnosticNowMs());
    }
    {
-@@ -1104,8 +1120,14 @@ bool CWinSystemGbmGLESContext::PrepareHDR10AIQueue(const VideoPicture& picture,
+@@ -1101,8 +1117,14 @@ bool CWinSystemGbmGLESContext::PrepareHDR10AIQueue(const VideoPicture& picture,
    }
    if (decision == HDR10AISource::Decision::Native)
    {
@@ -8477,7 +8394,7 @@ index cbafb89..8ee69d4 100644
      DVBRIDGE::PlaybackNotification::HDR10Recovery();
    }
    return decision == HDR10AISource::Decision::Prepare ||
-@@ -1291,6 +1313,7 @@ bool CWinSystemGbmGLESContext::RestoreFailedHDR10Setup()
+@@ -1288,6 +1310,7 @@ bool CWinSystemGbmGLESContext::RestoreFailedHDR10Setup()
  bool CWinSystemGbmGLESContext::BeginDVBridge()
  {
    if (!PollRejectedDVSurface()) return false;
@@ -8485,7 +8402,7 @@ index cbafb89..8ee69d4 100644
    const auto failure = [this](const char* stage) {
      if (DVBRIDGE::DiagnosticsEnabled() &&
          m_dvSetupFailures.Record(DVBRIDGE::DiagnosticNowMs(), stage))
-@@ -1394,8 +1417,7 @@ bool CWinSystemGbmGLESContext::SetVideoOutput(const VideoPicture* picture)
+@@ -1391,8 +1414,7 @@ bool CWinSystemGbmGLESContext::SetVideoOutput(const VideoPicture* picture)
      }
      m_hdrConversion = false;
      m_dvConfiguredOutput.reset();
@@ -8495,7 +8412,7 @@ index cbafb89..8ee69d4 100644
      return true;
    }
    // Restore with the current surface before EGL replaces its buffers.
-@@ -1508,22 +1530,25 @@ bool CWinSystemGbmGLESContext::PrepareDVOutputFrame(const VideoPicture& picture)
+@@ -1505,22 +1527,25 @@ bool CWinSystemGbmGLESContext::PrepareDVOutputFrame(const VideoPicture& picture)
          ConfigureHDR10Conversion(picture) : BeginDVBridge();
      if (!ready) { RejectDVOutputSurface(); return false; }
    }
@@ -8533,7 +8450,7 @@ index cbafb89..8ee69d4 100644
  bool CWinSystemGbmGLESContext::RejectDVOutputSurface()
  {
    if (m_dvOrdinaryFrame)
-@@ -1534,7 +1559,7 @@ bool CWinSystemGbmGLESContext::RejectDVOutputSurface()
+@@ -1531,7 +1556,7 @@ bool CWinSystemGbmGLESContext::RejectDVOutputSurface()
      return false;
    }
    if (!m_dvActivating && !HasPendingDVOutputSurface()) return true;
@@ -8542,7 +8459,7 @@ index cbafb89..8ee69d4 100644
    {
      m_dvRecoveryPending = true;
      m_dvRejectedRoute = m_dvSelection.route;
-@@ -1653,20 +1678,25 @@ bool CWinSystemGbmGLESContext::RenderDVBridge(const CDVBridgeGLES::Layer& layer,
+@@ -1650,20 +1675,25 @@ bool CWinSystemGbmGLESContext::RenderDVBridge(const CDVBridgeGLES::Layer& layer,
        KODI::RENDERING::CAPTURE::CaptureContent::COMPOSITE).empty();
    const bool overlayFree = !capturing &&
        (!m_guiWillRender || GetGUIElementCount() == 0) && !m_dvOverlays;
@@ -8570,7 +8487,7 @@ index cbafb89..8ee69d4 100644
    if (std::getenv("CB1_PRESENTATION_AUDIT"))
    {
      static unsigned prior = ~0u;
-@@ -1681,7 +1711,6 @@ bool CWinSystemGbmGLESContext::RenderDVBridge(const CDVBridgeGLES::Layer& layer,
+@@ -1678,7 +1708,6 @@ bool CWinSystemGbmGLESContext::RenderDVBridge(const CDVBridgeGLES::Layer& layer,
      }
    }
    m_dvNativeGui = false;
@@ -8578,7 +8495,7 @@ index cbafb89..8ee69d4 100644
    const auto policy = m_dvSelection.policy;
    const bool allowAsync = CB1AsyncAvailable() && !capturing;
  #ifdef CB1_HAS_HDR10_AI
-@@ -1695,7 +1724,7 @@ bool CWinSystemGbmGLESContext::RenderDVBridge(const CDVBridgeGLES::Layer& layer,
+@@ -1692,7 +1721,7 @@ bool CWinSystemGbmGLESContext::RenderDVBridge(const CDVBridgeGLES::Layer& layer,
  #ifdef CB1_HAS_HDR10_AI
      if (aiFrame)
        return m_dvBridge->PrepareHDR10AIFrame(layer, geometry, preferences,
@@ -8587,7 +8504,7 @@ index cbafb89..8ee69d4 100644
  #endif
      return m_dvBridge->PrepareHardwareFrame(layer, enhancement, enhancementBinding,
          metadata, geometry, preferences, overlayFree || nativeSubtitles, &policy, allowAsync);
-@@ -1854,6 +1883,9 @@ bool CWinSystemGbmGLESContext::StopDVBridgePlayback()
+@@ -1851,6 +1880,9 @@ bool CWinSystemGbmGLESContext::StopDVBridgePlayback()
  {
    // The window outlives the renderer when a pending scanout defers teardown.
    m_dvStopPending = true;
@@ -8598,7 +8515,7 @@ index cbafb89..8ee69d4 100644
    SetGuiCompositing(false);
    SetHDR(nullptr);
 diff --git a/xbmc/windowing/gbm/WinSystemGbmGLESContext.h b/xbmc/windowing/gbm/WinSystemGbmGLESContext.h
-index 16acd9f..83b4745 100644
+index 16acd9f16e194e19c61325f49d8f94d2e698e04e..83b4745e2a2ca297d99260ccbd5bd9abc2594b78 100644
 --- a/xbmc/windowing/gbm/WinSystemGbmGLESContext.h
 +++ b/xbmc/windowing/gbm/WinSystemGbmGLESContext.h
 @@ -67,6 +67,11 @@ public:
@@ -8630,7 +8547,7 @@ index 16acd9f..83b4745 100644
    int m_dvPQSubtitleWidth{}, m_dvPQSubtitleHeight{}, m_dvPQPreviousFbo{};
    unsigned m_dvPQSubtitleDraws{};
 diff --git a/xbmc/windowing/gbm/drm/DRMAtomic.cpp b/xbmc/windowing/gbm/drm/DRMAtomic.cpp
-index d36e0e1..0369760 100644
+index d36e0e18e8a3c5d676ef98517b405e595514f2fe..03697605d609724869d72465e1f5469c92e45baf 100644
 --- a/xbmc/windowing/gbm/drm/DRMAtomic.cpp
 +++ b/xbmc/windowing/gbm/drm/DRMAtomic.cpp
 @@ -211,10 +211,16 @@ bool CDRMAtomic::DrmAtomicCommit(int fb_id, int flags, bool rendered, bool video
@@ -8677,7 +8594,7 @@ index d36e0e1..0369760 100644
  bool CDRMAtomic::CompleteCB1Page(int timeoutMs)
  {
 diff --git a/xbmc/windowing/gbm/drm/DRMAtomic.h b/xbmc/windowing/gbm/drm/DRMAtomic.h
-index 8b48900..df6935a 100644
+index 8b489005725555939a20f6b81b97e9bbb568f963..df6935a2c55b6344507791615234cf18e8f185dd 100644
 --- a/xbmc/windowing/gbm/drm/DRMAtomic.h
 +++ b/xbmc/windowing/gbm/drm/DRMAtomic.h
 @@ -34,8 +34,8 @@ public:
@@ -8691,10 +8608,10 @@ index 8b48900..df6935a 100644
    bool SetActive(bool active) override;
    bool InitDrm() override;
 diff --git a/xbmc/windowing/gbm/drm/DRMUtils.cpp b/xbmc/windowing/gbm/drm/DRMUtils.cpp
-index 7cbed97..0cceea3 100644
+index 2299c9589d96a2aaf0d133779706d0f622dda496..f317797d671b1a868b36852e063ac9d11eb1ac86 100644
 --- a/xbmc/windowing/gbm/drm/DRMUtils.cpp
 +++ b/xbmc/windowing/gbm/drm/DRMUtils.cpp
-@@ -868,6 +868,12 @@ RESOLUTION_INFO CDRMUtils::GetResolutionInfo(drmModeModeInfoPtr mode)
+@@ -871,6 +871,12 @@ RESOLUTION_INFO CDRMUtils::GetResolutionInfo(drmModeModeInfoPtr mode)
    RESOLUTION_INFO res;
    res.iScreenWidth = mode->hdisplay;
    res.iScreenHeight = mode->vdisplay;
@@ -8707,7 +8624,7 @@ index 7cbed97..0cceea3 100644
    res.iWidth = res.iScreenWidth;
    res.iHeight = res.iScreenHeight;
  
-@@ -922,17 +928,33 @@ RESOLUTION_INFO CDRMUtils::GetResolutionInfo(drmModeModeInfoPtr mode)
+@@ -930,17 +936,33 @@ RESOLUTION_INFO CDRMUtils::GetResolutionInfo(drmModeModeInfoPtr mode)
    res.fPixelRatio = 1.0f;
    res.bFullScreen = true;
  
@@ -8750,7 +8667,7 @@ index 7cbed97..0cceea3 100644
  
    res.strMode =
        StringUtils::Format("{}x{}{} @ {:.6f} Hz", res.iScreenWidth, res.iScreenHeight,
-@@ -952,7 +974,31 @@ std::vector<RESOLUTION_INFO> CDRMUtils::GetModes()
+@@ -960,7 +982,31 @@ std::vector<RESOLUTION_INFO> CDRMUtils::GetModes()
  
    for (auto i = 0; i < m_connector->GetModesCount(); i++)
    {
@@ -8783,6 +8700,3 @@ index 7cbed97..0cceea3 100644
      res.strId = std::to_string(i);
      resolutions.push_back(res);
    }
--- 
-2.53.0
-
