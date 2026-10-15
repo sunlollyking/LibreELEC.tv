@@ -1,0 +1,31 @@
+From c964521488b1ba35284e845b194d5cd0f24e51f6 Mon Sep 17 00:00:00 2001
+From: Stephen Anthony <sa666666@gmail.com>
+Date: Thu, 7 May 2026 13:42:23 -0230
+Subject: [PATCH] libretro: Fix pixel colour masks; screen was all black.
+
+---
+ src/os/libretro/FBBackendLIBRETRO.hxx | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/src/os/libretro/FBBackendLIBRETRO.hxx b/src/os/libretro/FBBackendLIBRETRO.hxx
+index e5c18c77e..b1eabf66b 100644
+--- a/src/os/libretro/FBBackendLIBRETRO.hxx
++++ b/src/os/libretro/FBBackendLIBRETRO.hxx
+@@ -85,10 +85,10 @@ class FBBackendLIBRETRO : public FBBackend
+     void setTitle(string_view) override { }
+     void showCursor(bool) override { }
+     bool fullScreen() const override { return true; }
+-    uInt32 rMask() const override { return 0; }
+-    uInt32 gMask() const override { return 0; }
+-    uInt32 bMask() const override { return 0; }
+-    uInt32 aMask() const override { return 0; }
++    uInt32 rMask() const override { return 0x00FF0000; }
++    uInt32 gMask() const override { return 0x0000FF00; }
++    uInt32 bMask() const override { return 0x000000FF; }
++    uInt32 aMask() const override { return 0xFF000000; }
+     const FBSurface& compositedSurface() { static FBSurfaceLIBRETRO tmp(0, 0); return tmp; }
+     bool isCurrentWindowPositioned() const override { return true; }
+     Common::Point getCurrentWindowPos() const override { return Common::Point{}; }
+-- 
+2.53.0
+
