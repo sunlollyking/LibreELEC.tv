@@ -1,0 +1,39 @@
+From d39dcacb28134b9ccd423261cb38589fc9aa2fd8 Mon Sep 17 00:00:00 2001
+From: Chris <meischris39@hotmail.com>
+Date: Thu, 15 Oct 2026 19:28:24 +0100
+Subject: [PATCH] Request the hardware context when a game loads
+
+retro_init() read the core options, and with them asked for the
+hardware context. libretro.h says to set it in retro_load_game(), and
+a frontend that only accepts it then (Kodi) turned it down, so the
+core fell back to software and never asked again.
+---
+ libretro.c | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/libretro.c b/libretro.c
+index da53ed4..7ab02e0 100644
+--- a/libretro.c
++++ b/libretro.c
+@@ -641,8 +641,6 @@ void retro_init(void)
+ 
+    environ_cb(RETRO_ENVIRONMENT_SET_PERFORMANCE_LEVEL, &level);
+ 
+-   check_variables();
+-
+    vecx_psg_set_buffer(psgbuf);
+    vecx_dac_set_buffer(dacbuf);
+ }
+@@ -695,6 +693,9 @@ bool retro_load_game(const struct retro_game_info *info)
+ 
+    if (!info)
+       return false;
++
++   /* Frontends may only accept a hardware context once a game is loading */
++   check_variables();
+ #ifdef HAS_GPU
+    if (usingHWContext)
+       usingHWContext = set_rendering_context(true);
+-- 
+2.53.0
+
