@@ -1,0 +1,89 @@
+From 9e3e1efa762dc46f5f7aa0a36ee0c6f47a15299e Mon Sep 17 00:00:00 2001
+From: Chris <meischris39@hotmail.com>
+Date: Thu, 15 Oct 2026 17:54:22 +0100
+Subject: [PATCH] libretro: write cartridge SRAM out when a game is unloaded
+
+boardRun() returns once the board is set up in the libretro build, so
+the teardown after its run loop never ran and no device was destroyed.
+A cartridge writes its SRAM to the save directory when it's destroyed,
+so games that save to it, such as Koei's, lost every save. Do that
+teardown in retro_unload_game().
+---
+ Src/Board/Board.c | 30 ++++++++++++++++++++++++++++++
+ Src/Board/Board.h |  4 ++++
+ libretro.c        |  3 +++
+ 3 files changed, 37 insertions(+)
+
+diff --git a/Src/Board/Board.c b/Src/Board/Board.c
+index 3857b67..af77bee 100644
+--- a/Src/Board/Board.c
++++ b/Src/Board/Board.c
+@@ -811,6 +811,36 @@ int boardRun(Machine* machine,
+     return success;
+ }
+ 
++#ifdef __LIBRETRO__
++/* boardRun() returns once the board is set up when built for libretro, so the
++ * teardown that follows its run loop is done here instead. Destroying the
++ * devices writes each cartridge's SRAM out to its file. */
++void boardEnd()
++{
++    if (!boardRunning) {
++        return;
++    }
++
++    boardCaptureDestroy();
++
++    boardInfo.destroy();
++
++    boardTimerDestroy(fdcTimer);
++    boardTimerDestroy(mixerTimer);
++    if (breakpointTimer != NULL) {
++        boardTimerDestroy(breakpointTimer);
++        breakpointTimer = NULL;
++    }
++    if (stateTimer != NULL) {
++        boardTimerDestroy(stateTimer);
++        stateTimer = NULL;
++        memZipFileSystemDestroy();
++    }
++
++    boardRunning = 0;
++}
++#endif
++
+ BoardType boardGetType()
+ {
+     return boardType & BOARD_MASK;
+diff --git a/Src/Board/Board.h b/Src/Board/Board.h
+index f67bc75..54e69d3 100644
+--- a/Src/Board/Board.h
++++ b/Src/Board/Board.h
+@@ -87,6 +87,10 @@ typedef struct {
+ 
+ void boardInit(UInt32* systemTime);
+ 
++#ifdef __LIBRETRO__
++void boardEnd();
++#endif
++
+ int boardRun(Machine* machine, 
+              BoardDeviceInfo* deviceInfo,
+              Mixer* mixer,
+diff --git a/libretro.c b/libretro.c
+index 1086338..512d971 100644
+--- a/libretro.c
++++ b/libretro.c
+@@ -1920,6 +1920,9 @@ void retro_unload_game(void)
+ {
+    unmountDiskOverlay(0);
+ 
++   /* Writes cartridge SRAM out, so games that save to it keep their saves */
++   boardEnd();
++
+    if (image_buffer)
+       free(image_buffer);
+    
+-- 
+2.53.0
+
