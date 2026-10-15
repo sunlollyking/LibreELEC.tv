@@ -4,7 +4,7 @@
 PKG_NAME="game.libretro.dolphin"
 PKG_VERSION="9327b50b65b1e033d849b1967e6b80f896887e3c"
 PKG_SHA256="906bab1070b8d549901bf505fb5979e590c7681ac453a9ada360c6f47ccb73a8"
-PKG_REV="1"
+PKG_REV="2"
 PKG_ARCH="x86_64"
 PKG_LICENSE="GPL-2.0-or-later"
 PKG_SITE="https://github.com/kodi-game/game.libretro.dolphin"
