@@ -14,7 +14,8 @@ From CroqueMr/libreelec-x86-DV R1.0.0-Beta2 (kodi-9999-z-frame-preparation.patch
  .../VideoPlayer/VideoRenderers/DVBridgeGLES.h |  22 +-
  .../VideoRenderers/LinuxRendererGLES.cpp      |  25 +-
  .../VideoRenderers/OverlayRenderer.cpp        |  17 +
- .../VideoRenderers/OverlayRendererGLES.cpp    |  43 +-
+ .../VideoRenderers/OverlayRendererGLES.cpp    |  44 +-
+ .../VideoRenderers/OverlayRendererGLES.h      |   1 +
  .../VideoRenderers/RenderManager.cpp          | 148 ++++++-
  .../VideoRenderers/RenderManager.h            |   4 +
  xbmc/dialogs/DVPlaybackModes.cpp              |   2 +-
@@ -34,11 +35,11 @@ From CroqueMr/libreelec-x86-DV R1.0.0-Beta2 (kodi-9999-z-frame-preparation.patch
  xbmc/windowing/gbm/drm/DRMUtils.cpp           |  42 ++
  xbmc/windowing/gbm/drm/DVBridgeDisplayRoute.h | 131 ++++++
  .../gbm/drm/DVBridgeKernelLogReader.h         |  27 +-
- 29 files changed, 1289 insertions(+), 154 deletions(-)
+ 30 files changed, 1291 insertions(+), 154 deletions(-)
  create mode 100644 xbmc/windowing/gbm/drm/DVBridgeDisplayRoute.h
 
 diff --git a/addons/resource.language.en_gb/resources/strings.po b/addons/resource.language.en_gb/resources/strings.po
-index 21c08b0315c9dc05c1477ba55936095ebca1ee8d..5b5018cb346ee4ab1e2ff2bce9d266acffb2ede7 100644
+index 21c08b0315..5b5018cb34 100644
 --- a/addons/resource.language.en_gb/resources/strings.po
 +++ b/addons/resource.language.en_gb/resources/strings.po
 @@ -27079,7 +27079,7 @@ msgstr ""
@@ -79,7 +80,7 @@ index 21c08b0315c9dc05c1477ba55936095ebca1ee8d..5b5018cb346ee4ab1e2ff2bce9d266ac
  msgid "Show the accepted playback mode once when a video starts."
  msgstr ""
 diff --git a/system/settings/settings.xml b/system/settings/settings.xml
-index 81b641d634cdcfd00d6608e092655f3497b7751a..8c8b157d7a91e8f96ea4739eabb0d1145cc4954e 100755
+index 81b641d634..8c8b157d7a 100755
 --- a/system/settings/settings.xml
 +++ b/system/settings/settings.xml
 @@ -79,6 +79,12 @@
@@ -107,7 +108,7 @@ index 81b641d634cdcfd00d6608e092655f3497b7751a..8c8b157d7a91e8f96ea4739eabb0d114
        <group id="1" label="14230">
          <setting id="videoplayer.autoplaynextitem" type="list[integer]" label="13433" help="36152">
 diff --git a/system/shaders/GLES/2.0/gles_gui_composite.frag b/system/shaders/GLES/2.0/gles_gui_composite.frag
-index 4cfd4fdd071d6599899005d7265815dd946a3b77..4586b388b6aa9f4070f7ffe3030799a545474d24 100644
+index 4cfd4fdd07..4586b388b6 100644
 --- a/system/shaders/GLES/2.0/gles_gui_composite.frag
 +++ b/system/shaders/GLES/2.0/gles_gui_composite.frag
 @@ -15,6 +15,7 @@ uniform sampler2D u_lutDegamma; // sRGB -> linear LUT (IEC 61966-2-1)
@@ -132,7 +133,7 @@ index 4cfd4fdd071d6599899005d7265815dd946a3b77..4586b388b6aa9f4070f7ffe3030799a5
    vec3 linear = vec3(
      texture2D(u_lutDegamma, vec2(gui.r, 0.5)).r,
 diff --git a/xbmc/cores/AudioEngine/Engines/ActiveAE/ActiveAE.cpp b/xbmc/cores/AudioEngine/Engines/ActiveAE/ActiveAE.cpp
-index de0a69002d4ac8bc028f3bff679ad2298d0413c4..a680180747998fd6b13c336ff08355a42273f5b3 100644
+index de0a69002d..a680180747 100644
 --- a/xbmc/cores/AudioEngine/Engines/ActiveAE/ActiveAE.cpp
 +++ b/xbmc/cores/AudioEngine/Engines/ActiveAE/ActiveAE.cpp
 @@ -464,7 +464,7 @@ void CActiveAE::StateMachine(int signal, Protocol *port, Message *msg)
@@ -145,7 +146,7 @@ index de0a69002d4ac8bc028f3bff679ad2298d0413c4..a680180747998fd6b13c336ff08355a4
            msg->Reply(CActiveAEDataProtocol::ACC);
            return;
 diff --git a/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVOutputSettings.h b/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVOutputSettings.h
-index 55f1349925c28adfc80cc418a97e8361b9119278..dc02aa75721e2698930109e3031e1f69f6c6f09d 100644
+index 55f1349925..dc02aa7572 100644
 --- a/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVOutputSettings.h
 +++ b/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVOutputSettings.h
 @@ -138,4 +138,16 @@ inline bool EnhancedInfoEnabled()
@@ -166,7 +167,7 @@ index 55f1349925c28adfc80cc418a97e8361b9119278..dc02aa75721e2698930109e3031e1f69
 +}
  } // namespace DVBRIDGE
 diff --git a/xbmc/cores/VideoPlayer/VideoRenderers/DVBridgeGLES.cpp b/xbmc/cores/VideoPlayer/VideoRenderers/DVBridgeGLES.cpp
-index 7669034e8548824246508635932a776da5a778f7..9948a2ca865699aa3cefb7f19db5a9548b7b7c61 100644
+index 7669034e85..9948a2ca86 100644
 --- a/xbmc/cores/VideoPlayer/VideoRenderers/DVBridgeGLES.cpp
 +++ b/xbmc/cores/VideoPlayer/VideoRenderers/DVBridgeGLES.cpp
 @@ -14,6 +14,7 @@ extern "C"
@@ -645,7 +646,7 @@ index 7669034e8548824246508635932a776da5a778f7..9948a2ca865699aa3cefb7f19db5a954
    DVBRIDGE::StreamSnapshot::Output output{m_pendingInfo,m_outputBits,peak,
        m_hdr10 && !m_advanced && m_hdr10Session && m_hdr10Session->output.level6};
 diff --git a/xbmc/cores/VideoPlayer/VideoRenderers/DVBridgeGLES.h b/xbmc/cores/VideoPlayer/VideoRenderers/DVBridgeGLES.h
-index 612a43adba77c643c0fdf299177489dc5ccb4d33..ebb4432888e0ad7abcea856cd3c1cf8c757c06df 100644
+index 612a43adba..ebb4432888 100644
 --- a/xbmc/cores/VideoPlayer/VideoRenderers/DVBridgeGLES.h
 +++ b/xbmc/cores/VideoPlayer/VideoRenderers/DVBridgeGLES.h
 @@ -3,6 +3,7 @@
@@ -728,7 +729,7 @@ index 612a43adba77c643c0fdf299177489dc5ccb4d33..ebb4432888e0ad7abcea856cd3c1cf8c
    bool m_packed = false;
    unsigned m_pendingInfo = 0;
 diff --git a/xbmc/cores/VideoPlayer/VideoRenderers/LinuxRendererGLES.cpp b/xbmc/cores/VideoPlayer/VideoRenderers/LinuxRendererGLES.cpp
-index b00bef1fad948019969c9a8c24f476fc26e1dc79..9373fb75f1ce89957bd30a5043e5260a43610ce9 100644
+index b00bef1fad..9373fb75f1 100644
 --- a/xbmc/cores/VideoPlayer/VideoRenderers/LinuxRendererGLES.cpp
 +++ b/xbmc/cores/VideoPlayer/VideoRenderers/LinuxRendererGLES.cpp
 @@ -477,6 +477,12 @@ bool CLinuxRendererGLES::Flush(bool saveBuffers)
@@ -785,7 +786,7 @@ index b00bef1fad948019969c9a8c24f476fc26e1dc79..9373fb75f1ce89957bd30a5043e5260a
  
    // cleanup framebuffer object if it was in use
 diff --git a/xbmc/cores/VideoPlayer/VideoRenderers/OverlayRenderer.cpp b/xbmc/cores/VideoPlayer/VideoRenderers/OverlayRenderer.cpp
-index 9f2f32feec4435358f9a473c7cf1960cffb35600..d7f467b21ec15c54986131a83c1d51e1f4896b96 100644
+index 9f2f32feec..d7f467b21e 100644
 --- a/xbmc/cores/VideoPlayer/VideoRenderers/OverlayRenderer.cpp
 +++ b/xbmc/cores/VideoPlayer/VideoRenderers/OverlayRenderer.cpp
 @@ -25,6 +25,9 @@
@@ -827,7 +828,7 @@ index 9f2f32feec4435358f9a473c7cf1960cffb35600..d7f467b21ec15c54986131a83c1d51e1
    std::unique_lock lock(m_section);
  
 diff --git a/xbmc/cores/VideoPlayer/VideoRenderers/OverlayRendererGLES.cpp b/xbmc/cores/VideoPlayer/VideoRenderers/OverlayRendererGLES.cpp
-index 7d98bad8fa7bec3529ccdec56914a43cf982f3e6..b365373a6644772d701185fa631d6667d677cbf4 100644
+index 7d98bad8fa..fe1b91c9b2 100644
 --- a/xbmc/cores/VideoPlayer/VideoRenderers/OverlayRendererGLES.cpp
 +++ b/xbmc/cores/VideoPlayer/VideoRenderers/OverlayRendererGLES.cpp
 @@ -24,6 +24,9 @@
@@ -871,36 +872,44 @@ index 7d98bad8fa7bec3529ccdec56914a43cf982f3e6..b365373a6644772d701185fa631d6667
          CServiceBroker::GetWinSystem()->UseLimitedColor())
      {
        for (uint32_t& px : rgba)
-@@ -383,6 +401,28 @@ void COverlayGlyphGLES::Render(SRenderState& state)
-   if (m_texture == 0 || m_vertexCount == 0)
-     return;
+@@ -353,6 +371,23 @@ COverlayGlyphGLES::COverlayGlyphGLES(ASS_Image* images, float width, float heigh
  
-+  // ASS's nominal extent is the whole screen. Use its actual glyph quads.
-+  CRect bounds;
-+  bool first = true;
-+  for (const auto& vertex : m_vertex)
+   glBindTexture(GL_TEXTURE_2D, 0);
+ 
++  // ASS's nominal extent is the whole screen. Keep its actual glyph extent.
++  for (size_t i = 0; i < quadVertices.size(); i++)
 +  {
-+    const float x = state.x + state.width * vertex.x;
-+    const float y = state.y + state.height * vertex.y;
-+    if (first)
++    const VERTEX& vertex = quadVertices[i];
++    if (i == 0)
 +    {
-+      bounds = CRect(x, y, x, y);
-+      first = false;
++      m_glyphBounds = CRect(vertex.x, vertex.y, vertex.x, vertex.y);
 +    }
 +    else
 +    {
-+      bounds.x1 = std::min(bounds.x1, x);
-+      bounds.y1 = std::min(bounds.y1, y);
-+      bounds.x2 = std::max(bounds.x2, x);
-+      bounds.y2 = std::max(bounds.y2, y);
++      m_glyphBounds.x1 = std::min(m_glyphBounds.x1, vertex.x);
++      m_glyphBounds.y1 = std::min(m_glyphBounds.y1, vertex.y);
++      m_glyphBounds.x2 = std::max(m_glyphBounds.x2, vertex.x);
++      m_glyphBounds.y2 = std::max(m_glyphBounds.y2, vertex.y);
 +    }
 +  }
-+  RecordSubtitleBounds(bounds, m_texture);
++
+   // Expand quads to triangles and upload once: glyph vertices never change after construction.
+   std::vector<VERTEX> vecVertices(6 * quadVertices.size() / 4);
+   VERTEX* vertices = vecVertices.data();
+@@ -383,6 +418,12 @@ void COverlayGlyphGLES::Render(SRenderState& state)
+   if (m_texture == 0 || m_vertexCount == 0)
+     return;
+ 
++  RecordSubtitleBounds(CRect(state.x + state.width * m_glyphBounds.x1,
++                             state.y + state.height * m_glyphBounds.y1,
++                             state.x + state.width * m_glyphBounds.x2,
++                             state.y + state.height * m_glyphBounds.y2),
++                       m_texture);
 +
    glEnable(GL_BLEND);
  
    glBindTexture(GL_TEXTURE_2D, m_texture);
-@@ -488,6 +528,7 @@ void COverlayTextureGLES::Render(SRenderState& state)
+@@ -488,6 +529,7 @@ void COverlayTextureGLES::Render(SRenderState& state)
    CRenderSystemGLES* renderSystem =
        dynamic_cast<CRenderSystemGLES*>(CServiceBroker::GetRenderSystem());
    renderSystem->EnableGUIShader(ShaderMethodGLES::SM_TEXTURE_NOBLEND);
@@ -908,8 +917,20 @@ index 7d98bad8fa7bec3529ccdec56914a43cf982f3e6..b365373a6644772d701185fa631d6667
    GLint depthLoc = renderSystem->GUIShaderGetDepth();
  
    // Tell the shader this texture is premultiplied so its limited-range
+diff --git a/xbmc/cores/VideoPlayer/VideoRenderers/OverlayRendererGLES.h b/xbmc/cores/VideoPlayer/VideoRenderers/OverlayRendererGLES.h
+index e0e231ea73..6010733dc8 100644
+--- a/xbmc/cores/VideoPlayer/VideoRenderers/OverlayRendererGLES.h
++++ b/xbmc/cores/VideoPlayer/VideoRenderers/OverlayRendererGLES.h
+@@ -64,6 +64,7 @@ public:
+ private:
+   KODI::UTILS::GL::CGLBufferObject m_VBO{GL_ARRAY_BUFFER};
+   GLsizei m_vertexCount = 0;
++  CRect m_glyphBounds;
+ };
+ 
+ } // namespace OVERLAY
 diff --git a/xbmc/cores/VideoPlayer/VideoRenderers/RenderManager.cpp b/xbmc/cores/VideoPlayer/VideoRenderers/RenderManager.cpp
-index a226ddc6b976326cd5cbe3b1b701e4833ddfcdcf..8c29863648b062eb50103ebc1c1394319131d27e 100644
+index a226ddc6b9..8c29863648 100644
 --- a/xbmc/cores/VideoPlayer/VideoRenderers/RenderManager.cpp
 +++ b/xbmc/cores/VideoPlayer/VideoRenderers/RenderManager.cpp
 @@ -30,6 +30,7 @@
@@ -1209,7 +1230,7 @@ index a226ddc6b976326cd5cbe3b1b701e4833ddfcdcf..8c29863648b062eb50103ebc1c139431
      m_lateframes = 0;
      m_presentstep = PRESENT_FLIP;
 diff --git a/xbmc/cores/VideoPlayer/VideoRenderers/RenderManager.h b/xbmc/cores/VideoPlayer/VideoRenderers/RenderManager.h
-index aa4663eb63e191a94d5b3bfb93bcb5e1f445f351..61735b1c6827a62efba78e07d7683d5e0a24554b 100644
+index aa4663eb63..61735b1c68 100644
 --- a/xbmc/cores/VideoPlayer/VideoRenderers/RenderManager.h
 +++ b/xbmc/cores/VideoPlayer/VideoRenderers/RenderManager.h
 @@ -253,6 +253,9 @@ protected:
@@ -1231,7 +1252,7 @@ index aa4663eb63e191a94d5b3bfb93bcb5e1f445f351..61735b1c6827a62efba78e07d7683d5e
    CClockSync m_clockSync;
  };
 diff --git a/xbmc/dialogs/DVPlaybackModes.cpp b/xbmc/dialogs/DVPlaybackModes.cpp
-index 2195124150cd0fbcf68079cb1edcf77cd7805ce8..b88711bbf4ba8396e6e7a5be89e2d42996979ab5 100644
+index 2195124150..b88711bbf4 100644
 --- a/xbmc/dialogs/DVPlaybackModes.cpp
 +++ b/xbmc/dialogs/DVPlaybackModes.cpp
 @@ -28,7 +28,7 @@ CDVPlaybackModes& CDVPlaybackModes::GetInstance()
@@ -1244,7 +1265,7 @@ index 2195124150cd0fbcf68079cb1edcf77cd7805ce8..b88711bbf4ba8396e6e7a5be89e2d429
  
  bool CDVPlaybackModes::ConfigureProfile()
 diff --git a/xbmc/rendering/gles/GuiCompositeShaderGLES.cpp b/xbmc/rendering/gles/GuiCompositeShaderGLES.cpp
-index 77dc71381a6a9959e9e9c2f6b9f3959ec1d4bb22..ec602c6b7ced381c2a1ed2be7da3af4c3a75794d 100644
+index 77dc71381a..ec602c6b7c 100644
 --- a/xbmc/rendering/gles/GuiCompositeShaderGLES.cpp
 +++ b/xbmc/rendering/gles/GuiCompositeShaderGLES.cpp
 @@ -63,6 +63,7 @@ void CGuiCompositeShaderGLES::OnCompiledAndLinked()
@@ -1264,7 +1285,7 @@ index 77dc71381a6a9959e9e9c2f6b9f3959ec1d4bb22..ec602c6b7ced381c2a1ed2be7da3af4c
    glActiveTexture(GL_TEXTURE1);
    glBindTexture(GL_TEXTURE_2D, m_lutDegammaTexId);
 diff --git a/xbmc/rendering/gles/GuiCompositeShaderGLES.h b/xbmc/rendering/gles/GuiCompositeShaderGLES.h
-index 9a1f83f745d74faf1ac5bbf1aebfa8fdbf383d73..336a0f8b764909af5547731af90d5780960b1893 100644
+index 9a1f83f745..336a0f8b76 100644
 --- a/xbmc/rendering/gles/GuiCompositeShaderGLES.h
 +++ b/xbmc/rendering/gles/GuiCompositeShaderGLES.h
 @@ -20,11 +20,14 @@ public:
@@ -1297,7 +1318,7 @@ index 9a1f83f745d74faf1ac5bbf1aebfa8fdbf383d73..336a0f8b764909af5547731af90d5780
 +  GLint m_hInputPQ{-1};
  };
 diff --git a/xbmc/utils/DVBridgeKernelLog.h b/xbmc/utils/DVBridgeKernelLog.h
-index 77d0e8f7117eba712cfcb6c77e0c907a743828d9..502d3bfb006617913a5c4035a49e9c06723f5ce4 100644
+index 77d0e8f711..502d3bfb00 100644
 --- a/xbmc/utils/DVBridgeKernelLog.h
 +++ b/xbmc/utils/DVBridgeKernelLog.h
 @@ -32,14 +32,23 @@ public:
@@ -1346,7 +1367,7 @@ index 77d0e8f7117eba712cfcb6c77e0c907a743828d9..502d3bfb006617913a5c4035a49e9c06
      m_pendingLost=0;
      return result;
 diff --git a/xbmc/windowing/Resolution.cpp b/xbmc/windowing/Resolution.cpp
-index 9238a67704160292f58802f808407bbf1fdd0f36..6ea0d46856370e9864f6c46d7892f5d221a2788a 100644
+index 9238a67704..6ea0d46856 100644
 --- a/xbmc/windowing/Resolution.cpp
 +++ b/xbmc/windowing/Resolution.cpp
 @@ -20,6 +20,7 @@
@@ -1406,7 +1427,7 @@ index 9238a67704160292f58802f808407bbf1fdd0f36..6ea0d46856370e9864f6c46d7892f5d2
    {
      if (!FindResolutionFromOverride(fps, width, is3D, res, weight, true)) //if that fails find it from a fallback
 diff --git a/xbmc/windowing/Resolution.h b/xbmc/windowing/Resolution.h
-index 7ea624dbe8e40942f4ddd966d3bf1a0ae40fa052..4a10b58697029dfe496273e65e171224b6cf3b64 100644
+index 7ea624dbe8..4a10b58697 100644
 --- a/xbmc/windowing/Resolution.h
 +++ b/xbmc/windowing/Resolution.h
 @@ -118,6 +118,7 @@ public:
@@ -1418,7 +1439,7 @@ index 7ea624dbe8e40942f4ddd966d3bf1a0ae40fa052..4a10b58697029dfe496273e65e171224
                                          bool allowNativeProgressiveRates = false);
    static bool HasWhitelist();
 diff --git a/xbmc/windowing/gbm/DVWindowRetirement.h b/xbmc/windowing/gbm/DVWindowRetirement.h
-index 42bcc2717d5134245bf08d0d8f6553b828d32bd7..1a57f34abb412b0d6e1db2a43dba5b5a7e4cc569 100644
+index 42bcc2717d..1a57f34abb 100644
 --- a/xbmc/windowing/gbm/DVWindowRetirement.h
 +++ b/xbmc/windowing/gbm/DVWindowRetirement.h
 @@ -3,6 +3,7 @@
@@ -1446,7 +1467,7 @@ index 42bcc2717d5134245bf08d0d8f6553b828d32bd7..1a57f34abb412b0d6e1db2a43dba5b5a
      const auto context = eglGetCurrentContext();
      const auto draw = eglGetCurrentSurface(EGL_DRAW);
 diff --git a/xbmc/windowing/gbm/WinSystemGbm.cpp b/xbmc/windowing/gbm/WinSystemGbm.cpp
-index 5804c8128b6ab6cab3de5bedf0767d8c528e4856..5b2f3842c12b4db8ee1dacb2449a5551a8addbcc 100644
+index 5804c8128b..5b2f3842c1 100644
 --- a/xbmc/windowing/gbm/WinSystemGbm.cpp
 +++ b/xbmc/windowing/gbm/WinSystemGbm.cpp
 @@ -307,21 +307,48 @@ bool CWinSystemGbm::SetFullScreen(bool fullScreen, RESOLUTION_INFO& res, bool bl
@@ -1525,7 +1546,7 @@ index 5804c8128b6ab6cab3de5bedf0767d8c528e4856..5b2f3842c12b4db8ee1dacb2449a5551
    {
      surface.EndTransactionalMode();
 diff --git a/xbmc/windowing/gbm/WinSystemGbm.h b/xbmc/windowing/gbm/WinSystemGbm.h
-index 12799a775c3735260ccf0fc54e6b0da3429d6978..53053adbd941f8f2069c639fcfc89328646b83f7 100644
+index 12799a775c..53053adbd9 100644
 --- a/xbmc/windowing/gbm/WinSystemGbm.h
 +++ b/xbmc/windowing/gbm/WinSystemGbm.h
 @@ -52,8 +52,10 @@ public:
@@ -1542,7 +1563,7 @@ index 12799a775c3735260ccf0fc54e6b0da3429d6978..53053adbd941f8f2069c639fcfc89328
  
    bool CanDoWindowed() override { return false; }
 diff --git a/xbmc/windowing/gbm/WinSystemGbmEGLContext.cpp b/xbmc/windowing/gbm/WinSystemGbmEGLContext.cpp
-index 185ef133712859d6ee02f8979121ac50001f1fcc..9e7da831015073b307c61de078332ed3dd20b38e 100644
+index 185ef13371..9e7da83101 100644
 --- a/xbmc/windowing/gbm/WinSystemGbmEGLContext.cpp
 +++ b/xbmc/windowing/gbm/WinSystemGbmEGLContext.cpp
 @@ -7,6 +7,9 @@
@@ -1575,7 +1596,7 @@ index 185ef133712859d6ee02f8979121ac50001f1fcc..9e7da831015073b307c61de078332ed3
      CDVWindowRetirement::Keep(std::move(m_nativeDVRetirement),egl,std::move(resources));
    }
 diff --git a/xbmc/windowing/gbm/WinSystemGbmGLESContext.cpp b/xbmc/windowing/gbm/WinSystemGbmGLESContext.cpp
-index cb3217673f696b1582078fd46de0fe08ad70d58b..8aaacb73bac5f8b9632d566033146682693c2cdb 100644
+index cb3217673f..8aaacb73ba 100644
 --- a/xbmc/windowing/gbm/WinSystemGbmGLESContext.cpp
 +++ b/xbmc/windowing/gbm/WinSystemGbmGLESContext.cpp
 @@ -43,12 +43,18 @@ extern "C"
@@ -2338,7 +2359,7 @@ index cb3217673f696b1582078fd46de0fe08ad70d58b..8aaacb73bac5f8b9632d566033146682
      m_dvImportBinding = {};
      m_dvImportUsable = false;
 diff --git a/xbmc/windowing/gbm/WinSystemGbmGLESContext.h b/xbmc/windowing/gbm/WinSystemGbmGLESContext.h
-index 9ba2c043a3b26c4fe4bc0e79c72914ac15c6bb04..16acd9f16e194e19c61325f49d8f94d2e698e04e 100644
+index 9ba2c043a3..16acd9f16e 100644
 --- a/xbmc/windowing/gbm/WinSystemGbmGLESContext.h
 +++ b/xbmc/windowing/gbm/WinSystemGbmGLESContext.h
 @@ -48,6 +48,10 @@ public:
@@ -2449,7 +2470,7 @@ index 9ba2c043a3b26c4fe4bc0e79c72914ac15c6bb04..16acd9f16e194e19c61325f49d8f94d2
  };
  
 diff --git a/xbmc/windowing/gbm/drm/DRMAtomic.cpp b/xbmc/windowing/gbm/drm/DRMAtomic.cpp
-index e51f17e20c1346085eb6b5b5ad8b4e437203b9be..d36e0e18e8a3c5d676ef98517b405e595514f2fe 100644
+index e51f17e20c..d36e0e18e8 100644
 --- a/xbmc/windowing/gbm/drm/DRMAtomic.cpp
 +++ b/xbmc/windowing/gbm/drm/DRMAtomic.cpp
 @@ -16,14 +16,12 @@
@@ -2646,7 +2667,7 @@ index e51f17e20c1346085eb6b5b5ad8b4e437203b9be..d36e0e18e8a3c5d676ef98517b405e59
    m_active = active;
  
 diff --git a/xbmc/windowing/gbm/drm/DRMAtomic.h b/xbmc/windowing/gbm/drm/DRMAtomic.h
-index 7ea6b1e71dcc29c0a24123543ccc99624367ff16..8b489005725555939a20f6b81b97e9bbb568f963 100644
+index 7ea6b1e71d..8b48900572 100644
 --- a/xbmc/windowing/gbm/drm/DRMAtomic.h
 +++ b/xbmc/windowing/gbm/drm/DRMAtomic.h
 @@ -34,6 +34,7 @@ public:
@@ -2692,7 +2713,7 @@ index 7ea6b1e71dcc29c0a24123543ccc99624367ff16..8b489005725555939a20f6b81b97e9bb
    bool m_lastPageAccepted{};
  #endif
 diff --git a/xbmc/windowing/gbm/drm/DRMUtils.cpp b/xbmc/windowing/gbm/drm/DRMUtils.cpp
-index 96bb99cd1c0148bfca722836a229c6aac4726d23..2299c9589d96a2aaf0d133779706d0f622dda496 100644
+index 96bb99cd1c..2299c9589d 100644
 --- a/xbmc/windowing/gbm/drm/DRMUtils.cpp
 +++ b/xbmc/windowing/gbm/drm/DRMUtils.cpp
 @@ -16,6 +16,8 @@
@@ -2774,7 +2795,7 @@ index 96bb99cd1c0148bfca722836a229c6aac4726d23..2299c9589d96a2aaf0d133779706d0f6
  
 diff --git a/xbmc/windowing/gbm/drm/DVBridgeDisplayRoute.h b/xbmc/windowing/gbm/drm/DVBridgeDisplayRoute.h
 new file mode 100644
-index 0000000000000000000000000000000000000000..b929a054d450d9043d72cbaea762848d44850266
+index 0000000000..b929a054d4
 --- /dev/null
 +++ b/xbmc/windowing/gbm/drm/DVBridgeDisplayRoute.h
 @@ -0,0 +1,131 @@
@@ -2910,7 +2931,7 @@ index 0000000000000000000000000000000000000000..b929a054d450d9043d72cbaea762848d
 +};
 +}
 diff --git a/xbmc/windowing/gbm/drm/DVBridgeKernelLogReader.h b/xbmc/windowing/gbm/drm/DVBridgeKernelLogReader.h
-index 461280aba04df86a17477a983193a7d56b64466e..a22f20de871c3a4d4e290502c80dafa7a13509af 100644
+index 461280aba0..a22f20de87 100644
 --- a/xbmc/windowing/gbm/drm/DVBridgeKernelLogReader.h
 +++ b/xbmc/windowing/gbm/drm/DVBridgeKernelLogReader.h
 @@ -3,18 +3,23 @@
@@ -2970,3 +2991,6 @@ index 461280aba04df86a17477a983193a7d56b64466e..a22f20de871c3a4d4e290502c80dafa7
 +  });
 +}
  }
+-- 
+2.53.0
+
