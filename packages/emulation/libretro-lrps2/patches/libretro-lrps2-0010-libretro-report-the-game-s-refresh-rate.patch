@@ -1,0 +1,56 @@
+From 1b29efe6a1b304f35162653ba0788933179e712b Mon Sep 17 00:00:00 2001
+From: Chris <meischris39@hotmail.com>
+Date: Fri, 16 Oct 2026 20:31:52 +0100
+Subject: [PATCH] libretro: report the game's refresh rate
+
+The core always declared 59.94 fps. A PAL game runs its vsyncs at
+50 Hz, so a frontend calling retro_run at 59.94 played it 20% fast
+and got 20% more sound than it could play, which Kodi kept flushing.
+Report the rate the GS is set to, and tell the frontend when the game
+changes it.
+---
+ libretro/main.cpp | 14 +++++++++++++-
+ 1 file changed, 13 insertions(+), 1 deletion(-)
+
+diff --git a/libretro/main.cpp b/libretro/main.cpp
+index 6e434d965..3dd326e9b 100644
+--- a/libretro/main.cpp
++++ b/libretro/main.cpp
+@@ -519,6 +519,8 @@ void retro_get_system_info(retro_system_info* info)
+ 	info->block_extract                 = true;
+ }
+ 
++static double reported_fps;
++
+ void retro_get_system_av_info(retro_system_av_info* info)
+ {
+ 	extern bool msg_cheat_ws_found_sent;
+@@ -538,7 +540,8 @@ void retro_get_system_av_info(retro_system_av_info* info)
+ 		info->geometry.aspect_ratio  = 16.0f / 9.0f;
+ 	else
+ 		info->geometry.aspect_ratio  = 4.0f / 3.0f;
+-	info->timing.fps                     = (retro_get_region() == RETRO_REGION_NTSC) ? (60.0f / 1.001f) : 50.0f;
++	info->timing.fps                     = GetVerticalFrequency().Raw / 100.0;
++	reported_fps                         = info->timing.fps;
+ 	info->timing.sample_rate             = 48000;
+ }
+ 
+@@ -968,6 +971,15 @@ void retro_run(void)
+ 
+ 	GetMTGS().ExecuteTaskInThread();
+ 
++	// The game chooses NTSC or PAL timing once it runs. A PAL game called at
++	// NTSC speed plays 20% fast and makes more sound than the frontend plays.
++	if (GetVerticalFrequency().Raw / 100.0 != reported_fps)
++	{
++		retro_system_av_info info;
++		retro_get_system_av_info(&info);
++		environ_cb(RETRO_ENVIRONMENT_SET_SYSTEM_AV_INFO, &info);
++	}
++
+ 	RETRO_PERFORMANCE_STOP(pcsx2_run);
+ }
+ 
+-- 
+2.53.0
+
