@@ -1,0 +1,77 @@
+From bfb338636bf4e7d7b768678e41fb327a18e7b4fd Mon Sep 17 00:00:00 2001
+From: Chris <meischris39@hotmail.com>
+Date: Fri, 16 Oct 2026 15:26:09 +0100
+Subject: [PATCH 3/3] maple: leave room for VMUs in the savestate size
+
+Kodi takes the savestate size once, before the game has created its
+VMUs, and states then outgrow its buffer. Measure each Maple slot as
+at least a VMU, and the pending DMA as the most it can hold.
+---
+ core/hw/maple/maple_cfg.cpp  | 18 ++++++++++++++++++
+ core/hw/maple/maple_devs.cpp |  7 +++++++
+ core/hw/maple/maple_devs.h   |  2 ++
+ 3 files changed, 27 insertions(+)
+
+diff --git a/core/hw/maple/maple_cfg.cpp b/core/hw/maple/maple_cfg.cpp
+index 300d6be..3bfe9d6 100644
+--- a/core/hw/maple/maple_cfg.cpp
++++ b/core/hw/maple/maple_cfg.cpp
+@@ -503,6 +503,24 @@ void mcfg_SerializeDevices(Serializer& ser)
+ {
+ 	ser << maple_ddt_pending_reset;
+ 	ser << SDCKBOccupied;
++	if (ser.dryrun())
++	{
++		// Maximum size: a frontend may take it before devices are plugged in or a DMA is under
++		// way, so leave room for a reply from every slot and for a VMU in each.
++		size_t dmaOut = sizeof(u32);
++		for (const auto& pair : mapleDmaOut)
++			dmaOut += sizeof(u32) * (2 + pair.second.size());
++		ser.skip(std::max(dmaOut, sizeof(u32) + MAPLE_PORTS * 6 * sizeof(u32) * (2 + 1024 / sizeof(u32))));
++		for (int i = 0; i < MAPLE_PORTS; i++)
++			for (int j = 0; j < 6; j++)
++			{
++				Serializer devSize;
++				if (MapleDevices[i][j] != nullptr)
++					MapleDevices[i][j]->serialize(devSize);
++				ser.skip(sizeof(u8) + std::max(devSize.size(), maple_vmuSerializedSize()));
++			}
++		return;
++	}
+ 	ser << (u32)mapleDmaOut.size();
+ 	for (const auto& pair : mapleDmaOut)
+ 	{
+diff --git a/core/hw/maple/maple_devs.cpp b/core/hw/maple/maple_devs.cpp
+index ecb89c7..db028e3 100755
+--- a/core/hw/maple/maple_devs.cpp
++++ b/core/hw/maple/maple_devs.cpp
+@@ -1858,6 +1858,13 @@ struct maple_dreamparapara_controller : maple_device
+ 	}
+ };
+ 
++// From the members rather than an instance: destroying a VMU updates the screen of a linked one.
++size_t maple_vmuSerializedSize()
++{
++	return sizeof(maple_sega_vmu::player_num) + sizeof(maple_sega_vmu::flash_data)
++		+ sizeof(maple_sega_vmu::lcd_data) + sizeof(maple_sega_vmu::lcd_data_decoded);
++}
++
+ std::shared_ptr<maple_device> maple_Create(MapleDeviceType type)
+ {
+ 	switch(type)
+diff --git a/core/hw/maple/maple_devs.h b/core/hw/maple/maple_devs.h
+index a57e2fc..d855001 100755
+--- a/core/hw/maple/maple_devs.h
++++ b/core/hw/maple/maple_devs.h
+@@ -189,6 +189,8 @@ struct maple_device : public std::enable_shared_from_this<maple_device>
+ };
+ 
+ std::shared_ptr<maple_device> maple_Create(MapleDeviceType type);
++// What a VMU writes to a savestate, the most of any standard device.
++size_t maple_vmuSerializedSize();
+ 
+ #define MAPLE_PORTS 4
+ 
+-- 
+2.53.0
+

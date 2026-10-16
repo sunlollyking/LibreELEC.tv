@@ -1,0 +1,54 @@
+From 90a8633a0c413043943f207301d8f61c8803e1ac Mon Sep 17 00:00:00 2001
+From: Chris <meischris39@hotmail.com>
+Date: Fri, 16 Oct 2026 15:19:24 +0100
+Subject: [PATCH] Add the Vblank Pacing setting, on by default
+
+Kodi paces cores by their frame rate and doesn't block on audio, so
+Flycast's default of running until the next frame is drawn lets loading
+screens run several vblanks per frame and Kodi flushes the audio.
+---
+ .../language/resource.language.en_gb/strings.po       |  8 ++++++++
+ game.libretro.flycast/resources/settings.xml          | 11 +++++++++++
+ 2 files changed, 19 insertions(+)
+
+diff --git a/game.libretro.flycast/resources/language/resource.language.en_gb/strings.po b/game.libretro.flycast/resources/language/resource.language.en_gb/strings.po
+index 7b2a4df..cc85d25 100644
+--- a/game.libretro.flycast/resources/language/resource.language.en_gb/strings.po
++++ b/game.libretro.flycast/resources/language/resource.language.en_gb/strings.po
+@@ -1417,3 +1417,11 @@ msgstr ""
+ msgctxt "#30348"
+ msgid "Skip dumping video (YUV) and already updated textures."
+ msgstr ""
++
++msgctxt "#30349"
++msgid "Vblank Pacing"
++msgstr ""
++
++msgctxt "#30350"
++msgid "Each frame the frontend runs emulates exactly one vblank, whether or not the game drew. For frontends that pace the core by its frame rate rather than by blocking on audio; without it, loading screens that draw nothing run several vblanks per frame and their sound arrives in bursts. Needs Threaded Rendering disabled."
++msgstr ""
+diff --git a/game.libretro.flycast/resources/settings.xml b/game.libretro.flycast/resources/settings.xml
+index 301cfaf..49d8a3d 100644
+--- a/game.libretro.flycast/resources/settings.xml
++++ b/game.libretro.flycast/resources/settings.xml
+@@ -432,6 +432,17 @@
+ 					</constraints>
+ 					<control type="list" format="string" />
+ 				</setting>
++				<setting id="reicast_vblank_pacing" type="string" label="30349" help="30350">
++					<level>0</level>
++					<default>enabled</default>
++					<constraints>
++						<options>
++							<option label="13106">disabled</option>
++							<option label="305">enabled</option>
++						</options>
++					</constraints>
++					<control type="list" format="string" />
++				</setting>
+ 				<setting id="reicast_auto_skip_frame" type="string" label="30221" help="30222">
+ 					<level>0</level>
+ 					<default>disabled</default>
+-- 
+2.53.0
+

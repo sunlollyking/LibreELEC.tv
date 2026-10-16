@@ -1,0 +1,109 @@
+From db180f642a446be86eff6814a4e22d6c07211c18 Mon Sep 17 00:00:00 2001
+From: Chris <meischris39@hotmail.com>
+Date: Fri, 16 Oct 2026 15:26:09 +0100
+Subject: [PATCH 2/3] libretro: add a Vblank Pacing option
+
+Without threaded rendering a run ends when a frame is presented, or
+after 50 ms of emulated time without one. Frontends that pace retro_run
+by the frame rate instead of blocking on audio, Kodi among them, then
+get several vblanks per run through loading screens and have to drop
+the extra audio. With the option on, every run ends at the next vblank.
+---
+ core/cfg/option.cpp                    |  1 +
+ core/cfg/option.h                      |  1 +
+ core/emulator.cpp                      |  2 +-
+ core/hw/pvr/Renderer_if.cpp            |  2 +-
+ shell/libretro/libretro_core_options.h | 14 ++++++++++++++
+ shell/libretro/option.cpp              |  1 +
+ 6 files changed, 19 insertions(+), 2 deletions(-)
+
+diff --git a/core/cfg/option.cpp b/core/cfg/option.cpp
+index 82f3994..575622c 100644
+--- a/core/cfg/option.cpp
++++ b/core/cfg/option.cpp
+@@ -110,6 +110,7 @@ Option<int64_t> PixelBufferSize("rend.PixelBufferSize", 512_MB);
+ Option<int> AnisotropicFiltering("rend.AnisotropicFiltering", 1);
+ Option<int> TextureFiltering("rend.TextureFiltering", 0); // Default
+ Option<bool> ThreadedRendering("rend.ThreadedRendering", true);
++Option<bool> VblankPacing("");
+ Option<bool> DupeFrames("rend.DupeFrames", false);
+ Option<int> PerPixelLayers("rend.PerPixelLayers", 32);
+ #ifdef TARGET_UWP
+diff --git a/core/cfg/option.h b/core/cfg/option.h
+index 267c90b..05f9489 100644
+--- a/core/cfg/option.h
++++ b/core/cfg/option.h
+@@ -471,6 +471,7 @@ extern Option<int64_t> PixelBufferSize;
+ extern Option<int> AnisotropicFiltering;
+ extern Option<int> TextureFiltering; // 0: default, 1: force nearest, 2: force linear
+ extern Option<bool> ThreadedRendering;
++extern Option<bool> VblankPacing;
+ extern Option<bool> DupeFrames;
+ extern Option<bool> NativeDepthInterpolation;
+ extern Option<bool> EmulateFramebuffer;
+diff --git a/core/emulator.cpp b/core/emulator.cpp
+index 25e685b..9026f72 100644
+--- a/core/emulator.cpp
++++ b/core/emulator.cpp
+@@ -1088,7 +1088,7 @@ void Emulator::vblank()
+ 	EventManager::event(Event::VBlank);
+ 	runner.execTasks();
+ 	// Time out if a frame hasn't been rendered for 50 ms
+-	if (sh4_sched_now64() - startTime <= 50_sh4ms)
++	if (!config::VblankPacing && sh4_sched_now64() - startTime <= 50_sh4ms)
+ 		return;
+ 	if (ggpo::active())
+ 		ggpo::endOfFrame();
+diff --git a/core/hw/pvr/Renderer_if.cpp b/core/hw/pvr/Renderer_if.cpp
+index 49c3f72..3d4c0a4 100644
+--- a/core/hw/pvr/Renderer_if.cpp
++++ b/core/hw/pvr/Renderer_if.cpp
+@@ -268,7 +268,7 @@ private:
+ 		if (renderer->Present())
+ 		{
+ 			presented = true;
+-			if (!config::ThreadedRendering && !ggpo::active())
++			if (!config::ThreadedRendering && !config::VblankPacing && !ggpo::active())
+ 				emu.getSh4Executor()->Stop();
+ #ifdef LIBRETRO
+ 			retro_rend_present();
+diff --git a/shell/libretro/libretro_core_options.h b/shell/libretro/libretro_core_options.h
+index 2cb2cb2..81c631f 100644
+--- a/shell/libretro/libretro_core_options.h
++++ b/shell/libretro/libretro_core_options.h
+@@ -644,6 +644,20 @@ struct retro_core_option_v2_definition option_defs_us[] = {
+       },
+       "enabled",
+    },
++   {
++      CORE_OPTION_NAME "_vblank_pacing",
++      "Vblank Pacing",
++      NULL,
++      "Each frame the frontend runs emulates exactly one vblank, whether or not the game drew. For frontends that pace the core by its frame rate rather than by blocking on audio; without it, loading screens that draw nothing run several vblanks per frame and their sound arrives in bursts. Needs Threaded Rendering disabled.",
++      NULL,
++      "performance",
++      {
++         { "disabled", NULL },
++         { "enabled",  NULL },
++         { NULL, NULL },
++      },
++      "disabled",
++   },
+    {
+       CORE_OPTION_NAME "_auto_skip_frame",
+       "Auto Skip Frame",
+diff --git a/shell/libretro/option.cpp b/shell/libretro/option.cpp
+index 6d317df..ee041d7 100644
+--- a/shell/libretro/option.cpp
++++ b/shell/libretro/option.cpp
+@@ -89,6 +89,7 @@ Option<bool> IntegerScale("");
+ Option<bool> LinearInterpolation("", true);
+ Option<bool> VSync("", true);
+ Option<bool> ThreadedRendering(CORE_OPTION_NAME "_threaded_rendering", true);
++Option<bool> VblankPacing(CORE_OPTION_NAME "_vblank_pacing");
+ Option<int> AnisotropicFiltering(CORE_OPTION_NAME "_anisotropic_filtering");
+ Option<int> TextureFiltering(CORE_OPTION_NAME "_texture_filtering");
+ Option<bool> PowerVR2Filter(CORE_OPTION_NAME "_pvr2_filtering");
+-- 
+2.53.0
+
