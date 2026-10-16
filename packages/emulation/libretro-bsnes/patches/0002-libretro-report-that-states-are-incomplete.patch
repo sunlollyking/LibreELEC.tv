@@ -1,0 +1,34 @@
+From 2963db9c624de02386f81b8f9defab50058844d0 Mon Sep 17 00:00:00 2001
+From: Chris <meischris39@hotmail.com>
+Date: Fri, 16 Oct 2026 19:00:07 +0100
+Subject: [PATCH] libretro: report that states are incomplete
+
+Loading a state reinitializes the system. A frontend that loads one
+every frame from power-on, as run-ahead does, keeps the game from ever
+booting and shows a black screen.
+
+Report RETRO_SERIALIZATION_QUIRK_INCOMPLETE so frontends don't rely on
+states for run-ahead or netplay.
+---
+ bsnes/target-libretro/libretro.cpp | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/bsnes/target-libretro/libretro.cpp b/bsnes/target-libretro/libretro.cpp
+index 66ba7ce..614c314 100644
+--- a/bsnes/target-libretro/libretro.cpp
++++ b/bsnes/target-libretro/libretro.cpp
+@@ -733,6 +733,11 @@ void retro_init()
+ {
+ 	emulator = new SuperFamicom::Interface;
+ 	program = new Program(emulator.data());
++
++	// Loading a state reinitializes the system, so a frontend that loads one every
++	// frame from power-on, as run-ahead does, keeps games from ever booting
++	uint64_t quirks = RETRO_SERIALIZATION_QUIRK_INCOMPLETE;
++	environ_cb(RETRO_ENVIRONMENT_SET_SERIALIZATION_QUIRKS, &quirks);
+ }
+ 
+ void retro_deinit()
+-- 
+2.53.0
+
