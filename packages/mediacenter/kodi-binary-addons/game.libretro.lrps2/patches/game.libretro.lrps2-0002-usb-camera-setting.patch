@@ -1,0 +1,63 @@
+From ba892cad34af3d0be7128668d5fd1960083dbfa7 Mon Sep 17 00:00:00 2001
+From: Chris <meischris39@hotmail.com>
+Date: Fri, 16 Oct 2026 11:40:44 +0100
+Subject: [PATCH] Add the USB Camera setting
+
+The core's new pcsx2_usb_camera option plugs a Sony EyeToy or Konami
+Capture Eye into USB port 1 for EyeToy games. Kodi only passes options
+the add-on declares, so without this the core always reads it as off.
+---
+ .../language/resource.language.en_gb/strings.po  | 16 ++++++++++++++++
+ game.libretro.lrps2/resources/settings.xml       | 12 ++++++++++++
+ 2 files changed, 28 insertions(+)
+
+diff --git a/game.libretro.lrps2/resources/language/resource.language.en_gb/strings.po b/game.libretro.lrps2/resources/language/resource.language.en_gb/strings.po
+index a40de09..b0ffbb1 100644
+--- a/game.libretro.lrps2/resources/language/resource.language.en_gb/strings.po
++++ b/game.libretro.lrps2/resources/language/resource.language.en_gb/strings.po
+@@ -1152,3 +1152,19 @@ msgstr ""
+ msgctxt "#30274"
+ msgid "Hack: Texture Offset Y - Tens"
+ msgstr ""
++
++msgctxt "#30275"
++msgid "System: USB Camera"
++msgstr ""
++
++msgctxt "#30276"
++msgid "Plug a camera into USB port 1 for EyeToy games. Pictures come from the first webcam on the system and sound from its microphone. (Content restart required)"
++msgstr ""
++
++msgctxt "#30277"
++msgid "Sony EyeToy"
++msgstr ""
++
++msgctxt "#30278"
++msgid "Konami Capture Eye"
++msgstr ""
+diff --git a/game.libretro.lrps2/resources/settings.xml b/game.libretro.lrps2/resources/settings.xml
+index 4145f5d..974bcba 100644
+--- a/game.libretro.lrps2/resources/settings.xml
++++ b/game.libretro.lrps2/resources/settings.xml
+@@ -63,6 +63,18 @@
+ 					</constraints>
+ 					<control type="list" format="string"/>
+ 				</setting>
++				<setting id="pcsx2_usb_camera" type="string" label="30275" help="30276">
++					<level>0</level>
++					<default>disabled</default>
++					<constraints>
++						<options>
++							<option>disabled</option>
++							<option label="30277">eyetoy</option>
++							<option label="30278">capture_eye</option>
++						</options>
++					</constraints>
++					<control type="list" format="string"/>
++				</setting>
+ 			</group>
+ 		</category>
+ 		<category id="memcards_options" label="30003" help="30004">
+-- 
+2.53.0
+

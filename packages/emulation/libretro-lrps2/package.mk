@@ -11,7 +11,7 @@ PKG_SITE="https://github.com/sunlollyking/LRPS2"
 # real directories, so an archive build has everything it needs -- unlike
 # libretro-dolphin, which needs a git clone for its submodules.
 PKG_URL="https://github.com/sunlollyking/LRPS2/archive/${PKG_VERSION}.tar.gz"
-PKG_DEPENDS_TARGET="toolchain zlib libpng xz libxml2 libaio"
+PKG_DEPENDS_TARGET="toolchain zlib libpng xz libxml2 libaio libjpeg-turbo alsa-lib"
 PKG_LONGDESC="LRPS2 is a libretro port of the PCSX2 PlayStation 2 emulator."
 PKG_TOOLCHAIN="cmake"
 
