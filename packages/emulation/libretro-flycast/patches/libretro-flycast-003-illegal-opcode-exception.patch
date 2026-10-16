@@ -1,0 +1,54 @@
+From 6549ec7b90660a806324f400147530498dc6224e Mon Sep 17 00:00:00 2001
+From: Chris <meischris39@hotmail.com>
+Date: Fri, 16 Oct 2026 14:10:23 +0100
+Subject: [PATCH 2/2] rec-x64: raise exceptions from fallback opcodes without
+ the MMU too
+
+Without the MMU, an instruction the dynarec hands to its interpreter
+was called straight from generated code. An illegal opcode's handler
+throws SH4ThrownException, which cannot unwind through generated code,
+so the process aborted. Kodi went down with it whenever a game executed
+an illegal instruction, as the Counter-Strike: Condition Zero beta does
+at 0x67f0 of the boot ROM.
+
+Call every fallback through interpreter_fallback, which turns the throw
+into the SH4 exception, as it already did with the MMU on.
+---
+ core/rec-x64/rec_x64.cpp | 14 +++++---------
+ 1 file changed, 5 insertions(+), 9 deletions(-)
+
+diff --git a/core/rec-x64/rec_x64.cpp b/core/rec-x64/rec_x64.cpp
+index 42ac647..1fa350c 100644
+--- a/core/rec-x64/rec_x64.cpp
++++ b/core/rec-x64/rec_x64.cpp
+@@ -337,11 +337,10 @@ public:
+          switch (op.op)
+          {
+             case shop_ifb:
+-					if (mmu_enabled())
+-					{
+-						mov(call_regs64[1], reinterpret_cast<uintptr_t>(*OpDesc[op.rs3._imm]->oph));	// op handler
+-						mov(call_regs[2], block->vaddr + op.guest_offs - (op.delay_slot ? 1 : 0));	// pc
+-					}
++					// Through interpreter_fallback even without the MMU: a handler that throws, such as an
++					// illegal opcode's, must become a guest exception, not unwind through generated code.
++					mov(call_regs64[1], reinterpret_cast<uintptr_t>(*OpDesc[op.rs3._imm]->oph));	// op handler
++					mov(call_regs[2], block->vaddr + op.guest_offs - (op.delay_slot ? 1 : 0));	// pc
+                if (op.rs1._imm)
+                {
+                   mov(rax, (size_t)&next_pc);
+@@ -350,10 +349,7 @@ public:
+ 
+                mov(call_regs[0], op.rs3._imm);
+ 
+-					if (!mmu_enabled())
+-						GenCall(OpDesc[op.rs3._imm]->oph);
+-					else
+-						GenCall(interpreter_fallback);
++					GenCall(interpreter_fallback);
+ 
+                break;
+ 
+-- 
+2.53.0
+

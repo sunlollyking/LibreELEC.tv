@@ -4,7 +4,7 @@
 PKG_NAME="game.libretro.flycast"
 PKG_VERSION="0.1.0.65-Omega"
 PKG_SHA256="7ec8fc9ab576d0f623863b47666076057ac33ccb7fd5967b02ad1ee618a05754"
-PKG_REV="1"
+PKG_REV="3"
 PKG_ARCH="any"
 PKG_LICENSE="GPL-2.0-or-later"
 PKG_SITE="https://github.com/kodi-game/game.libretro.flycast"
