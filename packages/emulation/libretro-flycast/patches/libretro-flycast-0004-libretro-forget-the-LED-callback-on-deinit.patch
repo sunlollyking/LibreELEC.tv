@@ -1,0 +1,28 @@
+From 19748f859b1ac0463c5431472eb572437fe08dee Mon Sep 17 00:00:00 2001
+From: Chris <meischris39@hotmail.com>
+Date: Fri, 16 Oct 2026 15:43:55 +0100
+Subject: [PATCH 4/4] libretro: forget the LED callback on deinit
+
+The callback was only ever taken once. A frontend that loads a fresh
+instance of itself for the next game, as Kodi does, keeps the core
+loaded, so the next GD-ROM light change called into the unloaded one.
+---
+ shell/libretro/libretro.cpp | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/shell/libretro/libretro.cpp b/shell/libretro/libretro.cpp
+index b927994..74b7f93 100644
+--- a/shell/libretro/libretro.cpp
++++ b/shell/libretro/libretro.cpp
+@@ -441,6 +441,8 @@ void retro_deinit()
+ 	emu.term();
+ #endif
+ 	libretro_supports_bitmasks = false;
++	led_state_cb = NULL;
++	memset(retro_led_state, 0, sizeof(retro_led_state));
+ 	categoriesSupported = false;
+ 	platformIsDreamcast = true;
+ 	platformIsArcade = false;
+-- 
+2.53.0
+
