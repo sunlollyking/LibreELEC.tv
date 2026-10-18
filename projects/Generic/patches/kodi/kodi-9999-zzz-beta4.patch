@@ -1,4 +1,4 @@
-From 139c3f508286370a9ff78d401c588acdc9db4acb Mon Sep 17 00:00:00 2001
+From ba5a0718e1c8edb355cdfc6f03ea30164991062a Mon Sep 17 00:00:00 2001
 From: Chris <meischris39@hotmail.com>
 Date: Sun, 18 Oct 2026 17:20:49 +0100
 Subject: [PATCH] Dolby Vision R1.0.0-Beta4 over Beta3
@@ -3517,7 +3517,7 @@ index ae42298..8c24d25 100644
  #endif
    // Returns 0 if scaling is below hqscalers threshold.
 diff --git a/xbmc/cores/VideoPlayer/VideoRenderers/RenderManager.cpp b/xbmc/cores/VideoPlayer/VideoRenderers/RenderManager.cpp
-index 9902d1d..50ad032 100644
+index 9902d1d..0b45a1e 100644
 --- a/xbmc/cores/VideoPlayer/VideoRenderers/RenderManager.cpp
 +++ b/xbmc/cores/VideoPlayer/VideoRenderers/RenderManager.cpp
 @@ -32,12 +32,15 @@
@@ -3660,7 +3660,7 @@ index 9902d1d..50ad032 100644
  
 +#ifdef CB1_HAS_HDR10_AI
 +  if (physicalPhase && completionAge && m_fps > 0 &&
-+      frametime * m_fps < DVD_TIME_BASE * 0.75 && m_pRenderer->HDR10AILookahead() &&
++      frametime * static_cast<double>(m_fps) < DVD_TIME_BASE * 0.75 && m_pRenderer->HDR10AILookahead() &&
 +      DVBRIDGE::FrameOutputSettings().hdr10Source == DVBRIDGE::HDR10SourceMode::ReferenceDV)
 +  {
 +    // Select on the physical refresh phase, not an interpolated mid-refresh clock.
