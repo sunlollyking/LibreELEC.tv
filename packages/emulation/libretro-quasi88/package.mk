@@ -2,8 +2,8 @@
 # Copyright (C) 2026-present Team LibreELEC (https://libreelec.tv)
 
 PKG_NAME="libretro-quasi88"
-PKG_VERSION="ac1e8743cf45d985d8f19191779a9407fc1b41de"
-PKG_SHA256="9b51417a0f84497997eba8c97d563c4d0f1dc9c8394f25f71641380626183f14"
+PKG_VERSION="7884be5277776a5d8c4fdc4e574e9b5b589945c9"
+PKG_SHA256="1bf45b4a87c96a7f6de212dde83f3c0e0cbc7023fac8e01e4f07da507c92273f"
 PKG_LICENSE="LicenseRef-Non-commercial"
 PKG_SITE="https://github.com/libretro/quasi88-libretro"
 PKG_URL="https://github.com/libretro/quasi88-libretro/archive/${PKG_VERSION}.tar.gz"

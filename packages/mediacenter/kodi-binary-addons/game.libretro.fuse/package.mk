@@ -2,8 +2,8 @@
 # Copyright (C) 2016-present Team LibreELEC (https://libreelec.tv)
 
 PKG_NAME="game.libretro.fuse"
-PKG_VERSION="1.6.0.43-Omega"
-PKG_SHA256="bb13e020231a47bce4986d1f79dc607ac438b7f64188b1322fb4f7455fdf3927"
+PKG_VERSION="1.6.0.48-Omega"
+PKG_SHA256="bb9a17c29fb457dab1422eb7cef2dbd59b2f57011c9f000f5fd7c3a3cf1cc0ea"
 PKG_REV="1"
 PKG_ARCH="any"
 PKG_LICENSE="GPL-3.0-only"

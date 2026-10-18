@@ -2,8 +2,8 @@
 # Copyright (C) 2026-present Team LibreELEC (https://libreelec.tv)
 
 PKG_NAME="game.libretro.freeintv"
-PKG_VERSION="1.2.0.37-Omega"
-PKG_SHA256="2e2303c6fc33996e3568b91808cb20537d0399e8100f1395f3652006f53e9196"
+PKG_VERSION="1.2.0.41-Omega"
+PKG_SHA256="319eaf9636f497b8058f8da64adc9613dab2e7d99cfa69d42b1d7cca61f48b22"
 PKG_REV="1"
 PKG_ARCH="any"
 PKG_LICENSE="GPL-2.0-or-later"

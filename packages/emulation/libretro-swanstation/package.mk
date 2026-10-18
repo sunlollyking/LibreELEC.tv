@@ -2,11 +2,11 @@
 # Copyright (C) 2024-present Team LibreELEC (https://libreelec.tv)
 
 PKG_NAME="libretro-swanstation"
-PKG_VERSION="fc37fce91dedeba6e4007012cfed8de626fb45cf"
-PKG_SHA256="d0b683021c079105c1f14be868390a6923614afdd36e6486a3b6b71b049922f4"
+PKG_VERSION="e436e9b85374def58d211df7f78880f0f4a917b4"
+PKG_SHA256="bff59f88ed83dbc9f597ccd52b29dc82eae2c724f5158095ef075cccb430131a"
 PKG_LICENSE="GPL-3.0-only"
 PKG_SITE="https://github.com/kodi-game/swanstation"
-PKG_URL="https://github.com/kodi-game/swanstation/archive/${PKG_VERSION}.tar.gz"
+PKG_URL="https://github.com/libretro/swanstation/archive/${PKG_VERSION}.tar.gz"
 PKG_DEPENDS_TARGET="toolchain"
 PKG_LONGDESC="SwanStation is a Libretro core implementation of DuckStation, which is an emulator of the Sony PlayStation console."
 PKG_TOOLCHAIN="cmake"

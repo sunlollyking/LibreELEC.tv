@@ -2,8 +2,8 @@
 # Copyright (C) 2026-present Team LibreELEC (https://libreelec.tv)
 
 PKG_NAME="libretro-neocd"
-PKG_VERSION="9e9ad181bed60f84f9cff02c03617b41e8a31cfe"
-PKG_SHA256="287e16da9c70f5d0797439b6da6583d191027f25dcf6c719d5890539966e6194"
+PKG_VERSION="b1e04c738cb48a1dae0574b8877f6a116d270ca1"
+PKG_SHA256="fac1ec580812ce7aa962498450e1b1cc8896a786eeb2f16cfe28807dc13d2418"
 PKG_LICENSE="LGPL-3.0-only"
 PKG_SITE="https://github.com/libretro/neocd_libretro"
 PKG_URL="https://github.com/libretro/neocd_libretro/archive/${PKG_VERSION}.tar.gz"

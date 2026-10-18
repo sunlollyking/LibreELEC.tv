@@ -2,9 +2,9 @@
 # Copyright (C) 2024-present Team LibreELEC (https://libreelec.tv)
 
 PKG_NAME="game.libretro.swanstation"
-PKG_VERSION="1.0.0.35-Omega"
-PKG_SHA256="54d5dbf1134d9feefb503cd0b3050456789262285fe67f16df6beb52fb862632"
-PKG_REV="2"
+PKG_VERSION="1.0.0.42-Omega"
+PKG_SHA256="29c9f1effad9b70218885790ed710fbb62c68ca7989b7453ad2ffd1407ee5e28"
+PKG_REV="1"
 PKG_ARCH="any"
 PKG_LICENSE="GPL-3.0-only"
 PKG_SITE="https://github.com/kodi-game/game.libretro.swanstation"

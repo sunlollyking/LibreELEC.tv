@@ -2,8 +2,8 @@
 # Copyright (C) 2023-present Team LibreELEC (https://libreelec.tv)
 
 PKG_NAME="game.libretro.supafaust"
-PKG_VERSION="1.29.0.40-Omega"
-PKG_SHA256="97bdcb0fb6d04243e3a7f0b476cfaf31b925c597b5ff27ee93bacc1f2b73e509"
+PKG_VERSION="1.29.0.46-Omega"
+PKG_SHA256="ae86908bb5a4eee13e0cf81791252acf60032e6e6c641db2dab6d3cbff8ad6fc"
 PKG_REV="1"
 PKG_ARCH="any"
 PKG_LICENSE="GPL-2.0-or-later"

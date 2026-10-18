@@ -2,8 +2,8 @@
 # Copyright (C) 2026-present Team LibreELEC (https://libreelec.tv)
 
 PKG_NAME="game.libretro.melonds"
-PKG_VERSION="0.9.3.48-Omega"
-PKG_SHA256="9ebbd88a842371171ed732546ef47216600a2c37a004c0adbc2e577c331d8d5b"
+PKG_VERSION="0.9.3.50-Omega"
+PKG_SHA256="4a8bfd6e322b93194d6596c4146b103aaa62e7c889aa0066e89e5b7fd4ab9da4"
 PKG_REV="1"
 PKG_ARCH="any"
 PKG_LICENSE="GPL-3.0-or-later"

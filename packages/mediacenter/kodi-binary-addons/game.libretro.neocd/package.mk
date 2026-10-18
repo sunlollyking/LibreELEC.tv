@@ -2,8 +2,8 @@
 # Copyright (C) 2026-present Team LibreELEC (https://libreelec.tv)
 
 PKG_NAME="game.libretro.neocd"
-PKG_VERSION="20.22.0.27-Omega"
-PKG_SHA256="58a79c8bf0a963954333039198b89bd45b52089970eb46b8f9d1f24fb556978e"
+PKG_VERSION="2022.0.0.34-Omega"
+PKG_SHA256="e2f5e7fe07d6a3299366d75476f27746eaa3a16f8abf2656d90e6db1f2e506bc"
 PKG_REV="1"
 PKG_ARCH="any"
 PKG_LICENSE="LGPL-3.0-only"

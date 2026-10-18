@@ -2,8 +2,8 @@
 # Copyright (C) 2026-present Team LibreELEC (https://libreelec.tv)
 
 PKG_NAME="game.libretro.quasi88"
-PKG_VERSION="0.6.4.43-Omega"
-PKG_SHA256="3c8e204ac497763a21c9480a92c21fe2116eea52d4f49e2af2a18d5e3cf37178"
+PKG_VERSION="0.6.4.44-Omega"
+PKG_SHA256="84fc4ff4eb8274b7bd913da916d0075ce59acf281be93cd6c00330e1b2a3f731"
 PKG_REV="1"
 PKG_ARCH="any"
 PKG_LICENSE="LicenseRef-Non-commercial"
