@@ -1,0 +1,106 @@
+From e91211cf817183b125abaa5ef159230d8076d615 Mon Sep 17 00:00:00 2001
+From: Chris <meischris39@hotmail.com>
+Date: Sun, 18 Oct 2026 19:33:27 +0100
+Subject: [PATCH] Fix MVC cadence accounting after stereo frame assembly
+
+From CroqueMr/libreelec-x86-DV#27 (1349835), merged after R1.0.0-Beta4.
+---
+ .../DVDCodecs/Video/DVDVideoCodecFFmpeg.cpp   | 48 +++++++++++++------
+ .../DVDCodecs/Video/DVDVideoCodecFFmpeg.h     |  1 +
+ 2 files changed, 34 insertions(+), 15 deletions(-)
+
+diff --git a/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVDVideoCodecFFmpeg.cpp b/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVDVideoCodecFFmpeg.cpp
+index 88c3b46..21b560a 100644
+--- a/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVDVideoCodecFFmpeg.cpp
++++ b/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVDVideoCodecFFmpeg.cpp
+@@ -989,21 +989,8 @@ CDVDVideoCodec::VCReturn CDVDVideoCodecFFmpeg::GetBasePicture(VideoPicture* pVid
+   }
+ 
+   // here we got a frame
+-  int64_t framePTS = m_pDecodedFrame->best_effort_timestamp;
+-
+-  if (m_pCodecContext->skip_frame > AVDISCARD_DEFAULT)
+-  {
+-    if (m_dropCtrl.m_state == CDropControl::VALID &&
+-        m_dropCtrl.m_lastPTS != AV_NOPTS_VALUE &&
+-        framePTS != AV_NOPTS_VALUE &&
+-        framePTS > (m_dropCtrl.m_lastPTS + m_dropCtrl.m_diffPTS * 1.5))
+-    {
+-      m_droppedFrames++;
+-      if (m_interlaced)
+-        m_droppedFrames++;
+-    }
+-  }
+-  m_dropCtrl.Process(framePTS, m_pCodecContext->skip_frame > AVDISCARD_DEFAULT);
++  if (!m_multiview)
++    UpdateDropControl(m_pDecodedFrame->best_effort_timestamp);
+ 
+   if (m_pDecodedFrame->flags & AV_FRAME_FLAG_KEY)
+   {
+@@ -1031,6 +1018,9 @@ CDVDVideoCodec::VCReturn CDVDVideoCodecFFmpeg::GetBasePicture(VideoPicture* pVid
+     int frames = 300;
+     if (m_dropCtrl.m_state == CDropControl::VALID)
+       frames = static_cast<int>(6000000 / m_dropCtrl.m_diffPTS);
++    else if (m_multiview && m_hints.fpsrate > 0 && m_hints.fpsscale > 0)
++      frames = static_cast<int>(
++          std::clamp<int64_t>(6LL * m_hints.fpsrate / m_hints.fpsscale, 1, 300));
+     if (m_iLastKeyframe >= frames && m_pDecodedFrame->pict_type == AV_PICTURE_TYPE_I)
+     {
+       m_started = true;
+@@ -1127,6 +1117,22 @@ CDVDVideoCodec::VCReturn CDVDVideoCodecFFmpeg::GetBasePicture(VideoPicture* pVid
+   return VC_NONE;
+ }
+ 
++void CDVDVideoCodecFFmpeg::UpdateDropControl(int64_t pts)
++{
++  if (m_pCodecContext->skip_frame > AVDISCARD_DEFAULT)
++  {
++    if (m_dropCtrl.m_state == CDropControl::VALID &&
++        m_dropCtrl.m_lastPTS != AV_NOPTS_VALUE && pts != AV_NOPTS_VALUE &&
++        pts > (m_dropCtrl.m_lastPTS + m_dropCtrl.m_diffPTS * 1.5))
++    {
++      m_droppedFrames++;
++      if (m_interlaced)
++        m_droppedFrames++;
++    }
++  }
++  m_dropCtrl.Process(pts, m_pCodecContext->skip_frame > AVDISCARD_DEFAULT);
++}
++
+ bool CDVDVideoCodecFFmpeg::SetPictureParams(VideoPicture* pVideoPicture)
+ {
+   if (!GetPictureCommon(pVideoPicture))
+@@ -1805,6 +1811,18 @@ CDVDVideoCodec::VCReturn CDVDVideoCodecFFmpeg::FilterProcess(AVFrame* frame)
+     return VC_ERROR;
+   }
+ 
++  // hstack can rescale an unknown timestamp to AV_NOPTS_VALUE + 1.
++  if (m_multiview && m_pFilterFrame->pts > AV_NOPTS_VALUE + 1)
++  {
++    // Count temporal pictures, not the two decoded views of each MVC picture.
++    const int64_t pts = av_rescale_q(m_pFilterFrame->pts,
++                                    av_buffersink_get_time_base(m_pFilterOut),
++                                    m_pFilterIn->outputs[0]->time_base);
++    if (m_dropCtrl.m_lastPTS == AV_NOPTS_VALUE)
++      m_dropCtrl.Reset(true);
++    UpdateDropControl(pts);
++  }
++
+   av_frame_unref(m_pFrame);
+   av_frame_move_ref(m_pFrame, m_pFilterFrame);
+ 
+diff --git a/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVDVideoCodecFFmpeg.h b/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVDVideoCodecFFmpeg.h
+index e26a634..94ee160 100644
+--- a/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVDVideoCodecFFmpeg.h
++++ b/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVDVideoCodecFFmpeg.h
+@@ -92,6 +92,7 @@ protected:
+   void SetFilters();
+   void UpdateName();
+   bool SetPictureParams(VideoPicture* pVideoPicture);
++  void UpdateDropControl(int64_t pts);
+ 
+   bool HasHardware() { return m_pHardware != nullptr; }
+   void SetHardware(IHardwareDecoder *hardware);
+-- 
+2.53.0
+
