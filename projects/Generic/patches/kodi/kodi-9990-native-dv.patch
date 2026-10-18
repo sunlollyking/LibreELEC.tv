@@ -1,9 +1,10 @@
-From 1160635d92dd3cdd5973ee6e79f64ff4dc35829e Mon Sep 17 00:00:00 2001
+From d5a6d6f3b5f59062fcdca76dd0d6e5d472eaba81 Mon Sep 17 00:00:00 2001
 From: CroqueMr <CroqueMr@users.noreply.github.com>
 Date: Wed, 7 Oct 2026 08:25:35 +0100
 Subject: [PATCH] kodi-9990-native-dv
 
 From CroqueMr/libreelec-x86-DV R1.0.0-Beta1 (kodi-9990-native-dv.patch).
+Re-anchored next to master's Xbox Dolby Vision RPU fields (xbmc#29861).
 ---
  CMakeLists.txt                                |  10 +
  LICENSES/GPL-3.0-or-later                     | 674 ++++++++++++++++++
@@ -57,7 +58,7 @@ From CroqueMr/libreelec-x86-DV R1.0.0-Beta1 (kodi-9990-native-dv.patch).
  xbmc/windowing/gbm/WinSystemGbm.h             |   5 +
  xbmc/windowing/gbm/WinSystemGbmEGLContext.cpp |   7 +-
  xbmc/windowing/gbm/WinSystemGbmEGLContext.h   |   1 +
- .../windowing/gbm/WinSystemGbmGLESContext.cpp | 219 +++++-
+ .../windowing/gbm/WinSystemGbmGLESContext.cpp | 211 +++++-
  xbmc/windowing/gbm/WinSystemGbmGLESContext.h  |  25 +
  xbmc/windowing/gbm/drm/CMakeLists.txt         |   4 +
  xbmc/windowing/gbm/drm/DRMAtomic.cpp          |  64 +-
@@ -66,7 +67,7 @@ From CroqueMr/libreelec-x86-DV R1.0.0-Beta1 (kodi-9990-native-dv.patch).
  xbmc/windowing/gbm/drm/DRMUtils.h             |   3 +
  xbmc/windowing/gbm/drm/DVBridgeState.cpp      |  96 +++
  xbmc/windowing/gbm/drm/DVBridgeState.h        |  32 +
- 61 files changed, 2748 insertions(+), 76 deletions(-)
+ 61 files changed, 2744 insertions(+), 72 deletions(-)
  create mode 100644 LICENSES/GPL-3.0-or-later
  create mode 100644 xbmc/cores/VideoPlayer/DVDCodecs/Video/DVMetadataBuffer.h
  create mode 100644 xbmc/cores/VideoPlayer/DVDCodecs/Video/DVPlaybackInfo.h
@@ -82,7 +83,7 @@ From CroqueMr/libreelec-x86-DV R1.0.0-Beta1 (kodi-9990-native-dv.patch).
  create mode 100644 xbmc/windowing/gbm/drm/DVBridgeState.h
 
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 3747529fa6585af3dc0a6700e044ccb1372172d5..e8a26b8195df0c1be6af15032fc092f1d7aaed93 100644
+index fc55afff17..ebd1570ad7 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -5,6 +5,16 @@ endif()
@@ -104,7 +105,7 @@ index 3747529fa6585af3dc0a6700e044ccb1372172d5..e8a26b8195df0c1be6af15032fc092f1
    cmake_policy(SET CMP0069 NEW)
 diff --git a/LICENSES/GPL-3.0-or-later b/LICENSES/GPL-3.0-or-later
 new file mode 100644
-index 0000000000000000000000000000000000000000..f288702d2fa16d3cdf0035b15a9fcbc552cd88e7
+index 0000000000..f288702d2f
 --- /dev/null
 +++ b/LICENSES/GPL-3.0-or-later
 @@ -0,0 +1,674 @@
@@ -783,7 +784,7 @@ index 0000000000000000000000000000000000000000..f288702d2fa16d3cdf0035b15a9fcbc5
 +Public License instead of this License.  But first, please read
 +<https://www.gnu.org/licenses/why-not-lgpl.html>.
 diff --git a/LICENSES/README.md b/LICENSES/README.md
-index b4f008cc4baf548e0cc53d222dd15824b7148780..af8a8358b3a7df7d9b7fa393c73662feefa13a15 100644
+index b4f008cc4b..af8a8358b3 100644
 --- a/LICENSES/README.md
 +++ b/LICENSES/README.md
 @@ -3,6 +3,11 @@
@@ -804,7 +805,7 @@ index b4f008cc4baf548e0cc53d222dd15824b7148780..af8a8358b3a7df7d9b7fa393c73662fe
  These licensing rules were adapted from the **[Linux kernel licensing rules](https://github.com/torvalds/linux/blob/master/Documentation/process/license-rules.rst)**.
 -
 diff --git a/xbmc/cores/VideoPlayer/DVDCodecs/DVDFactoryCodec.cpp b/xbmc/cores/VideoPlayer/DVDCodecs/DVDFactoryCodec.cpp
-index 99285d6bf5c691a7663278cb230a81d070ae819a..041c0d169eb168b2fcf88a9c769b8fc1a72d3bb5 100644
+index 99285d6bf5..041c0d169e 100644
 --- a/xbmc/cores/VideoPlayer/DVDCodecs/DVDFactoryCodec.cpp
 +++ b/xbmc/cores/VideoPlayer/DVDCodecs/DVDFactoryCodec.cpp
 @@ -29,6 +29,9 @@
@@ -838,7 +839,7 @@ index 99285d6bf5c691a7663278cb230a81d070ae819a..041c0d169eb168b2fcf88a9c769b8fc1
  }
 -
 diff --git a/xbmc/cores/VideoPlayer/DVDCodecs/Video/CMakeLists.txt b/xbmc/cores/VideoPlayer/DVDCodecs/Video/CMakeLists.txt
-index 07a0b78baf37d55929a9fc096deb6a7b97f6b165..6568a05a6638031f2a0e05ac0f9b9e28800056a7 100644
+index 07a0b78baf..6568a05a66 100644
 --- a/xbmc/cores/VideoPlayer/DVDCodecs/Video/CMakeLists.txt
 +++ b/xbmc/cores/VideoPlayer/DVDCodecs/Video/CMakeLists.txt
 @@ -44,3 +44,7 @@ if(("gbm" IN_LIST CORE_PLATFORM_NAME_LC OR "wayland" IN_LIST CORE_PLATFORM_NAME_
@@ -850,13 +851,13 @@ index 07a0b78baf37d55929a9fc096deb6a7b97f6b165..6568a05a6638031f2a0e05ac0f9b9e28
 +  target_link_libraries(${CORE_LIBRARY} PRIVATE dvbridge_core)
 +endif()
 diff --git a/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVDVideoCodec.cpp b/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVDVideoCodec.cpp
-index 6e5836d82dd1ae9943a444c928e35fa2f8403d40..4b00f57e203affb39142caaa39c21026721f3e0e 100644
+index a41939d8fd..ed52607be3 100644
 --- a/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVDVideoCodec.cpp
 +++ b/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVDVideoCodec.cpp
-@@ -49,6 +49,14 @@ void VideoPicture::Reset()
-   pict_type = 0;
+@@ -50,6 +50,14 @@ void VideoPicture::Reset()
  
    hdrType = StreamHdrType::HDR_TYPE_NONE;
+   doviRpu.reset();
 +  doviMetadata.Reset();
 +  doviSourceInfo = {};
 +  doviSourceBinding = {};
@@ -869,7 +870,7 @@ index 6e5836d82dd1ae9943a444c928e35fa2f8403d40..4b00f57e203affb39142caaa39c21026
    hasDisplayMetadata = false;
    hasLightMetadata = false;
 diff --git a/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVDVideoCodec.h b/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVDVideoCodec.h
-index d58b3fc8814e8e924597ce79b671b3422a20211a..da741326344d1c6b6f50ecff25a93325dc46f0ad 100644
+index 08933a0c10..b1979d8c34 100644
 --- a/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVDVideoCodec.h
 +++ b/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVDVideoCodec.h
 @@ -9,6 +9,7 @@
@@ -880,10 +881,10 @@ index d58b3fc8814e8e924597ce79b671b3422a20211a..da741326344d1c6b6f50ecff25a93325
  #include "cores/VideoPlayer/Buffers/VideoBuffer.h"
  #include "cores/VideoPlayer/Interface/DemuxPacket.h"
  #include "cores/VideoPlayer/Process/ProcessInfo.h"
-@@ -68,6 +69,14 @@ public:
-   StreamHdrType hdrType;
+@@ -78,6 +79,14 @@ public:
    StreamHdrType hdrTypeAlt;
    std::string strDVELType;
+   std::shared_ptr<const DoviRpu> doviRpu;
 +  CDVMetadataBuffer doviMetadata;
 +  DVBRIDGE::SourceInfo doviSourceInfo{};
 +  DVBRIDGE::SourceBinding doviSourceBinding{};
@@ -896,18 +897,19 @@ index d58b3fc8814e8e924597ce79b671b3422a20211a..da741326344d1c6b6f50ecff25a93325
    bool hasDisplayMetadata = false;
    AVMasteringDisplayMetadata displayMetadata;
 diff --git a/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVDVideoCodecFFmpeg.cpp b/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVDVideoCodecFFmpeg.cpp
-index e6c74a1b75b9181389aa2bd71dcb837d01d61096..00414977e99a035fc60adc32c6b929247c185e34 100644
+index 4a77e96396..e2e8a61ad5 100644
 --- a/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVDVideoCodecFFmpeg.cpp
 +++ b/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVDVideoCodecFFmpeg.cpp
-@@ -23,12 +23,24 @@
+@@ -23,6 +23,7 @@
  #include "settings/Settings.h"
  #include "settings/SettingsComponent.h"
  #include "utils/CPUInfo.h"
 +#include "utils/DVBridgeDiagnosticState.h"
+ #include "utils/DolbyVisionRpu.h"
  #include "utils/StringUtils.h"
  #include "utils/XTimeUtils.h"
- #include "utils/log.h"
- 
+@@ -31,6 +32,17 @@
+ #include <iterator>
  #include <memory>
  #include <mutex>
 +#include "dvbridge_metadata_bounds.h"
@@ -924,7 +926,7 @@ index e6c74a1b75b9181389aa2bd71dcb837d01d61096..00414977e99a035fc60adc32c6b92924
  
  extern "C" {
  #include <libavcodec/defs.h>
-@@ -335,6 +347,9 @@ bool CDVDVideoCodecFFmpeg::Open(CDVDStreamInfo &hints, CDVDCodecOptions &options
+@@ -337,6 +349,9 @@ bool CDVDVideoCodecFFmpeg::Open(CDVDStreamInfo &hints, CDVDCodecOptions &options
  
    m_hints = hints;
    m_options = options;
@@ -932,9 +934,9 @@ index e6c74a1b75b9181389aa2bd71dcb837d01d61096..00414977e99a035fc60adc32c6b92924
 +  m_dvNativeOutput = DVBRIDGE::RetainsDVSource(hints);
 +#endif
  
-   const AVCodec* pCodec = nullptr;
- 
-@@ -475,11 +490,40 @@ bool CDVDVideoCodecFFmpeg::Open(CDVDStreamInfo &hints, CDVDCodecOptions &options
+   const int doviProfile = hints.dovi.dv_profile;
+   m_exportDoviRpu =
+@@ -483,11 +498,40 @@ bool CDVDVideoCodecFFmpeg::Open(CDVDStreamInfo &hints, CDVDCodecOptions &options
  
    m_dropCtrl.Reset(true);
    m_eof = false;
@@ -975,8 +977,8 @@ index e6c74a1b75b9181389aa2bd71dcb837d01d61096..00414977e99a035fc60adc32c6b92924
    av_frame_free(&m_pFrame);
    av_frame_free(&m_pDecodedFrame);
    av_frame_free(&m_pFilterFrame);
-@@ -622,6 +666,11 @@ bool CDVDVideoCodecFFmpeg::AddData(const DemuxPacket &packet)
-   avpkt->side_data_elems = packet.iSideDataElems;
+@@ -642,6 +686,11 @@ bool CDVDVideoCodecFFmpeg::AddData(const DemuxPacket &packet)
+   }
  
    int ret = avcodec_send_packet(m_pCodecContext, avpkt);
 +#ifdef HAVE_DVBRIDGE
@@ -987,7 +989,7 @@ index e6c74a1b75b9181389aa2bd71dcb837d01d61096..00414977e99a035fc60adc32c6b92924
  
    //! @todo: properly handle avpkt side_data. this works around our improper use of the side_data
    // as we pass pointers to ffmpeg allocated memory for the side_data. we should really be allocating
-@@ -659,6 +708,62 @@ bool CDVDVideoCodecFFmpeg::AddData(const DemuxPacket &packet)
+@@ -679,6 +728,62 @@ bool CDVDVideoCodecFFmpeg::AddData(const DemuxPacket &packet)
  }
  
  CDVDVideoCodec::VCReturn CDVDVideoCodecFFmpeg::GetPicture(VideoPicture* pVideoPicture)
@@ -1050,7 +1052,7 @@ index e6c74a1b75b9181389aa2bd71dcb837d01d61096..00414977e99a035fc60adc32c6b92924
  {
    if (!m_startedInput)
    {
-@@ -957,6 +1062,11 @@ bool CDVDVideoCodecFFmpeg::SetPictureParams(VideoPicture* pVideoPicture)
+@@ -977,6 +1082,11 @@ bool CDVDVideoCodecFFmpeg::SetPictureParams(VideoPicture* pVideoPicture)
  
  void CDVDVideoCodecFFmpeg::Reset()
  {
@@ -1062,8 +1064,8 @@ index e6c74a1b75b9181389aa2bd71dcb837d01d61096..00414977e99a035fc60adc32c6b92924
    m_started = false;
    m_startedInput = false;
    m_interlaced = false;
-@@ -1155,28 +1265,45 @@ bool CDVDVideoCodecFFmpeg::GetPictureCommon(VideoPicture* pVideoPicture)
-     pVideoPicture->hasLightMetadata = true;
+@@ -1202,28 +1312,45 @@ bool CDVDVideoCodecFFmpeg::GetPictureCommon(VideoPicture* pVideoPicture)
+           m_hints.dovi.dv_profile, m_hints.dovi.dv_bl_signal_compatibility_id, std::move(rpu)});
    }
  
 +  pVideoPicture->doviMetadata.Reset();
@@ -1122,16 +1124,16 @@ index e6c74a1b75b9181389aa2bd71dcb837d01d61096..00414977e99a035fc60adc32c6b92924
            }
          }
        }
-@@ -1500,4 +1627,3 @@ IHardwareDecoder* CDVDVideoCodecFFmpeg::GetHWAccel()
+@@ -1547,4 +1674,3 @@ IHardwareDecoder* CDVDVideoCodecFFmpeg::GetHWAccel()
  {
    return m_pHardware;
  }
 -
 diff --git a/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVDVideoCodecFFmpeg.h b/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVDVideoCodecFFmpeg.h
-index 139de8a0af73941b410f7408a8e0427f8689cf31..3c6375c8d030c1c07a427e511fb6a924bbe4d1b9 100644
+index b84fee9b0b..59ab88c998 100644
 --- a/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVDVideoCodecFFmpeg.h
 +++ b/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVDVideoCodecFFmpeg.h
-@@ -16,6 +16,10 @@
+@@ -17,6 +17,10 @@
  #include <memory>
  #include <string>
  #include <vector>
@@ -1142,7 +1144,7 @@ index 139de8a0af73941b410f7408a8e0427f8689cf31..3c6375c8d030c1c07a427e511fb6a924
  
  extern "C"
  {
-@@ -46,8 +50,21 @@ public:
+@@ -47,8 +51,21 @@ public:
  
    IHardwareDecoder* GetHWAccel() override;
    bool GetPictureCommon(VideoPicture* pVideoPicture) override;
@@ -1166,7 +1168,7 @@ index 139de8a0af73941b410f7408a8e0427f8689cf31..3c6375c8d030c1c07a427e511fb6a924
    static enum AVPixelFormat GetFormat(struct AVCodecContext * avctx, const AVPixelFormat * fmt);
 diff --git a/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVMetadataBuffer.h b/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVMetadataBuffer.h
 new file mode 100644
-index 0000000000000000000000000000000000000000..756c4774210521e650ce1a7c436d25649137ec9a
+index 0000000000..756c477421
 --- /dev/null
 +++ b/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVMetadataBuffer.h
 @@ -0,0 +1,91 @@
@@ -1263,7 +1265,7 @@ index 0000000000000000000000000000000000000000..756c4774210521e650ce1a7c436d2564
 +};
 diff --git a/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVPlaybackInfo.h b/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVPlaybackInfo.h
 new file mode 100644
-index 0000000000000000000000000000000000000000..9d72a89a02c44d93d4f6954d00d98bdd190c9fa1
+index 0000000000..9d72a89a02
 --- /dev/null
 +++ b/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVPlaybackInfo.h
 @@ -0,0 +1,22 @@
@@ -1291,7 +1293,7 @@ index 0000000000000000000000000000000000000000..9d72a89a02c44d93d4f6954d00d98bdd
 +};
 diff --git a/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVPlaybackPolicy.h b/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVPlaybackPolicy.h
 new file mode 100644
-index 0000000000000000000000000000000000000000..36db5bf66f4d16c259ede66f8bb8cd542bb2a378
+index 0000000000..36db5bf66f
 --- /dev/null
 +++ b/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVPlaybackPolicy.h
 @@ -0,0 +1,20 @@
@@ -1317,7 +1319,7 @@ index 0000000000000000000000000000000000000000..36db5bf66f4d16c259ede66f8bb8cd54
 +} // namespace DVBRIDGE
 diff --git a/xbmc/cores/VideoPlayer/DVDCodecs/Video/HDR10AIBuffers.h b/xbmc/cores/VideoPlayer/DVDCodecs/Video/HDR10AIBuffers.h
 new file mode 100644
-index 0000000000000000000000000000000000000000..af5a01c874d7c6ff9d176de522e0c7f9421c581d
+index 0000000000..af5a01c874
 --- /dev/null
 +++ b/xbmc/cores/VideoPlayer/DVDCodecs/Video/HDR10AIBuffers.h
 @@ -0,0 +1,23 @@
@@ -1345,7 +1347,7 @@ index 0000000000000000000000000000000000000000..af5a01c874d7c6ff9d176de522e0c7f9
 +};
 +}
 diff --git a/xbmc/cores/VideoPlayer/DVDCodecs/Video/VAAPI.cpp b/xbmc/cores/VideoPlayer/DVDCodecs/Video/VAAPI.cpp
-index a177cd1659be61c27ab2e35896bbfdb42ecf27f7..bc984028c309dde8633f1a3b31d251e76ac76c92 100644
+index a177cd1659..bc984028c3 100644
 --- a/xbmc/cores/VideoPlayer/DVDCodecs/Video/VAAPI.cpp
 +++ b/xbmc/cores/VideoPlayer/DVDCodecs/Video/VAAPI.cpp
 @@ -26,6 +26,9 @@
@@ -1380,7 +1382,7 @@ index a177cd1659be61c27ab2e35896bbfdb42ecf27f7..bc984028c309dde8633f1a3b31d251e7
    vaapiFramesCtx->nb_surfaces = m_videoSurfaces.Size();
    VASurfaceID *surfaceIds = (VASurfaceID*)av_malloc(vaapiFramesCtx->nb_surfaces *  sizeof(VASurfaceID));
 diff --git a/xbmc/cores/VideoPlayer/DVDDemuxers/DVDDemux.h b/xbmc/cores/VideoPlayer/DVDDemuxers/DVDDemux.h
-index 7dd7baecae3f95794d1e96e7beaf73193ddaec72..e928f920d7843ff062dc6867523129fc6157a28a 100644
+index 7dd7baecae..e928f920d7 100644
 --- a/xbmc/cores/VideoPlayer/DVDDemuxers/DVDDemux.h
 +++ b/xbmc/cores/VideoPlayer/DVDDemuxers/DVDDemux.h
 @@ -179,6 +179,9 @@ public:
@@ -1394,7 +1396,7 @@ index 7dd7baecae3f95794d1e96e7beaf73193ddaec72..e928f920d7843ff062dc6867523129fc
  
  class CDemuxStreamAudio : public CDemuxStream
 diff --git a/xbmc/cores/VideoPlayer/DVDDemuxers/DVDDemuxFFmpeg.cpp b/xbmc/cores/VideoPlayer/DVDDemuxers/DVDDemuxFFmpeg.cpp
-index 7acece0276d7254ac4b388e1af998dd3289a90db..988d46a796c08dfe9b7096ad3f9eb2b06b4f9ecf 100644
+index 7acece0276..988d46a796 100644
 --- a/xbmc/cores/VideoPlayer/DVDDemuxers/DVDDemuxFFmpeg.cpp
 +++ b/xbmc/cores/VideoPlayer/DVDDemuxers/DVDDemuxFFmpeg.cpp
 @@ -1975,10 +1975,16 @@ CDemuxStream* CDVDDemuxFFmpeg::AddStream(int streamIdx)
@@ -1416,7 +1418,7 @@ index 7acece0276d7254ac4b388e1af998dd3289a90db..988d46a796c08dfe9b7096ad3f9eb2b0
  
          sideData = av_packet_side_data_get(pStream->codecpar->coded_side_data,
 diff --git a/xbmc/cores/VideoPlayer/DVDStreamInfo.cpp b/xbmc/cores/VideoPlayer/DVDStreamInfo.cpp
-index 3cc705ba6ef1e7002d675d9aaa903b9639d20df0..149666eec5b3e12bd52b8ef390de245729d022a4 100644
+index 3cc705ba6e..149666eec5 100644
 --- a/xbmc/cores/VideoPlayer/DVDStreamInfo.cpp
 +++ b/xbmc/cores/VideoPlayer/DVDStreamInfo.cpp
 @@ -69,6 +69,9 @@ void CDVDStreamInfo::Clear()
@@ -1461,7 +1463,7 @@ index 3cc705ba6ef1e7002d675d9aaa903b9639d20df0..149666eec5b3e12bd52b8ef390de2457
    else if (right.type == StreamType::SUBTITLE)
    {
 diff --git a/xbmc/cores/VideoPlayer/DVDStreamInfo.h b/xbmc/cores/VideoPlayer/DVDStreamInfo.h
-index dc8836ba7d4540fe6c31f846d94a588cf4605907..8b65a11d1d0904b65b690cbb2ff6ace28f248ab1 100644
+index dc8836ba7d..8b65a11d1d 100644
 --- a/xbmc/cores/VideoPlayer/DVDStreamInfo.h
 +++ b/xbmc/cores/VideoPlayer/DVDStreamInfo.h
 @@ -83,6 +83,9 @@ public:
@@ -1475,7 +1477,7 @@ index dc8836ba7d4540fe6c31f846d94a588cf4605907..8b65a11d1d0904b65b690cbb2ff6ace2
    // AUDIO
    int channels;
 diff --git a/xbmc/cores/VideoPlayer/VideoPlayer.cpp b/xbmc/cores/VideoPlayer/VideoPlayer.cpp
-index 87c0b9cd0fd01db43babe7aae17a39231dad3ee3..151b44dc47f0a3f769f3f00d9798aa9cf889a3d8 100644
+index 87c0b9cd0f..151b44dc47 100644
 --- a/xbmc/cores/VideoPlayer/VideoPlayer.cpp
 +++ b/xbmc/cores/VideoPlayer/VideoPlayer.cpp
 @@ -7,6 +7,9 @@
@@ -1506,7 +1508,7 @@ index 87c0b9cd0fd01db43babe7aae17a39231dad3ee3..151b44dc47f0a3f769f3f00d9798aa9c
    }
  
 diff --git a/xbmc/cores/VideoPlayer/VideoRenderers/CMakeLists.txt b/xbmc/cores/VideoPlayer/VideoRenderers/CMakeLists.txt
-index db9099749b672c94efdafce3c0b25679d9760477..19e54726c13b697bcfbe22f6d91245365092792f 100644
+index db9099749b..19e54726c1 100644
 --- a/xbmc/cores/VideoPlayer/VideoRenderers/CMakeLists.txt
 +++ b/xbmc/cores/VideoPlayer/VideoRenderers/CMakeLists.txt
 @@ -50,4 +50,27 @@ if(TARGET ${APP_NAME_LC}::OpenGLES AND ("android" IN_LIST CORE_PLATFORM_NAME_LC
@@ -1539,7 +1541,7 @@ index db9099749b672c94efdafce3c0b25679d9760477..19e54726c13b697bcfbe22f6d9124536
 +endif()
 diff --git a/xbmc/cores/VideoPlayer/VideoRenderers/DVBridgeGLES.cpp b/xbmc/cores/VideoPlayer/VideoRenderers/DVBridgeGLES.cpp
 new file mode 100644
-index 0000000000000000000000000000000000000000..8c96338d14abda66e34c6d5e1eeb464584579230
+index 0000000000..8c96338d14
 --- /dev/null
 +++ b/xbmc/cores/VideoPlayer/VideoRenderers/DVBridgeGLES.cpp
 @@ -0,0 +1,203 @@
@@ -1748,7 +1750,7 @@ index 0000000000000000000000000000000000000000..8c96338d14abda66e34c6d5e1eeb4645
 +}
 diff --git a/xbmc/cores/VideoPlayer/VideoRenderers/DVBridgeGLES.h b/xbmc/cores/VideoPlayer/VideoRenderers/DVBridgeGLES.h
 new file mode 100644
-index 0000000000000000000000000000000000000000..ab12ec8c59f500f7c854c86a56a9cd6703379213
+index 0000000000..ab12ec8c59
 --- /dev/null
 +++ b/xbmc/cores/VideoPlayer/VideoRenderers/DVBridgeGLES.h
 @@ -0,0 +1,54 @@
@@ -1808,7 +1810,7 @@ index 0000000000000000000000000000000000000000..ab12ec8c59f500f7c854c86a56a9cd67
 +};
 diff --git a/xbmc/cores/VideoPlayer/VideoRenderers/DVBridgeShaders.h.in b/xbmc/cores/VideoPlayer/VideoRenderers/DVBridgeShaders.h.in
 new file mode 100644
-index 0000000000000000000000000000000000000000..76caa04f9c82906fee924229c3af0037a12dc4e2
+index 0000000000..76caa04f9c
 --- /dev/null
 +++ b/xbmc/cores/VideoPlayer/VideoRenderers/DVBridgeShaders.h.in
 @@ -0,0 +1,4 @@
@@ -1818,7 +1820,7 @@ index 0000000000000000000000000000000000000000..76caa04f9c82906fee924229c3af0037
 +inline constexpr char DVBRIDGE_FRAGMENT[] = R"DVGLSL(@DVBRIDGE_FRAGMENT_SOURCE@)DVGLSL";
 diff --git a/xbmc/cores/VideoPlayer/VideoRenderers/HDR10AISource.cpp b/xbmc/cores/VideoPlayer/VideoRenderers/HDR10AISource.cpp
 new file mode 100644
-index 0000000000000000000000000000000000000000..22c02839459553878ba159c2c5523f78e44c5ddd
+index 0000000000..22c0283945
 --- /dev/null
 +++ b/xbmc/cores/VideoPlayer/VideoRenderers/HDR10AISource.cpp
 @@ -0,0 +1,221 @@
@@ -2045,7 +2047,7 @@ index 0000000000000000000000000000000000000000..22c02839459553878ba159c2c5523f78
 +}
 diff --git a/xbmc/cores/VideoPlayer/VideoRenderers/HDR10AISource.h b/xbmc/cores/VideoPlayer/VideoRenderers/HDR10AISource.h
 new file mode 100644
-index 0000000000000000000000000000000000000000..83d43a7663e2e95b3392dc537a116a583eaa028b
+index 0000000000..83d43a7663
 --- /dev/null
 +++ b/xbmc/cores/VideoPlayer/VideoRenderers/HDR10AISource.h
 @@ -0,0 +1,73 @@
@@ -2123,7 +2125,7 @@ index 0000000000000000000000000000000000000000..83d43a7663e2e95b3392dc537a116a58
 +  bool m_active{}, m_job{}, m_fallback{}, m_resetPending{}, m_paused{};
 +};
 diff --git a/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/CMakeLists.txt b/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/CMakeLists.txt
-index 8fcd4df51c500dbab12e88117bbc1c14fb65ea60..c5ff8be8a43e2fdb840a57a517a9db4805384369 100644
+index 8fcd4df51c..c5ff8be8a4 100644
 --- a/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/CMakeLists.txt
 +++ b/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/CMakeLists.txt
 @@ -75,4 +75,7 @@ endif()
@@ -2135,7 +2137,7 @@ index 8fcd4df51c500dbab12e88117bbc1c14fb65ea60..c5ff8be8a43e2fdb840a57a517a9db48
 +  endif()
  endif()
 diff --git a/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/RendererVAAPIGLES.cpp b/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/RendererVAAPIGLES.cpp
-index 3514ba091d07fa3ef8786bb3344682fef9602b82..7323778c74822bfb635307a7ef42ac8dbf41d62e 100644
+index 3514ba091d..7323778c74 100644
 --- a/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/RendererVAAPIGLES.cpp
 +++ b/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/RendererVAAPIGLES.cpp
 @@ -16,6 +16,11 @@
@@ -2210,7 +2212,7 @@ index 3514ba091d07fa3ef8786bb3344682fef9602b82..7323778c74822bfb635307a7ef42ac8d
  {
    if (!m_isVAAPIBuffer)
 diff --git a/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/RendererVAAPIGLES.h b/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/RendererVAAPIGLES.h
-index 7ace6efdfa402c133cf039fa7d3b744e0c0329ef..a3bb3248034943bd1a4e692877558be64df67b3b 100644
+index 7ace6efdfa..a3bb324803 100644
 --- a/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/RendererVAAPIGLES.h
 +++ b/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/RendererVAAPIGLES.h
 @@ -49,6 +49,9 @@ public:
@@ -2224,7 +2226,7 @@ index 7ace6efdfa402c133cf039fa7d3b744e0c0329ef..a3bb3248034943bd1a4e692877558be6
  
    // textures
 diff --git a/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/VaapiEGL.cpp b/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/VaapiEGL.cpp
-index 05b369edd9532e60a3d809dc4f602a4e69d4a925..87f57d2f00a2e480c4419bdbb2b5aed8615774c3 100644
+index 05b369edd9..87f57d2f00 100644
 --- a/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/VaapiEGL.cpp
 +++ b/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/VaapiEGL.cpp
 @@ -251,9 +251,10 @@ std::optional<DRMPRIME::DmaBufIdentity> IdentityFromVaDescriptor(
@@ -2286,7 +2288,7 @@ index 05b369edd9532e60a3d809dc4f602a4e69d4a925..87f57d2f00a2e480c4419bdbb2b5aed8
  {
    int width = 1920;
 diff --git a/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/VaapiEGL.h b/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/VaapiEGL.h
-index 9f7488f71e6e7145bcef4e8d5f62c6e3589885ab..cd12eb2daf450297e01aa61c046fcea20b0e7b0e 100644
+index 9f7488f71e..cd12eb2daf 100644
 --- a/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/VaapiEGL.h
 +++ b/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/VaapiEGL.h
 @@ -92,10 +92,11 @@ public:
@@ -2313,7 +2315,7 @@ index 9f7488f71e6e7145bcef4e8d5f62c6e3589885ab..cd12eb2daf450297e01aa61c046fcea2
  }
 -
 diff --git a/xbmc/cores/VideoPlayer/VideoRenderers/LinuxRendererGL.cpp b/xbmc/cores/VideoPlayer/VideoRenderers/LinuxRendererGL.cpp
-index 3be87a6254132544521e4463aed7f32e5ef03b15..15597dfb9a886cbce8af1c81d1685d60b6e731ff 100644
+index 3be87a6254..15597dfb9a 100644
 --- a/xbmc/cores/VideoPlayer/VideoRenderers/LinuxRendererGL.cpp
 +++ b/xbmc/cores/VideoPlayer/VideoRenderers/LinuxRendererGL.cpp
 @@ -308,6 +308,9 @@ void CLinuxRendererGL::AddVideoPicture(const VideoPicture &picture, int index)
@@ -2336,7 +2338,7 @@ index 3be87a6254132544521e4463aed7f32e5ef03b15..15597dfb9a886cbce8af1c81d1685d60
    {
      buf.videoBuffer->Release();
 diff --git a/xbmc/cores/VideoPlayer/VideoRenderers/LinuxRendererGL.h b/xbmc/cores/VideoPlayer/VideoRenderers/LinuxRendererGL.h
-index c051e7a94f3a9476ad7a99ccc4cfae7e45dce54c..b8aa50fb1b10309db54f291756cab25fd8fb1156 100644
+index c051e7a94f..b8aa50fb1b 100644
 --- a/xbmc/cores/VideoPlayer/VideoRenderers/LinuxRendererGL.h
 +++ b/xbmc/cores/VideoPlayer/VideoRenderers/LinuxRendererGL.h
 @@ -203,6 +203,8 @@ protected:
@@ -2349,7 +2351,7 @@ index c051e7a94f3a9476ad7a99ccc4cfae7e45dce54c..b8aa50fb1b10309db54f291756cab25f
  
    // YUV decoder textures
 diff --git a/xbmc/cores/VideoPlayer/VideoRenderers/LinuxRendererGLES.cpp b/xbmc/cores/VideoPlayer/VideoRenderers/LinuxRendererGLES.cpp
-index b2ca3eab74b8527c14af09c5924aefb687d2f0b2..a1f77b7d2a07edfba29db0a4edd0e153340db46a 100644
+index b2ca3eab74..a1f77b7d2a 100644
 --- a/xbmc/cores/VideoPlayer/VideoRenderers/LinuxRendererGLES.cpp
 +++ b/xbmc/cores/VideoPlayer/VideoRenderers/LinuxRendererGLES.cpp
 @@ -29,6 +29,9 @@
@@ -2462,7 +2464,7 @@ index b2ca3eab74b8527c14af09c5924aefb687d2f0b2..a1f77b7d2a07edfba29db0a4edd0e153
    {
      ;
 diff --git a/xbmc/cores/VideoPlayer/VideoRenderers/LinuxRendererGLES.h b/xbmc/cores/VideoPlayer/VideoRenderers/LinuxRendererGLES.h
-index a1cdcc4a409e16c732a8fd99069fdc20ddaf3f5d..66af048aac3208f27e8abf8e5ceb067d4e541b72 100644
+index a1cdcc4a40..66af048aac 100644
 --- a/xbmc/cores/VideoPlayer/VideoRenderers/LinuxRendererGLES.h
 +++ b/xbmc/cores/VideoPlayer/VideoRenderers/LinuxRendererGLES.h
 @@ -132,6 +132,11 @@ protected:
@@ -2490,7 +2492,7 @@ index a1cdcc4a409e16c732a8fd99069fdc20ddaf3f5d..66af048aac3208f27e8abf8e5ceb067d
  
    // YUV decoder textures
 diff --git a/xbmc/cores/VideoPlayer/VideoRenderers/RenderManager.cpp b/xbmc/cores/VideoPlayer/VideoRenderers/RenderManager.cpp
-index 7b4c14eb828fada5bcc06a63da9c28cd5ed0746d..b12e07a95687da30afb9fff05b8432a98035461a 100644
+index 7b4c14eb82..b12e07a956 100644
 --- a/xbmc/cores/VideoPlayer/VideoRenderers/RenderManager.cpp
 +++ b/xbmc/cores/VideoPlayer/VideoRenderers/RenderManager.cpp
 @@ -30,6 +30,10 @@
@@ -2594,7 +2596,7 @@ index 7b4c14eb828fada5bcc06a63da9c28cd5ed0746d..b12e07a95687da30afb9fff05b8432a9
      m_picture.iWidth = width;
      m_picture.iHeight = height;
 diff --git a/xbmc/cores/VideoPlayer/VideoRenderers/RenderManager.h b/xbmc/cores/VideoPlayer/VideoRenderers/RenderManager.h
-index d54a344b974ec3290ecf3f54c104b5bd1cc9a258..b7abe611a20439b5a7b65f2ae3dff26f714a9b83 100644
+index d54a344b97..b7abe611a2 100644
 --- a/xbmc/cores/VideoPlayer/VideoRenderers/RenderManager.h
 +++ b/xbmc/cores/VideoPlayer/VideoRenderers/RenderManager.h
 @@ -78,7 +78,8 @@ public:
@@ -2616,7 +2618,7 @@ index d54a344b974ec3290ecf3f54c104b5bd1cc9a258..b7abe611a20439b5a7b65f2ae3dff26f
    bool m_renderedDebugOverlay = false;
    bool m_renderDebug = false;
 diff --git a/xbmc/guilib/guiinfo/VideoGUIInfo.cpp b/xbmc/guilib/guiinfo/VideoGUIInfo.cpp
-index c4066155faf9db6de5bb585d4e37c616c312347d..dae33211fea5e6d2d102101fa63642a2fc937c68 100644
+index c4066155fa..dae33211fe 100644
 --- a/xbmc/guilib/guiinfo/VideoGUIInfo.cpp
 +++ b/xbmc/guilib/guiinfo/VideoGUIInfo.cpp
 @@ -18,6 +18,10 @@
@@ -2646,7 +2648,7 @@ index c4066155faf9db6de5bb585d4e37c616c312347d..dae33211fea5e6d2d102101fa63642a2
      case VIDEOPLAYER_AUDIO_CODEC:
        value = m_audioInfo.codecName;
 diff --git a/xbmc/platform/linux/CMakeLists.txt b/xbmc/platform/linux/CMakeLists.txt
-index 7c4da1bd768ba66643094c214fa5ee102ed75caf..26fa197e61fb5df3fd946cdd2f266f9e4729298f 100644
+index 7c4da1bd76..26fa197e61 100644
 --- a/xbmc/platform/linux/CMakeLists.txt
 +++ b/xbmc/platform/linux/CMakeLists.txt
 @@ -41,3 +41,7 @@ if(ADDONS_CONFIGURE_AT_STARTUP)
@@ -2658,7 +2660,7 @@ index 7c4da1bd768ba66643094c214fa5ee102ed75caf..26fa197e61fb5df3fd946cdd2f266f9e
 +  target_compile_definitions(${CORE_LIBRARY} PRIVATE HAVE_DVBRIDGE=1)
 +endif()
 diff --git a/xbmc/utils/DisplayInfo.cpp b/xbmc/utils/DisplayInfo.cpp
-index 2627a4921be0384a95a2a7266968915e905713ba..377ab2aeaab9c2feed69a4a1d5b8b38e7fdb2087 100644
+index 2627a4921b..377ab2aeaa 100644
 --- a/xbmc/utils/DisplayInfo.cpp
 +++ b/xbmc/utils/DisplayInfo.cpp
 @@ -103,6 +103,16 @@ void CDisplayInfo::Parse()
@@ -2679,7 +2681,7 @@ index 2627a4921be0384a95a2a7266968915e905713ba..377ab2aeaab9c2feed69a4a1d5b8b38e
              {
                m_colorimetry = di_cta_data_block_get_colorimetry(block);
 diff --git a/xbmc/utils/DisplayInfo.h b/xbmc/utils/DisplayInfo.h
-index 5cf7ef51e94db58bd6b770bdf4ff2f024ad1f3c1..eb3d7f455fc9a99989d208ea9af62a19085ffb0a 100644
+index 5cf7ef51e9..eb3d7f455f 100644
 --- a/xbmc/utils/DisplayInfo.h
 +++ b/xbmc/utils/DisplayInfo.h
 @@ -65,6 +65,9 @@ public:
@@ -2702,7 +2704,7 @@ index 5cf7ef51e94db58bd6b770bdf4ff2f024ad1f3c1..eb3d7f455fc9a99989d208ea9af62a19
  
  } // namespace UTILS
 diff --git a/xbmc/utils/EGLUtils.cpp b/xbmc/utils/EGLUtils.cpp
-index 282ea790138d5927c7f9307adc600ef3c689776c..729d007f1c63cc3285c11d53eeb3e635e328b37c 100644
+index 282ea79013..729d007f1c 100644
 --- a/xbmc/utils/EGLUtils.cpp
 +++ b/xbmc/utils/EGLUtils.cpp
 @@ -317,7 +317,8 @@ bool CEGLContextUtils::ChooseConfig(EGLint renderableType, EGLint visualId, bool
@@ -2813,7 +2815,7 @@ index 282ea790138d5927c7f9307adc600ef3c689776c..729d007f1c63cc3285c11d53eeb3e635
  {
    DestroyContext();
 diff --git a/xbmc/utils/EGLUtils.h b/xbmc/utils/EGLUtils.h
-index 4b3b429605173df542a2f1f2b4fedc468e6bde86..c2116931790b6a103819ee079ec9e9748ddacd5f 100644
+index 4b3b429605..c211693179 100644
 --- a/xbmc/utils/EGLUtils.h
 +++ b/xbmc/utils/EGLUtils.h
 @@ -195,6 +195,20 @@ public:
@@ -2848,7 +2850,7 @@ index 4b3b429605173df542a2f1f2b4fedc468e6bde86..c2116931790b6a103819ee079ec9e974
  
    PFNEGLSETDAMAGEREGIONKHRPROC m_eglSetDamageRegionKHR{nullptr};
 diff --git a/xbmc/windowing/Resolution.cpp b/xbmc/windowing/Resolution.cpp
-index 2aa9f23bb6e9baaa5cc118482cf60779909bdf46..9238a67704160292f58802f808407bbf1fdd0f36 100644
+index 2aa9f23bb6..9238a67704 100644
 --- a/xbmc/windowing/Resolution.cpp
 +++ b/xbmc/windowing/Resolution.cpp
 @@ -66,7 +66,8 @@ float RESOLUTION_INFO::DisplayRatio() const
@@ -2896,7 +2898,7 @@ index 2aa9f23bb6e9baaa5cc118482cf60779909bdf46..9238a67704160292f58802f808407bbf
        }
      }
 diff --git a/xbmc/windowing/Resolution.h b/xbmc/windowing/Resolution.h
-index 638ca1c06430aea6aa84d1a5ee431f4f9b6dcced..7ea624dbe8e40942f4ddd966d3bf1a0ae40fa052 100644
+index 638ca1c064..7ea624dbe8 100644
 --- a/xbmc/windowing/Resolution.h
 +++ b/xbmc/windowing/Resolution.h
 @@ -118,7 +118,8 @@ public:
@@ -2920,7 +2922,7 @@ index 638ca1c06430aea6aa84d1a5ee431f4f9b6dcced..7ea624dbe8e40942f4ddd966d3bf1a0a
    static float RefreshWeight(float refresh, float fps);
  };
 diff --git a/xbmc/windowing/gbm/CMakeLists.txt b/xbmc/windowing/gbm/CMakeLists.txt
-index 4bf4d12262fa1e05f4edb3314a96766637be3fc4..b53e047eff632e161439b1a468df7c47a9ee50db 100644
+index 4bf4d12262..b53e047eff 100644
 --- a/xbmc/windowing/gbm/CMakeLists.txt
 +++ b/xbmc/windowing/gbm/CMakeLists.txt
 @@ -24,3 +24,7 @@ if(TARGET ${APP_NAME_LC}::OpenGLES)
@@ -2933,7 +2935,7 @@ index 4bf4d12262fa1e05f4edb3314a96766637be3fc4..b53e047eff632e161439b1a468df7c47
 +endif()
 diff --git a/xbmc/windowing/gbm/DVWindowRetirement.h b/xbmc/windowing/gbm/DVWindowRetirement.h
 new file mode 100644
-index 0000000000000000000000000000000000000000..42bcc2717d5134245bf08d0d8f6553b828d32bd7
+index 0000000000..42bcc2717d
 --- /dev/null
 +++ b/xbmc/windowing/gbm/DVWindowRetirement.h
 @@ -0,0 +1,86 @@
@@ -3024,7 +3026,7 @@ index 0000000000000000000000000000000000000000..42bcc2717d5134245bf08d0d8f6553b8
 +};
 +}
 diff --git a/xbmc/windowing/gbm/GBMUtils.cpp b/xbmc/windowing/gbm/GBMUtils.cpp
-index c4a6acabc3109494f113c998e1cabec854dbdf4a..949d36bc2835ec7ff04c5f5bb21289aab6759014 100644
+index c4a6acabc3..949d36bc28 100644
 --- a/xbmc/windowing/gbm/GBMUtils.cpp
 +++ b/xbmc/windowing/gbm/GBMUtils.cpp
 @@ -39,8 +39,11 @@ CGBMUtils::CGBMDevice::CGBMDevice(gbm_device* device) : m_device(device)
@@ -3110,7 +3112,7 @@ index c4a6acabc3109494f113c998e1cabec854dbdf4a..949d36bc2835ec7ff04c5f5bb21289aa
  {
    if (m_surface && m_buffer)
 diff --git a/xbmc/windowing/gbm/GBMUtils.h b/xbmc/windowing/gbm/GBMUtils.h
-index 8ff226216da7d309444c33e92b082af76b36c8b4..bff3f22069c1ce1da20c6d04cd6f9300fd504961 100644
+index 8ff226216d..bff3f22069 100644
 --- a/xbmc/windowing/gbm/GBMUtils.h
 +++ b/xbmc/windowing/gbm/GBMUtils.h
 @@ -68,7 +68,22 @@ public:
@@ -3194,7 +3196,7 @@ index 8ff226216da7d309444c33e92b082af76b36c8b4..bff3f22069c1ce1da20c6d04cd6f9300
    };
    std::unique_ptr<CGBMDevice, CGBMDeviceDeleter> m_device;
 diff --git a/xbmc/windowing/gbm/WinSystemGbm.cpp b/xbmc/windowing/gbm/WinSystemGbm.cpp
-index 7f7b4e36e3e19690e9e7ed17151b47102e7798ce..b3755ce0dcc576624f6815e50ce95cdfd4d44e12 100644
+index 7f7b4e36e3..b3755ce0dc 100644
 --- a/xbmc/windowing/gbm/WinSystemGbm.cpp
 +++ b/xbmc/windowing/gbm/WinSystemGbm.cpp
 @@ -14,6 +14,9 @@
@@ -3300,7 +3302,7 @@ index 7f7b4e36e3e19690e9e7ed17151b47102e7798ce..b3755ce0dcc576624f6815e50ce95cdf
    return caps;
  }
 diff --git a/xbmc/windowing/gbm/WinSystemGbm.h b/xbmc/windowing/gbm/WinSystemGbm.h
-index de4e55fd08afc9acd5be6d40702e70a847d789ae..07894e9bb2508e71ae4d49526c307d059874435a 100644
+index de4e55fd08..07894e9bb2 100644
 --- a/xbmc/windowing/gbm/WinSystemGbm.h
 +++ b/xbmc/windowing/gbm/WinSystemGbm.h
 @@ -34,6 +34,7 @@ namespace WINDOWING
@@ -3323,7 +3325,7 @@ index de4e55fd08afc9acd5be6d40702e70a847d789ae..07894e9bb2508e71ae4d49526c307d05
    bool CanDoWindowed() override { return false; }
    void UpdateResolutions() override;
 diff --git a/xbmc/windowing/gbm/WinSystemGbmEGLContext.cpp b/xbmc/windowing/gbm/WinSystemGbmEGLContext.cpp
-index 6f19a9db3f50e3d29b47aa763018a66ed7f76f9b..cb6df88400f4e477534907b4b66bad3fd9f92267 100644
+index 6f19a9db3f..cb6df88400 100644
 --- a/xbmc/windowing/gbm/WinSystemGbmEGLContext.cpp
 +++ b/xbmc/windowing/gbm/WinSystemGbmEGLContext.cpp
 @@ -194,6 +194,11 @@ bool CWinSystemGbmEGLContext::DestroyWindow()
@@ -3348,7 +3350,7 @@ index 6f19a9db3f50e3d29b47aa763018a66ed7f76f9b..cb6df88400f4e477534907b4b66bad3f
    // Pick an EGL config matching the target bit depth, then rebuild
    // the surface only if that pick changed the native visual ID.
 diff --git a/xbmc/windowing/gbm/WinSystemGbmEGLContext.h b/xbmc/windowing/gbm/WinSystemGbmEGLContext.h
-index 1580be947eb5d7e0591757ee7380e1525f2e8d4c..d382c87f9c381acb2827f669bb796f56835e4041 100644
+index 1580be947e..d382c87f9c 100644
 --- a/xbmc/windowing/gbm/WinSystemGbmEGLContext.h
 +++ b/xbmc/windowing/gbm/WinSystemGbmEGLContext.h
 @@ -58,6 +58,7 @@ protected:
@@ -3360,7 +3362,7 @@ index 1580be947eb5d7e0591757ee7380e1525f2e8d4c..d382c87f9c381acb2827f669bb796f56
    EGLint m_renderableType{0};
  
 diff --git a/xbmc/windowing/gbm/WinSystemGbmGLESContext.cpp b/xbmc/windowing/gbm/WinSystemGbmGLESContext.cpp
-index aea1948ddc8423ca5ff63fe2721c8b7aebc69bb9..10f42920f5f6ec141f6585a3fd652ad0d698f1ee 100644
+index aea1948ddc..10f42920f5 100644
 --- a/xbmc/windowing/gbm/WinSystemGbmGLESContext.cpp
 +++ b/xbmc/windowing/gbm/WinSystemGbmGLESContext.cpp
 @@ -37,6 +37,14 @@ extern "C"
@@ -3634,7 +3636,7 @@ index aea1948ddc8423ca5ff63fe2721c8b7aebc69bb9..10f42920f5f6ec141f6585a3fd652ad0
  {
    const EGLint version = (m_renderableType == EGL_OPENGL_ES3_BIT) ? 3 : 2;
 diff --git a/xbmc/windowing/gbm/WinSystemGbmGLESContext.h b/xbmc/windowing/gbm/WinSystemGbmGLESContext.h
-index 7c6a04f28fdadbdcc371c219e1b8281f8a103ff4..3e6980cb49a6603ab8ea46be29105b71168a6d67 100644
+index 7c6a04f28f..3e6980cb49 100644
 --- a/xbmc/windowing/gbm/WinSystemGbmGLESContext.h
 +++ b/xbmc/windowing/gbm/WinSystemGbmGLESContext.h
 @@ -14,6 +14,10 @@
@@ -3691,7 +3693,7 @@ index 7c6a04f28fdadbdcc371c219e1b8281f8a103ff4..3e6980cb49a6603ab8ea46be29105b71
  
  } // namespace GBM
 diff --git a/xbmc/windowing/gbm/drm/CMakeLists.txt b/xbmc/windowing/gbm/drm/CMakeLists.txt
-index 8bd07ea621abcc2dcce8e0016ca733b267fb1981..2cdfa816d4b74ff12f433af0d41f87e7ce6f090a 100644
+index 8bd07ea621..2cdfa816d4 100644
 --- a/xbmc/windowing/gbm/drm/CMakeLists.txt
 +++ b/xbmc/windowing/gbm/drm/CMakeLists.txt
 @@ -18,4 +18,8 @@ set(HEADERS DRMAtomic.h
@@ -3704,7 +3706,7 @@ index 8bd07ea621abcc2dcce8e0016ca733b267fb1981..2cdfa816d4b74ff12f433af0d41f87e7
 +endif()
  core_add_library(windowing_gbm_drm)
 diff --git a/xbmc/windowing/gbm/drm/DRMAtomic.cpp b/xbmc/windowing/gbm/drm/DRMAtomic.cpp
-index 7a6f87c2db3e498e60a0a39c64b81adb4247ba1d..b3a5063ffd5d9f1d671d05fb661feaa2096de067 100644
+index 7a6f87c2db..b3a5063ffd 100644
 --- a/xbmc/windowing/gbm/drm/DRMAtomic.cpp
 +++ b/xbmc/windowing/gbm/drm/DRMAtomic.cpp
 @@ -17,6 +17,7 @@
@@ -3840,7 +3842,7 @@ index 7a6f87c2db3e498e60a0a39c64b81adb4247ba1d..b3a5063ffd5d9f1d671d05fb661feaa2
  
  CDRMAtomic::CDRMAtomicRequest::CDRMAtomicRequest() : m_atomicRequest(drmModeAtomicAlloc())
 diff --git a/xbmc/windowing/gbm/drm/DRMAtomic.h b/xbmc/windowing/gbm/drm/DRMAtomic.h
-index c20531b682e1e154374c0eac5747bad692117816..bbf1ee00f23f5302a8a2294443bf215403e03b02 100644
+index c20531b682..bbf1ee00f2 100644
 --- a/xbmc/windowing/gbm/drm/DRMAtomic.h
 +++ b/xbmc/windowing/gbm/drm/DRMAtomic.h
 @@ -35,16 +35,21 @@ public:
@@ -3867,7 +3869,7 @@ index c20531b682e1e154374c0eac5747bad692117816..bbf1ee00f23f5302a8a2294443bf2154
    class CDRMAtomicRequest
    {
 diff --git a/xbmc/windowing/gbm/drm/DRMUtils.cpp b/xbmc/windowing/gbm/drm/DRMUtils.cpp
-index 796410af3bd7c7e195672f559dc1d1b4fd0c5ffc..da2079ef679d889456a83ef1defa0dff1cec6fc9 100644
+index 796410af3b..da2079ef67 100644
 --- a/xbmc/windowing/gbm/drm/DRMUtils.cpp
 +++ b/xbmc/windowing/gbm/drm/DRMUtils.cpp
 @@ -31,6 +31,9 @@ void DrmFbDestroyCallback(gbm_bo* bo, void* data)
@@ -3933,7 +3935,7 @@ index 796410af3bd7c7e195672f559dc1d1b4fd0c5ffc..da2079ef679d889456a83ef1defa0dff
  {
    if (m_mode)
 diff --git a/xbmc/windowing/gbm/drm/DRMUtils.h b/xbmc/windowing/gbm/drm/DRMUtils.h
-index db4d756946b0f18090021f48332d794e71007b45..09612b0071587a15a7409e8d5a4c662aeb1184f7 100644
+index db4d756946..09612b0071 100644
 --- a/xbmc/windowing/gbm/drm/DRMUtils.h
 +++ b/xbmc/windowing/gbm/drm/DRMUtils.h
 @@ -38,6 +38,7 @@ struct drm_fb
@@ -3962,7 +3964,7 @@ index db4d756946b0f18090021f48332d794e71007b45..09612b0071587a15a7409e8d5a4c662a
    CDRMConnector* m_connector{nullptr};
 diff --git a/xbmc/windowing/gbm/drm/DVBridgeState.cpp b/xbmc/windowing/gbm/drm/DVBridgeState.cpp
 new file mode 100644
-index 0000000000000000000000000000000000000000..500efafad2d67d81414b123c6afe57df1e91455d
+index 0000000000..500efafad2
 --- /dev/null
 +++ b/xbmc/windowing/gbm/drm/DVBridgeState.cpp
 @@ -0,0 +1,96 @@
@@ -4064,7 +4066,7 @@ index 0000000000000000000000000000000000000000..500efafad2d67d81414b123c6afe57df
 +}
 diff --git a/xbmc/windowing/gbm/drm/DVBridgeState.h b/xbmc/windowing/gbm/drm/DVBridgeState.h
 new file mode 100644
-index 0000000000000000000000000000000000000000..221d6dd797e0f5b4be03b0584b5121ab324ab8b7
+index 0000000000..221d6dd797
 --- /dev/null
 +++ b/xbmc/windowing/gbm/drm/DVBridgeState.h
 @@ -0,0 +1,32 @@
