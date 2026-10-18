@@ -12,7 +12,7 @@ PKG_LONGDESC="Port of Final Burn Neo to Libretro"
 PKG_TOOLCHAIN="make"
 
 PKG_LIBNAME="fbneo_libretro.so"
-PKG_LIBPATH="src/burner/libretro/${PKG_LIBNAME}"
+PKG_LIBPATH="../src/burner/libretro/${PKG_LIBNAME}"
 PKG_LIBVAR="FBNEO_LIB"
 
 PKG_MAKE_OPTS_TARGET="-C ../src/burner/libretro"
@@ -42,8 +42,8 @@ makeinstall_target() {
   echo "set(${PKG_LIBVAR} ${SYSROOT_PREFIX}/usr/lib/${PKG_LIBNAME})" >${SYSROOT_PREFIX}/usr/lib/cmake/${PKG_NAME}/${PKG_NAME}-config.cmake
 
   mkdir -p ${SYSROOT_PREFIX}/usr/share/libretro-database/fbneo
-  cp -vr dats/* ${SYSROOT_PREFIX}/usr/share/libretro-database/fbneo
+  cp -vr ${PKG_BUILD}/dats/* ${SYSROOT_PREFIX}/usr/share/libretro-database/fbneo
 
   mkdir -p ${SYSROOT_PREFIX}/usr/share/retroarch/system/fbneo
-  cp metadata/hiscore.dat ${SYSROOT_PREFIX}/usr/share/retroarch/system/fbneo
+  cp ${PKG_BUILD}/metadata/hiscore.dat ${SYSROOT_PREFIX}/usr/share/retroarch/system/fbneo
 }
