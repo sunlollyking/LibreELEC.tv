@@ -2601,7 +2601,8 @@ static bool dve_allocate(struct dvbridge_renderer *r,unsigned width,unsigned hei
     GLint fragment_images;glGetIntegerv(GL_MAX_FRAGMENT_IMAGE_UNIFORMS,&fragment_images);
     r->ai_enhanced_fused=ai_fused && !r->ai_fusion_failed && fragment_images>=2;
     r->ai_enhanced_prepack=r->ai_enhanced_fused && r->fragment_quad && fragment_images>=3 && width==3840 && height==2160;
-    r->enhanced_prepack=r->enhanced_linear && width==3840 && height==2160 && images>=2;
+    /* Packing consumes the output raster, independently of source scaling/PQ. */
+    r->enhanced_prepack=(r->enhanced_linear || r->enhanced_skip_aux) && width==3840 && height==2160 && images>=2;
     r->enhanced_skip_aux=r->enhanced_skip_aux && r->enhanced_prepack;
     if(!dve_program(r,pq_lookup)){dv_release(r);return false;}
     GLint binding;glGetIntegerv(GL_SHADER_STORAGE_BUFFER_BINDING,&binding);
@@ -2909,7 +2910,8 @@ static enum dvbridge_dv_policy_status dv_policy_prepare(struct dvbridge_renderer
         !geometry.x && !geometry.y && geometry.width==3840 && geometry.height==2160;
     r->enhanced_authored=pixels;
     r->enhanced_authored_curve=pixels;
-    r->enhanced_skip_aux=r->enhanced_authored_curve && packed && r->enhanced_linear;
+    r->enhanced_skip_aux=r->enhanced_authored_curve && packed &&
+        (r->enhanced_linear || policy->adaptive!=DVBRIDGE_ADAPTIVE_A);
     if(r->enhanced_linear && policy->adaptive==DVBRIDGE_ADAPTIVE_B_FP16){
         pl_fmt fmt=pl_find_fmt(r->gpu,PL_FMT_FLOAT,4,16,32,PL_FMT_CAP_RENDERABLE|PL_FMT_CAP_SAMPLEABLE);
         if(!fmt || fmt->component_depth[0]!=16 || !pl_tex_recreate(r->gpu,&r->enhanced_input,
@@ -3343,7 +3345,7 @@ bool dvbridge_render_dv_policy_resolve(struct dvbridge_renderer *r,pl_tex target
         r->dv.output.value.policy.adaptive!=DVBRIDGE_ADAPTIVE_A &&
         r->dv.output.value.expansion_reason==CB1_DVE_SOURCE_BOUND && !r->dv.ai_source && r->fragment_quad){
         /* Keep the guard, fusing native PQ recovery and transport in one draw. */
-        ok=dve_pack_overlay(r,r->enhanced_input?r->enhanced_input:r->rgb,target,flip,packets,count,true);
+        ok=dve_pack_overlay(r,r->enhanced_input?r->enhanced_input:r->rgb,target,flip,packets,count,r->enhanced_linear);
     }else if(composed && r->fragment_quad){
         ok=dve_pack_overlay(r,intermediate,target,flip,packets,count,false);
     }else{

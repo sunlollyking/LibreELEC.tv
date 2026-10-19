@@ -1,4 +1,5 @@
 {
+  "src/dvbridge_fel.c": "f882f40e1fc41c4c331dea9865de35d0ae3d0c41f21a54e651e7dad8cb51a6d7",
   "src/dvbridge_gl_pack.h": "29e7800616662210fd71776263b6c63bcc8502b7f7910851805ceb3a42e6b6ba",
   "src/dvbridge_gl_pack.c": "26754ea4f1298f521eabc3594b7d28c80da12f4fc13f3c1c83058c257068be63",
   "src/cb1_circuit.c": "30ff0263b55e43ada7d516d646dc19fd6ae053af055fb88adc2cc0c73ba5549e",
@@ -35,7 +36,7 @@
   "src/dvbridge_placebo.h": "cdef70eb16a901376321aaba7962bcd82c6be764cdaf50e07f681291961d28ab",
   "src/dvbridge_policy.c": "92eae3075658595347fa026e6457fbab87de966d4d9e27cb357fe9690b425705",
   "src/dvbridge_policy.h": "b9f6fc652d6c14d4497205d03d908b5ab41362e034258895df5db85078138714",
-  "src/dvbridge_render.c": "556c8204c8cc8533f07f63a2952a104efe9b46f2b691331334c188c44f84946d",
+  "src/dvbridge_render.c": "60ee0a82a6e201f87d027915dffcb2be17bf68b3807fdd9b4b8ead6a39b55cd8",
   "src/dvbridge_render.h": "f393b31ecb332af91b9daf5c4292bee2c9c4f3f455a1707785088cca0911e1f7",
   "src/dvbridge_gl_frame.c": "8aed42da1974ad1d4d6e865916fe0eed0e38579c1e1922ce66d2a525abd6ab87",
   "src/dvbridge_gl_frame.h": "786696e44ec4caffef3a95214a86747422b65056a92d56661e43c902852d147e",

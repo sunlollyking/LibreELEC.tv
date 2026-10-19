@@ -1,0 +1,27 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Chris <meischris39@hotmail.com>
+Date: Mon, 19 Oct 2026 08:43:33 +0100
+Subject: [PATCH] Dolby Vision R1.0.0-Beta4-debug over Beta4
+ (CroqueMr/libreelec-x86-DV): MPEG-TS DV layer
+
+---
+diff -ruN a/libavformat/mpegts.c b/libavformat/mpegts.c
+--- a/libavformat/mpegts.c	2026-10-19 08:40:46.485241000 +0100
++++ b/libavformat/mpegts.c	2026-10-19 08:40:46.492883591 +0100
+@@ -2507,6 +2507,16 @@
+                 struct StreamGroup *stg;
+                 int gi;
+ 
++                /* Profile 7 EL is HEVC even when carried as private PES. */
++                if (stream_type == STREAM_TYPE_PRIVATE_DATA &&
++                    st->codecpar->codec_id == AV_CODEC_ID_BIN_DATA) {
++                    st->codecpar->codec_type = AVMEDIA_TYPE_VIDEO;
++                    st->codecpar->codec_id = AV_CODEC_ID_HEVC;
++                    sti->need_context_update = 1;
++                    sti->need_parsing = AVSTREAM_PARSE_FULL;
++                    sti->request_probe = 0;
++                }
++
+                 if (!p)
+                     break;
+ 
