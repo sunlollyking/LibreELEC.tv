@@ -2,8 +2,8 @@
 # Copyright (C) 2023-present Team LibreELEC (https://libreelec.tv)
 
 PKG_NAME="game.libretro.beetle-pce"
-PKG_VERSION="1.29.0.37-Omega"
-PKG_SHA256="da079e2abbba8675395a7f65a02c659025f3d3a4702b49ca60adfe96c23f79db"
+PKG_VERSION="1.29.0.38-Omega"
+PKG_SHA256="6ba88a8e58de54903934d396ddcbc7d434dd038a0a91cbeaa7223b5de2b8746f"
 PKG_REV="1"
 PKG_ARCH="any"
 PKG_LICENSE="GPL-2.0-or-later"

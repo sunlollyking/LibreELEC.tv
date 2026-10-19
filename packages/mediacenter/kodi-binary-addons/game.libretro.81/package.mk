@@ -2,8 +2,8 @@
 # Copyright (C) 2023-present Team LibreELEC (https://libreelec.tv)
 
 PKG_NAME="game.libretro.81"
-PKG_VERSION="1.0.0.35-Omega"
-PKG_SHA256="71a3230aa945c7587142e310e832da6b776e3ffaa8e23e66367e33c69dc516fb"
+PKG_VERSION="1.0.0.36-Omega"
+PKG_SHA256="2c6a8ffc61d074d50d06afb1f226b81cd9d285e3e0abae5acdde84eb3b12b82d"
 PKG_REV="1"
 PKG_ARCH="any"
 PKG_LICENSE="GPL-3.0-only"
