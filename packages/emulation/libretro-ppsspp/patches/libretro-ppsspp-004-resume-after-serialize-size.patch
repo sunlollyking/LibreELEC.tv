@@ -1,0 +1,41 @@
+From: Chris <chris.dixon.78.burnbridge@gmail.com>
+Date: Sat, 03 Oct 2026 12:10:00 +0100
+Subject: [PATCH] libretro: don't leave the emu thread paused after
+ retro_serialize_size
+
+retro_serialize_size() pauses the emu thread and leaves it paused, on the
+assumption that retro_serialize() follows and restarts it. A frontend that
+only asks for the size -- Kodi does, once, when a game starts -- gets a
+thread that never runs again: retro_run() returns early while it is paused,
+so the game shows a black screen, and EmuThreadStop() only stops a running
+thread, so the still-joinable std::thread is destroyed when the core is
+unloaded and the process aborts.
+
+Let retro_run() resume a paused thread, and stop any thread that exists.
+---
+--- a/libretro/libretro.cpp
++++ b/libretro/libretro.cpp
+@@ -441,7 +441,9 @@
+ }
+ 
+ void EmuThreadStop() {
+-	if (emuThreadState != EmuThreadState::RUNNING) {
++	// Paused counts: retro_serialize_size() leaves the thread paused, and a
++	// thread still joinable when the core is unloaded aborts the process
++	if (!emuThread.joinable()) {
+ 		return;
+ 	}
+ 
+@@ -681,11 +683,7 @@
+ 	retro_input();
+ 
+ 	if (useEmuThread) {
+-		if(emuThreadState == EmuThreadState::PAUSED || emuThreadState == EmuThreadState::PAUSE_REQUESTED) {
+-			ctx->SwapBuffers();
+-			return;
+-		}
+-
++		// Resumes a thread retro_serialize_size() left paused
+ 		if (emuThreadState != EmuThreadState::RUNNING) {
+ 			EmuThreadStart();
+ 		}

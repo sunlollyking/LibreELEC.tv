@@ -1,0 +1,33 @@
+From 0725176e8e76c2c063216332c11819bdee774b21 Mon Sep 17 00:00:00 2001
+From: Chris <chris.dixon.78.burnbridge@gmail.com>
+Date: Fri, 08 Aug 2026 18:35:00 +0100
+Subject: [PATCH] use gl3stub on any GLES target, not just Android
+
+gpu_features.cpp calls gl3stubInit() whenever USING_GLES2 is set, but gl3stub.c
+is only added to the sources for Android -- the build assumes GLES only ever
+happens there. Any other GLES target links with:
+
+  undefined reference to 'gl3stubInit'
+
+Compile it for those targets too.
+---
+diff --git a/libretro/Makefile.common b/libretro/Makefile.common
+--- a/libretro/Makefile.common
++++ b/libretro/Makefile.common
+@@ -92,6 +92,16 @@
+ 
+ SOURCES_C += $(EXTDIR)/glew/glew.c
+ 
++# gpu_features.cpp calls gl3stubInit() whenever USING_GLES2 is set, but
++# gl3stub.c is only compiled for Android -- the build assumes GLES only ever
++# happens there. Any other GLES target fails to link with
++# "undefined reference to 'gl3stubInit'".
++ifeq ($(GLES), 1)
++   ifneq ($(PLATFORM_EXT), android)
++      SOURCES_C += $(NATIVEDIR)/gfx_es2/gl3stub.c
++   endif
++endif
++
+ SOURCES_C += \
+ 	$(EXTDIR)/libkirk/AES.c \
+ 	$(EXTDIR)/libkirk/amctrl.c \

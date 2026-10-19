@@ -2,15 +2,15 @@
 # Copyright (C) 2026-present Team LibreELEC (https://libreelec.tv)
 
 PKG_NAME="libretro-ppsspp"
-PKG_VERSION="1265a3cef4463000b78af5b7c31ab5fd219f2344"
+PKG_VERSION="7b4ddb426bbe9e287bb7f19b0cfaebb4ea0d41d8"
 PKG_LICENSE="GPL-2.0-or-later"
 PKG_SITE="https://github.com/hrydgard/ppsspp"
 # A git source rather than an archive: the core needs its submodules -- glslang
 # and SPIRV-Cross among them -- and GitHub's tarballs never contain those, so an
 # archive build stops at "ext/glslang/SPIRV/GlslangToSpv.h: No such file"
-PKG_URL="https://github.com/hrydgard/ppsspp.git"
+PKG_URL="https://github.com/libretro/ppsspp.git"
 PKG_GIT_CLONE_SINGLE="yes"
-PKG_GIT_CLONE_DEPTH="500"
+PKG_GIT_CLONE_DEPTH="1"
 PKG_GIT_SUBMODULE_DEPTH="1"
 PKG_DEPENDS_TARGET="toolchain"
 PKG_LONGDESC="PPSSPP is a PSP emulator, capable of running games in full HD."
