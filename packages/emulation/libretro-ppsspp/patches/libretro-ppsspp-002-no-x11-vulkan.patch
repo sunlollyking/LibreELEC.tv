@@ -9,20 +9,17 @@ no X11 headers, so the build stops at "X11/Xlib.h: No such file or directory".
 
 Gate it behind NO_X11 so such systems can build. Default behaviour is unchanged.
 ---
-diff --git a/libretro/Makefile.common b/libretro/Makefile.common
 --- a/libretro/Makefile.common
 +++ b/libretro/Makefile.common
-@@ -619,7 +619,12 @@
- 
- ifneq ($(PLATFORM_EXT), darwin)
- 	ifeq ($(PLATFORM_EXT), unix)
--		COREFLAGS += -DVK_USE_PLATFORM_XLIB_KHR
-+		# Only when there is an X server to talk to. A GBM or Wayland-only
-+		# system has no X11/Xlib.h, and ext/vulkan/vulkan.h includes it
-+		# unconditionally once this is defined.
-+		ifneq ($(NO_X11), 1)
-+			COREFLAGS += -DVK_USE_PLATFORM_XLIB_KHR
-+		endif
- 	endif
+@@ -667,7 +667,11 @@
+ 	       $(EXTDIR)/glslang/glslang/OSDependent/Unix/ossource.cpp \
+ 		   $(COMMONDIR)/Render/Text/draw_text_android.cpp
+ else
++# Only when there is an X server to talk to. A GBM or Wayland-only system has
++# no X11/Xlib.h, and ext/vulkan/vulkan.h includes it once this is defined.
++ifneq ($(NO_X11), 1)
+ COREFLAGS += -DVK_USE_PLATFORM_XLIB_KHR
++endif
+ SOURCES_CXX += $(COMMONDIR)/MemArenaPosix.cpp \
+ 	       $(EXTDIR)/glslang/glslang/OSDependent/Unix/ossource.cpp
  endif
- 

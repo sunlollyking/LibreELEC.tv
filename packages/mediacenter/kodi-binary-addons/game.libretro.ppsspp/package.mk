@@ -2,9 +2,9 @@
 # Copyright (C) 2026-present Team LibreELEC (https://libreelec.tv)
 
 PKG_NAME="game.libretro.ppsspp"
-PKG_VERSION="0.0.1.28-Omega"
-PKG_SHA256="f830fa9f1ddf62852380c88eddc25ed169def749cd73007172de4ae0513088d8"
-PKG_REV="2"
+PKG_VERSION="0.0.1.32-Omega"
+PKG_SHA256="b95f1b804b0dea866ae5a251a7eb4db2d02c418bece7896c4ac97bb3923ccd4a"
+PKG_REV="1"
 PKG_ARCH="any"
 PKG_LICENSE="GPL-2.0-or-later"
 PKG_SITE="https://github.com/kodi-game/game.libretro.ppsspp"
