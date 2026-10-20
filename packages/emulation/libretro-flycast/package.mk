@@ -2,11 +2,11 @@
 # Copyright (C) 2026-present Team LibreELEC (https://libreelec.tv)
 
 PKG_NAME="libretro-flycast"
-PKG_VERSION="da088bb92c9e4b78b66a3449e4f5d7cfb8f7c7d6"
-PKG_SHA256="8dd79bdf239b664a18255079891cb565ee954b2b8a68945def3dbe84670fa650"
+PKG_VERSION="8ef5fec6bd2c1ce53b5c8a2d49e3a2953f099747"
+PKG_SHA256="6d1409bd384069b06bbd55df4f2c2a2fb34f04ca94d320c3ed4db9f53245cc7c"
 PKG_LICENSE="GPL-2.0-or-later"
 PKG_SITE="https://github.com/flyinghead/flycast"
-PKG_URL="https://github.com/kodi-game/flycast/archive/${PKG_VERSION}.tar.gz"
+PKG_URL="https://github.com/sunlollyking/flycast/archive/${PKG_VERSION}.tar.gz"
 PKG_DEPENDS_TARGET="toolchain zlib"
 PKG_LONGDESC="Flycast is a multi-platform Sega Dreamcast, Naomi and Atomiswave emulator."
 PKG_BUILD_FLAGS="-strip"
