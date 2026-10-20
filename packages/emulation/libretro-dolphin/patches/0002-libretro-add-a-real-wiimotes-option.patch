@@ -1,0 +1,116 @@
+From c3f8a19bdfa9e3b9f6ad2a40c8f826dfeeeafa26 Mon Sep 17 00:00:00 2001
+From: Chris <meischris39@hotmail.com>
+Date: Tue, 20 Oct 2026 12:15:25 +0100
+Subject: [PATCH] libretro: Add a Real Wiimotes option
+
+A frontend can only ask for a real Wiimote through the Real WiiMote
+device, which it then has to offer next to the emulated Wiimote. This
+option lets the player choose real Wiimotes instead: every port set to a
+Wiimote uses a real one, and Wiimotes are scanned for continuously,
+since a real one is only found by scanning.
+
+Ports set to a Classic Controller stay emulated, so a pad can still play
+as one next to a real Wiimote.
+---
+ Source/Core/DolphinLibretro/Boot.cpp           |  3 ++-
+ Source/Core/DolphinLibretro/Common/Options.cpp | 14 ++++++++++++++
+ Source/Core/DolphinLibretro/Common/Options.h   |  1 +
+ Source/Core/DolphinLibretro/Input.cpp          |  6 ++++++
+ Source/Core/DolphinLibretro/Main.cpp           | 11 +++++++++--
+ 5 files changed, 32 insertions(+), 3 deletions(-)
+
+diff --git a/Source/Core/DolphinLibretro/Boot.cpp b/Source/Core/DolphinLibretro/Boot.cpp
+index 2fd5731b4a..11468c20ee 100644
+--- a/Source/Core/DolphinLibretro/Boot.cpp
++++ b/Source/Core/DolphinLibretro/Boot.cpp
+@@ -281,7 +281,8 @@ bool retro_load_game(const struct retro_game_info* game)
+ 
+   Config::SetBase(Config::MAIN_WIIMOTE_CONTINUOUS_SCANNING,
+                   Libretro::GetOption<bool>(sysconf::WIIMOTE_CONTINUOUS_SCANNING,
+-                                             /*def=*/false));
++                                             /*def=*/false) ||
++                  Libretro::GetOption<bool>(sysconf::REAL_WIIMOTES, /*def=*/false));
+   Config::SetBase(Config::MAIN_MMU,
+                   Libretro::GetOption<bool>(core::MAIN_MMU, /*def=*/false));
+ 
+diff --git a/Source/Core/DolphinLibretro/Common/Options.cpp b/Source/Core/DolphinLibretro/Common/Options.cpp
+index d02906548e..c8850ddff7 100644
+--- a/Source/Core/DolphinLibretro/Common/Options.cpp
++++ b/Source/Core/DolphinLibretro/Common/Options.cpp
+@@ -583,6 +583,20 @@ static struct retro_core_option_v2_definition option_defs[] = {
+     },
+     "disabled"
+   },
++  {
++    Libretro::Options::sysconf::REAL_WIIMOTES,
++    "System Configuration > Real Wiimotes",
++    "Real Wiimotes",
++    "Play with Wiimotes connected to this device, for example through a DolphinBar, on every port set to a Wiimote. Ports set to a Classic Controller stay emulated. Scans for Wiimotes continuously.",
++    nullptr,
++    CATEGORY_SYSCONF,
++    {
++      { "disabled", nullptr },
++      { "enabled",  nullptr },
++      { nullptr, nullptr }
++    },
++    "disabled"
++  },
+   {
+     Libretro::Options::sysconf::ALT_GC_PORTS_ON_WII,
+     "System Configuration > Alt GC Ports (Wii)",
+diff --git a/Source/Core/DolphinLibretro/Common/Options.h b/Source/Core/DolphinLibretro/Common/Options.h
+index cada86f14a..19e24ec1be 100644
+--- a/Source/Core/DolphinLibretro/Common/Options.h
++++ b/Source/Core/DolphinLibretro/Common/Options.h
+@@ -180,6 +180,7 @@ namespace sysconf {
+   constexpr const char SENSOR_BAR_POSITION[] = "dolphin_sensor_bar_position";
+   constexpr const char ENABLE_RUMBLE[] = "dolphin_enable_rumble";
+   constexpr const char WIIMOTE_CONTINUOUS_SCANNING[] = "dolphin_wiimote_continuous_scanning";
++  constexpr const char REAL_WIIMOTES[] = "dolphin_real_wiimotes";
+   constexpr const char ALT_GC_PORTS_ON_WII[] = "dolphin_alt_gc_ports_on_wii";
+   constexpr const char WII_SPEAK_ENABLE[] = "dolphin_wiispeak_enable";
+   constexpr const char WII_SPEAK_MUTED[] = "dolphin_wiispeak_muted";
+diff --git a/Source/Core/DolphinLibretro/Input.cpp b/Source/Core/DolphinLibretro/Input.cpp
+index 88b8d3ef8e..b29fdd947c 100644
+--- a/Source/Core/DolphinLibretro/Input.cpp
++++ b/Source/Core/DolphinLibretro/Input.cpp
+@@ -1029,6 +1029,12 @@ void retro_set_controller_port_device(unsigned port, unsigned device)
+   }
+   else if (!Config::Get(Config::MAIN_BLUETOOTH_PASSTHROUGH_ENABLED))
+   {
++    // input_types keeps the frontend's choice, so turning the option off restores it.
++    // A Classic Controller stays emulated, so a pad can still play as one.
++    const unsigned remote = device;
++    if (Libretro::Options::GetCached<bool>(Libretro::Options::sysconf::REAL_WIIMOTES) &&
++        remote != RETRO_DEVICE_WIIMOTE_CC && remote != RETRO_DEVICE_WIIMOTE_CC_PRO)
++      device = RETRO_DEVICE_REAL_WIIMOTE;
+     retro_set_controller_port_device_wii(port, device);
+   }
+ 
+diff --git a/Source/Core/DolphinLibretro/Main.cpp b/Source/Core/DolphinLibretro/Main.cpp
+index 5426507e16..50a478e410 100644
+--- a/Source/Core/DolphinLibretro/Main.cpp
++++ b/Source/Core/DolphinLibretro/Main.cpp
+@@ -401,13 +401,20 @@ void retro_run(void)
+     Config::SetCurrent(Config::MAIN_WII_SPEAK_MUTED,
+       Libretro::Options::GetCached<bool>(Libretro::Options::sysconf::WII_SPEAK_MUTED));
+ 
+-  if (Libretro::Options::IsUpdated(Libretro::Options::sysconf::WIIMOTE_CONTINUOUS_SCANNING))
++  const bool realWiimotesUpdated =
++    Libretro::Options::IsUpdated(Libretro::Options::sysconf::REAL_WIIMOTES);
++  if (Libretro::Options::IsUpdated(Libretro::Options::sysconf::WIIMOTE_CONTINUOUS_SCANNING) ||
++      realWiimotesUpdated)
+   {
+     Config::SetCurrent(Config::MAIN_WIIMOTE_CONTINUOUS_SCANNING,
+-      Libretro::Options::GetCached<bool>(Libretro::Options::sysconf::WIIMOTE_CONTINUOUS_SCANNING));
++      Libretro::Options::GetCached<bool>(Libretro::Options::sysconf::WIIMOTE_CONTINUOUS_SCANNING) ||
++      Libretro::Options::GetCached<bool>(Libretro::Options::sysconf::REAL_WIIMOTES));
+     WiimoteReal::Initialize(Wiimote::InitializeMode::DO_NOT_WAIT_FOR_WIIMOTES);
+   }
+ 
++  if (realWiimotesUpdated)
++    Libretro::Input::ResetControllers(WiimoteUpdateFlags{});
++
+   if (Config::Get(Config::MAIN_BLUETOOTH_PASSTHROUGH_ENABLED))
+     Libretro::Input::BluetoothPassthroughBind();
+ 
