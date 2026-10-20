@@ -1,0 +1,1928 @@
+diff -ruN -x .git -x '*.orig' -x '*.rej' a/addons/resource.language.en_gb/resources/strings.po b/addons/resource.language.en_gb/resources/strings.po
+--- a/addons/resource.language.en_gb/resources/strings.po
++++ b/addons/resource.language.en_gb/resources/strings.po
+@@ -26067,3 +26067,23 @@
+ msgid "Insufficient rendering headroom. Switching to Dolby Vision Standard."
+ msgstr ""
+ 
++msgctxt "#40916"
++msgid "Dolby Vision Master Reference (IPT-PQc2)"
++msgstr ""
++
++msgctxt "#40917"
++msgid "Use standard LibreELEC drivers (reboot required)"
++msgstr ""
++
++msgctxt "#40918"
++msgid "Use unmodified LibreELEC graphics drivers after restarting. Dolby Vision output may be unavailable."
++msgstr ""
++
++msgctxt "#40919"
++msgid "Driver profile selected. Restart to apply."
++msgstr ""
++
++msgctxt "#40920"
++msgid "Driver profile selection failed. Check kodi.log."
++msgstr ""
++
+diff -ruN -x .git -x '*.orig' -x '*.rej' a/addons/skin.estuary/xml/DialogPlayerProcessInfo.xml b/addons/skin.estuary/xml/DialogPlayerProcessInfo.xml
+--- a/addons/skin.estuary/xml/DialogPlayerProcessInfo.xml
++++ b/addons/skin.estuary/xml/DialogPlayerProcessInfo.xml
+@@ -6,9 +6,7 @@
+ 	<animation effect="fade" start="100" end="0" time="200">WindowClose</animation>
+ 	<onunload>ClearProperty(PlayerInfoDialogFocus,Home)</onunload>
+ 	<controls>
+-		<include file="IncludesDVProcessInfo.xml">DVProcessPanel</include>
+ 		<control type="group">
+-			<visible>!String.IsEqual(Window(playerprocessinfo).Property(DV.Enhanced),true)</visible>
+ 			<bottom>0</bottom>
+ 			<height>250</height>
+ 			<animation effect="slide" end="0,-20" time="150" condition="VideoPlayer.Content(LiveTV)">conditional</animation>
+diff -ruN -x .git -x '*.orig' -x '*.rej' a/addons/skin.estuary/xml/Includes_DialogSelect.xml b/addons/skin.estuary/xml/Includes_DialogSelect.xml
+--- a/addons/skin.estuary/xml/Includes_DialogSelect.xml
++++ b/addons/skin.estuary/xml/Includes_DialogSelect.xml
+@@ -1278,7 +1278,7 @@
+       <right>40</right><bottom>40</bottom><width>660</width><height>412</height>
+       <control type="image" id="9101">
+         <left>0</left><top>0</top><width>660</width><height>412</height>
+-        <texture colordiffuse="dialog_tint">colors/white.png</texture>
++        <texture colordiffuse="dialog_tint">special://xbmc/media/cb1-panel.png</texture>
+       </control>
+       <control type="label" id="1">
+         <left>20</left><top>12</top><width>620</width><height>40</height><font>font12</font><scroll>true</scroll>
+diff -ruN -x .git -x '*.orig' -x '*.rej' a/addons/skin.estuary/xml/IncludesDVProcessInfo.xml b/addons/skin.estuary/xml/IncludesDVProcessInfo.xml
+--- a/addons/skin.estuary/xml/IncludesDVProcessInfo.xml
++++ b/addons/skin.estuary/xml/IncludesDVProcessInfo.xml
+@@ -1,174 +0,0 @@
+-<?xml version="1.0" encoding="UTF-8"?>
+-<includes>
+-  <variable name="DVAudioOutput">
+-    <value condition="Player.Passthrough">Passthrough</value>
+-    <value>Decoded player PCM</value>
+-  </variable>
+-  <variable name="DVSourceFormat">
+-    <value condition="String.IsEqual(VideoPlayer.HdrType,dolbyvision)">Dolby Vision</value>
+-    <value condition="String.IsEqual(VideoPlayer.HdrType,hdr10)">HDR10</value>
+-    <value condition="String.IsEqual(VideoPlayer.HdrType,hlg)">HLG</value>
+-    <value condition="!String.IsEmpty(VideoPlayer.HdrType)">$INFO[VideoPlayer.HdrType]</value>
+-    <value>SDR</value>
+-  </variable>
+-  <variable name="DVPanelMode">
+-    <value condition="!String.IsEqual(Window(playerprocessinfo).Property(DV.Mode),Kodi default)">$INFO[Window(playerprocessinfo).Property(DV.Mode)]</value>
+-    <value>$VAR[DVSourceFormat] / Kodi playback</value>
+-  </variable>
+-  <variable name="DVSubtitleLanguage">
+-    <value condition="VideoPlayer.HasSubtitles + VideoPlayer.SubtitlesEnabled">$INFO[VideoPlayer.SubtitlesLanguage]</value>
+-    <value>Off</value>
+-  </variable>
+-  <include name="DVInfoRow">
+-    <param name="label"/><param name="value"/><param name="visible" default="true"/>
+-    <definition>
+-      <control type="group"><height>30</height><visible>$PARAM[visible]</visible>
+-        <control type="label"><width>230</width><height>30</height>
+-          <font>font10</font><textcolor>FFBFC8CC</textcolor><label>$PARAM[label]</label>
+-        </control>
+-        <control type="label"><left>234</left><right>0</right><height>30</height>
+-          <font>font10</font><textcolor>FFF4F6F6</textcolor><align>right</align><label>$PARAM[value]</label>
+-        </control>
+-      </control>
+-    </definition>
+-  </include>
+-  <include name="DVSection">
+-    <param name="label"/><param name="gap" default="0"/><param name="height" default="42"/><param name="visible" default="true"/>
+-    <definition>
+-      <control type="group"><height>$PARAM[height]</height><visible>$PARAM[visible]</visible>
+-        <control type="label"><top>$PARAM[gap]</top><width>550</width><height>34</height>
+-          <font>font12</font><textcolor>FFF4F6F6</textcolor><label>[B]$PARAM[label][/B]</label>
+-        </control>
+-      </control>
+-    </definition>
+-  </include>
+-  <include name="DVVideoFields"><definition>
+-      <include content="DVSection"><param name="label" value="VIDEO"/><param name="gap" value="0"/><param name="height" value="42"/><param name="visible" value="true"/></include>
+-      <include content="DVInfoRow"><param name="label" value="Format"/><param name="value" value="$VAR[DVSourceFormat]"/><param name="visible" value="true"/></include>
+-      <include content="DVInfoRow"><param name="label" value="Display output"/><param name="value" value="$INFO[Window(playerprocessinfo).Property(DV.Display)]"/><param name="visible" value="true"/></include>
+-      <include content="DVInfoRow"><param name="label" value="Video stream"/><param name="value" value="$INFO[Player.Process(videowidth)]x$INFO[Player.Process(videoheight)] / $INFO[Player.Process(videofps)] fps"/><param name="visible" value="true"/></include>
+-      <include content="DVInfoRow"><param name="label" value="Decoder"/><param name="value" value="$INFO[Player.Process(videodecoder)]"/><param name="visible" value="true"/></include>
+-      <include content="DVInfoRow"><param name="label" value="Pixel format"/><param name="value" value="$INFO[Window(playerprocessinfo).Property(DV.SourcePixelFormat)]"/><param name="visible" value="!String.IsEmpty(Window(playerprocessinfo).Property(DV.SourcePixelFormat))"/></include>
+-      <include content="DVInfoRow"><param name="label" value="Source bit depth"/><param name="value" value="$INFO[Window(playerprocessinfo).Property(DV.SourceBits)]"/><param name="visible" value="!String.IsEmpty(Window(playerprocessinfo).Property(DV.SourceBits)) + !String.IsEqual(Window(playerprocessinfo).Property(DV.SourceBits),N/A)"/></include>
+-      <include content="DVInfoRow"><param name="label" value="Aspect ratio"/><param name="value" value="$INFO[Player.Process(videodar)]"/><param name="visible" value="true"/></include>
+-      <include content="DVInfoRow"><param name="label" value="Video bitrate"/><param name="value" value="$INFO[Player.Process(videolivebitrate)]"/><param name="visible" value="true"/></include>
+-      <include content="DVInfoRow"><param name="label" value="Playback time"/><param name="value" value="$INFO[Player.Time] / $INFO[Player.Duration]"/><param name="visible" value="true"/></include>
+-    </definition></include>
+-  <include name="DVAudioFields"><definition>
+-      <include content="DVSection"><param name="label" value="AUDIO"/><param name="gap" value="0"/><param name="height" value="42"/><param name="visible" value="true"/></include>
+-      <include content="DVInfoRow"><param name="label" value="Track"/><param name="value" value="No audio track"/><param name="visible" value="!Integer.IsGreater(VideoPlayer.AudioStreamCount,0)"/></include>
+-      <include content="DVInfoRow"><param name="label" value="Source codec"/><param name="value" value="$INFO[VideoPlayer.AudioCodec]"/><param name="visible" value="Integer.IsGreater(VideoPlayer.AudioStreamCount,0)"/></include>
+-      <include content="DVInfoRow"><param name="label" value="Decoder"/><param name="value" value="$INFO[Player.Process(audiodecoder)]"/><param name="visible" value="Integer.IsGreater(VideoPlayer.AudioStreamCount,0)"/></include>
+-      <include content="DVInfoRow"><param name="label" value="Decoded format"/><param name="value" value="$INFO[Player.Process(audiobitspersample)] bit / $INFO[Player.Process(audiosamplerate)] Hz"/><param name="visible" value="Integer.IsGreater(VideoPlayer.AudioStreamCount,0) + !Player.Passthrough"/></include>
+-      <include content="DVInfoRow"><param name="label" value="Source channels"/><param name="value" value="$INFO[Player.Process(audiochannels)]"/><param name="visible" value="Integer.IsGreater(VideoPlayer.AudioStreamCount,0)"/></include>
+-      <include content="DVInfoRow"><param name="label" value="Player audio path"/><param name="value" value="$VAR[DVAudioOutput]"/><param name="visible" value="Integer.IsGreater(VideoPlayer.AudioStreamCount,0)"/></include>
+-      <include content="DVInfoRow"><param name="label" value="Bitrate"/><param name="value" value="$INFO[Player.Process(audiolivebitrate)]"/><param name="visible" value="Integer.IsGreater(VideoPlayer.AudioStreamCount,0)"/></include>
+-      <include content="DVInfoRow"><param name="label" value="Language"/><param name="value" value="$INFO[VideoPlayer.AudioLanguage]"/><param name="visible" value="Integer.IsGreater(VideoPlayer.AudioStreamCount,0)"/></include>
+-      <include content="DVInfoRow"><param name="label" value="Subtitles"/><param name="value" value="$VAR[DVSubtitleLanguage]"/><param name="visible" value="true"/></include>
+-    </definition></include>
+-  <include name="DVStaticHDRFields"><definition>
+-      <include content="DVInfoRow"><param name="label" value="Mastering max / min"/><param name="value" value="$INFO[Window(playerprocessinfo).Property(DV.SourceMastering)]"/><param name="visible" value="!String.IsEmpty(Window(playerprocessinfo).Property(DV.SourceMastering)) + !String.IsEqual(Window(playerprocessinfo).Property(DV.SourceMastering),N/A)"/></include>
+-      <include content="DVInfoRow"><param name="label" value="MaxCLL / MaxFALL"/><param name="value" value="$INFO[Window(playerprocessinfo).Property(DV.SourceLight)]"/><param name="visible" value="!String.IsEmpty(Window(playerprocessinfo).Property(DV.SourceLight)) + !String.IsEqual(Window(playerprocessinfo).Property(DV.SourceLight),N/A)"/></include>
+-    </definition></include>
+-  <include name="DVRenderingFields"><param name="gauge"/><definition>
+-      <include content="DVSection"><param name="label" value="RENDERING &amp; SYSTEM"/><param name="gap" value="0"/><param name="height" value="42"/><param name="visible" value="true"/></include>
+-      <include content="DVInfoRow"><param name="label" value="$LOCALIZE[40906]"/><param name="value" value="$INFO[Window(playerprocessinfo).Property(DV.FastRendering)]"/><param name="visible" value="!String.IsEmpty(Window(playerprocessinfo).Property(DV.FastRendering))"/></include>
+-      <include content="DVInfoRow"><param name="label" value="Render engine + GUI"/><param name="value" value="$INFO[Window(playerprocessinfo).Property(DV.GPURender)]"/><param name="visible" value="String.IsEqual(Window(playerprocessinfo).Property(DV.GPUAvailable),true)"/></include>
+-      <control type="group"><height>24</height><visible>String.IsEqual(Window(playerprocessinfo).Property(DV.GPUAvailable),true)</visible>
+-        <control type="progress" id="$PARAM[gauge]"><top>8</top><width>564</width><height>8</height>
+-          <texturebg colordiffuse="FF343E42">colors/white.png</texturebg>
+-          <lefttexture/><midtexture colordiffuse="FFB9D8C7">colors/white.png</midtexture><righttexture/><overlaytexture/>
+-        </control>
+-      </control>
+-      <include content="DVInfoRow"><param name="label" value="CPU"/><param name="value" value="$INFO[Window(playerprocessinfo).Property(DV.CPU)]"/><param name="visible" value="!String.IsEmpty(Window(playerprocessinfo).Property(DV.CPU)) + !String.IsEqual(Window(playerprocessinfo).Property(DV.CPU),N/A)"/></include>
+-      <include content="DVInfoRow"><param name="label" value="Temperature"/><param name="value" value="$INFO[System.CPUTemperature]"/><param name="visible" value="!String.IsEmpty(System.CPUTemperature)"/></include>
+-      <include content="DVInfoRow"><param name="label" value="Memory"/><param name="value" value="$INFO[System.Memory(used.percent)]"/><param name="visible" value="true"/></include>
+-      <include content="DVInfoRow"><param name="label" value="Drop / skip"/><param name="value" value="$INFO[Window(playerprocessinfo).Property(DV.DroppedSkipped)]"/><param name="visible" value="!String.IsEmpty(Window(playerprocessinfo).Property(DV.DroppedSkipped)) + !String.IsEqual(Window(playerprocessinfo).Property(DV.DroppedSkipped),N/A)"/></include>
+-      <include content="DVInfoRow"><param name="label" value="Player cache"/><param name="value" value="$INFO[Player.CacheLevel] %"/><param name="visible" value="true"/></include>
+-      <include content="DVInfoRow"><param name="label" value="Video queue / data"/><param name="value" value="$INFO[Player.Process(videoqueuelevel)] % / $INFO[Player.Process(videoqueuedatalevel)] %"/><param name="visible" value="true"/></include>
+-      <include content="DVInfoRow"><param name="label" value="Audio queue / data"/><param name="value" value="$INFO[Player.Process(audioqueuelevel)] % / $INFO[Player.Process(audioqueuedatalevel)] %"/><param name="visible" value="Integer.IsGreater(VideoPlayer.AudioStreamCount,0)"/></include>
+-      <include content="DVSection"><param name="label" value="OUTPUT &amp; PROCESSING"/><param name="gap" value="18"/><param name="height" value="60"/><param name="visible" value="String.IsEqual(Window(playerprocessinfo).Property(DV.ProcessingVisible),true)"/></include>
+-      <include content="DVInfoRow"><param name="label" value="Engine"/><param name="value" value="$INFO[Window(playerprocessinfo).Property(DV.Engine)]"/><param name="visible" value="!String.IsEmpty(Window(playerprocessinfo).Property(DV.Engine))"/></include>
+-      <include content="DVInfoRow"><param name="label" value="Circuit"/><param name="value" value="$INFO[Window(playerprocessinfo).Property(DV.Circuit)]"/><param name="visible" value="!String.IsEmpty(Window(playerprocessinfo).Property(DV.Circuit))"/></include>
+-      <include content="DVInfoRow"><param name="label" value="Compatibility fallback"/><param name="value" value="$INFO[Window(playerprocessinfo).Property(DV.Fallback)]"/><param name="visible" value="!String.IsEmpty(Window(playerprocessinfo).Property(DV.Fallback))"/></include>
+-      <include content="DVInfoRow"><param name="label" value="Requested policy"/><param name="value" value="$INFO[Window(playerprocessinfo).Property(DV.RequestedPolicy)]"/><param name="visible" value="!String.IsEmpty(Window(playerprocessinfo).Property(DV.OutputStage)) | !String.IsEmpty(Window(playerprocessinfo).Property(DV.Fallback))"/></include>
+-      <include content="DVInfoRow"><param name="label" value="Pending output"/><param name="value" value="$INFO[Window(playerprocessinfo).Property(DV.OutputStage)]"/><param name="visible" value="!String.IsEmpty(Window(playerprocessinfo).Property(DV.OutputStage))"/></include>
+-      <include content="DVInfoRow"><param name="label" value="$LOCALIZE[40849]"/><param name="value" value="$INFO[Window(playerprocessinfo).Property(DV.AdmissionReason)]"/><param name="visible" value="!String.IsEmpty(Window(playerprocessinfo).Property(DV.AdmissionReason))"/></include>
+-      <include content="DVInfoRow"><param name="label" value="$LOCALIZE[40850]"/><param name="value" value="$INFO[Window(playerprocessinfo).Property(DV.AtomicResult)]"/><param name="visible" value="!String.IsEmpty(Window(playerprocessinfo).Property(DV.AtomicResult))"/></include>
+-      <include content="DVInfoRow"><param name="label" value="Manual TV profile"/><param name="value" value="$INFO[Window(playerprocessinfo).Property(DV.TVProfile)]"/><param name="visible" value="!String.IsEmpty(Window(playerprocessinfo).Property(DV.TVProfile))"/></include>
+-      <include content="DVInfoRow"><param name="label" value="Render warning"/><param name="value" value="$INFO[Window(playerprocessinfo).Property(DV.ReferenceWarning)]"/><param name="visible" value="!String.IsEmpty(Window(playerprocessinfo).Property(DV.ReferenceWarning))"/></include>
+-      <include content="DVInfoRow"><param name="label" value="$INFO[Window(playerprocessinfo).Property(DV.HDR10TargetLabel)]"/><param name="value" value="$INFO[Window(playerprocessinfo).Property(DV.HDR10Target)]"/><param name="visible" value="!String.IsEmpty(Window(playerprocessinfo).Property(DV.HDR10Target))"/></include>
+-      <include content="DVInfoRow"><param name="label" value="Creative trims"/><param name="value" value="$INFO[Window(playerprocessinfo).Property(DV.CreativeTrims)]"/><param name="visible" value="String.IsEqual(VideoPlayer.HdrType,dolbyvision) + !String.IsEmpty(Window(playerprocessinfo).Property(DV.CreativeTrims))"/></include>
+-      <include content="DVInfoRow"><param name="label" value="Signal intent"/><param name="value" value="$INFO[Window(playerprocessinfo).Property(DV.SignalIntent)]"/><param name="visible" value="!String.IsEmpty(Window(playerprocessinfo).Property(DV.SignalIntent))"/></include>
+-      <include content="DVInfoRow"><param name="label" value="Scanout container"/><param name="value" value="$INFO[Window(playerprocessinfo).Property(DV.Transport)]"/><param name="visible" value="!String.IsEmpty(Window(playerprocessinfo).Property(DV.Transport))"/></include>
+-      <include content="DVInfoRow"><param name="label" value="$LOCALIZE[40848]"/><param name="value" value="$INFO[Window(playerprocessinfo).Property(DV.MinimumLinkBits)]"/><param name="visible" value="!String.IsEmpty(Window(playerprocessinfo).Property(DV.MinimumLinkBits))"/></include>
+-      <include content="DVInfoRow"><param name="label" value="FEL reconstructed"/><param name="value" value="$INFO[Window(playerprocessinfo).Property(DV.FEL)]"/><param name="visible" value="String.IsEqual(VideoPlayer.HdrType,dolbyvision) + !String.IsEmpty(Window(playerprocessinfo).Property(DV.FEL)) + !String.IsEqual(Window(playerprocessinfo).Property(DV.FEL),N/A)"/></include>
+-      <include content="DVInfoRow"><param name="label" value="$LOCALIZE[40907]"/><param name="value" value="$INFO[Window(playerprocessinfo).Property(DV.FELUpscaling)]"/><param name="visible" value="!String.IsEmpty(Window(playerprocessinfo).Property(DV.FELUpscaling))"/></include>
+-    </definition></include>
+-  <include name="DVDynamicFields"><definition>
+-      <include content="DVSection"><param name="label" value="DOLBY VISION"/><param name="gap" value="0"/><param name="height" value="42"/><param name="visible" value="true"/></include>
+-      <include content="DVInfoRow"><param name="label" value="Profile"/><param name="value" value="$INFO[Window(playerprocessinfo).Property(DV.Profile)]"/><param name="visible" value="!String.IsEmpty(Window(playerprocessinfo).Property(DV.Profile)) + !String.IsEqual(Window(playerprocessinfo).Property(DV.Profile),N/A)"/></include>
+-      <include content="DVInfoRow"><param name="label" value="Level"/><param name="value" value="$INFO[Window(playerprocessinfo).Property(DV.Level)]"/><param name="visible" value="!String.IsEmpty(Window(playerprocessinfo).Property(DV.Level)) + !String.IsEqual(Window(playerprocessinfo).Property(DV.Level),N/A)"/></include>
+-      <include content="DVInfoRow"><param name="label" value="Version"/><param name="value" value="$INFO[Window(playerprocessinfo).Property(DV.Version)]"/><param name="visible" value="!String.IsEmpty(Window(playerprocessinfo).Property(DV.Version)) + !String.IsEqual(Window(playerprocessinfo).Property(DV.Version),N/A)"/></include>
+-      <include content="DVInfoRow"><param name="label" value="CM metadata"/><param name="value" value="$INFO[Window(playerprocessinfo).Property(DV.CM)]"/><param name="visible" value="!String.IsEmpty(Window(playerprocessinfo).Property(DV.CM)) + !String.IsEqual(Window(playerprocessinfo).Property(DV.CM),N/A)"/></include>
+-      <include content="DVInfoRow"><param name="label" value="Parsed source blocks"/><param name="value" value="$INFO[Window(playerprocessinfo).Property(DV.ParsedBlocks)]"/><param name="visible" value="!String.IsEmpty(Window(playerprocessinfo).Property(DV.ParsedBlocks))"/></include>
+-      <include content="DVInfoRow"><param name="label" value="Applied source blocks"/><param name="value" value="$INFO[Window(playerprocessinfo).Property(DV.AppliedBlocks)]"/><param name="visible" value="!String.IsEmpty(Window(playerprocessinfo).Property(DV.AppliedBlocks))"/></include>
+-      <include content="DVInfoRow"><param name="label" value="Partial block use"/><param name="value" value="$INFO[Window(playerprocessinfo).Property(DV.PartialBlocks)]"/><param name="visible" value="!String.IsEmpty(Window(playerprocessinfo).Property(DV.PartialBlocks))"/></include>
+-      <include content="DVInfoRow"><param name="label" value="Output blocks"/><param name="value" value="$INFO[Window(playerprocessinfo).Property(DV.TransmittedBlocks)]"/><param name="visible" value="!String.IsEmpty(Window(playerprocessinfo).Property(DV.TransmittedBlocks))"/></include>
+-      <include content="DVInfoRow"><param name="label" value="Unapplied source blocks"/><param name="value" value="$INFO[Window(playerprocessinfo).Property(DV.UnappliedBlocks)]"/><param name="visible" value="!String.IsEmpty(Window(playerprocessinfo).Property(DV.UnappliedBlocks))"/></include>
+-      <include content="DVInfoRow"><param name="label" value="RPU"/><param name="value" value="$INFO[Window(playerprocessinfo).Property(DV.RPU)]"/><param name="visible" value="!String.IsEmpty(Window(playerprocessinfo).Property(DV.RPU)) + !String.IsEqual(Window(playerprocessinfo).Property(DV.RPU),N/A)"/></include>
+-      <include content="DVInfoRow"><param name="label" value="Base layer"/><param name="value" value="$INFO[Window(playerprocessinfo).Property(DV.BL)]"/><param name="visible" value="!String.IsEmpty(Window(playerprocessinfo).Property(DV.BL)) + !String.IsEqual(Window(playerprocessinfo).Property(DV.BL),N/A)"/></include>
+-      <include content="DVInfoRow"><param name="label" value="Enhancement layer"/><param name="value" value="$INFO[Window(playerprocessinfo).Property(DV.EL)]"/><param name="visible" value="!String.IsEmpty(Window(playerprocessinfo).Property(DV.EL)) + !String.IsEqual(Window(playerprocessinfo).Property(DV.EL),N/A)"/></include>
+-      <include content="DVSection"><param name="label" value="METADATA"/><param name="gap" value="18"/><param name="height" value="60"/><param name="visible" value="[!String.IsEmpty(Window(playerprocessinfo).Property(DV.SourceMastering)) + !String.IsEqual(Window(playerprocessinfo).Property(DV.SourceMastering),N/A)] | [!String.IsEmpty(Window(playerprocessinfo).Property(DV.SourceLight)) + !String.IsEqual(Window(playerprocessinfo).Property(DV.SourceLight),N/A)] | [!String.IsEmpty(Window(playerprocessinfo).Property(DV.Mastering)) + !String.IsEqual(Window(playerprocessinfo).Property(DV.Mastering),N/A)] | [!String.IsEmpty(Window(playerprocessinfo).Property(DV.CLL)) + !String.IsEqual(Window(playerprocessinfo).Property(DV.CLL),N/A)] | [!String.IsEmpty(Window(playerprocessinfo).Property(DV.L1PQ)) + !String.IsEqual(Window(playerprocessinfo).Property(DV.L1PQ),N/A)] | [!String.IsEmpty(Window(playerprocessinfo).Property(DV.L1Nits)) + !String.IsEqual(Window(playerprocessinfo).Property(DV.L1Nits),N/A)] | [!String.IsEmpty(Window(playerprocessinfo).Property(DV.L5)) + !String.IsEqual(Window(playerprocessinfo).Property(DV.L5),N/A)]"/></include>
+-      <include>DVStaticHDRFields</include>
+-      <include content="DVInfoRow"><param name="label" value="RPU max / min"/><param name="value" value="$INFO[Window(playerprocessinfo).Property(DV.Mastering)]"/><param name="visible" value="!String.IsEmpty(Window(playerprocessinfo).Property(DV.Mastering)) + !String.IsEqual(Window(playerprocessinfo).Property(DV.Mastering),N/A)"/></include>
+-      <include content="DVInfoRow"><param name="label" value="RPU CLL / FALL"/><param name="value" value="$INFO[Window(playerprocessinfo).Property(DV.CLL)]"/><param name="visible" value="!String.IsEmpty(Window(playerprocessinfo).Property(DV.CLL)) + !String.IsEqual(Window(playerprocessinfo).Property(DV.CLL),N/A)"/></include>
+-      <include content="DVInfoRow"><param name="label" value="L1 PQ min/max/avg"/><param name="value" value="$INFO[Window(playerprocessinfo).Property(DV.L1PQ)]"/><param name="visible" value="!String.IsEmpty(Window(playerprocessinfo).Property(DV.L1PQ)) + !String.IsEqual(Window(playerprocessinfo).Property(DV.L1PQ),N/A)"/></include>
+-      <include content="DVInfoRow"><param name="label" value="L1 nits min/max/avg"/><param name="value" value="$INFO[Window(playerprocessinfo).Property(DV.L1Nits)]"/><param name="visible" value="!String.IsEmpty(Window(playerprocessinfo).Property(DV.L1Nits)) + !String.IsEqual(Window(playerprocessinfo).Property(DV.L1Nits),N/A)"/></include>
+-      <include content="DVInfoRow"><param name="label" value="L5 L/R/T/B"/><param name="value" value="$INFO[Window(playerprocessinfo).Property(DV.L5)]"/><param name="visible" value="!String.IsEmpty(Window(playerprocessinfo).Property(DV.L5)) + !String.IsEqual(Window(playerprocessinfo).Property(DV.L5),N/A)"/></include>
+-    </definition></include>
+-  <include name="DVProcessLayout"><param name="height"/><param name="background"/><param name="panel"/><param name="surface"/><param name="col1"/><param name="col2"/><param name="col3"/><param name="dv"/><param name="gauge"/><definition>
+-      <control type="group" id="$PARAM[panel]">
+-        <left>32</left><right>32</right><bottom>24</bottom><height>$PARAM[height]</height>
+-        <control type="image" id="$PARAM[surface]"><left>-20</left><top>-20</top><width>1896</width><height>$PARAM[background]</height>
+-          <texture border="60">buttons/roundbutton-fo.png</texture><colordiffuse>FF1E2428</colordiffuse>
+-        </control>
+-        <control type="label"><left>36</left><top>22</top><width>820</width><height>48</height>
+-          <font>font30_title</font><textcolor>FFF4F6F6</textcolor><label>$LOCALIZE[40818]</label>
+-        </control>
+-        <control type="label"><left>880</left><top>27</top><right>36</right><height>40</height>
+-          <font>font10</font><textcolor>FFB9D8C7</textcolor><align>right</align><label>$VAR[DVPanelMode]</label>
+-        </control>
+-        <control type="image"><left>36</left><top>88</top><right>36</right><height>1</height>
+-          <texture>colors/white.png</texture><colordiffuse>28FFFFFF</colordiffuse>
+-        </control>
+-        <control type="grouplist" id="$PARAM[col1]"><left>36</left><top>108</top><width>548</width><height>700</height><itemgap>0</itemgap>
+-          <include>DVVideoFields</include>
+-          <control type="group"><height>24</height><visible>$PARAM[dv]</visible></control>
+-          <include condition="$PARAM[dv]">DVAudioFields</include>
+-          <include content="DVSection"><param name="label" value="HDR METADATA"/><param name="gap" value="24"/><param name="height" value="66"/><param name="visible" value="![$PARAM[dv]] + [[!String.IsEmpty(Window(playerprocessinfo).Property(DV.SourceMastering)) + !String.IsEqual(Window(playerprocessinfo).Property(DV.SourceMastering),N/A)] | [!String.IsEmpty(Window(playerprocessinfo).Property(DV.SourceLight)) + !String.IsEqual(Window(playerprocessinfo).Property(DV.SourceLight),N/A)]]"/></include>
+-          <include condition="![$PARAM[dv]]">DVStaticHDRFields</include>
+-        </control>
+-        <control type="grouplist" id="$PARAM[col2]"><left>630</left><top>108</top><width>580</width><height>700</height><itemgap>0</itemgap>
+-          <include condition="$PARAM[dv]">DVDynamicFields</include>
+-          <include condition="![$PARAM[dv]]">DVAudioFields</include>
+-          <include content="DVSection"><param name="label" value="AI RECONSTRUCTION"/><param name="gap" value="18"/><param name="height" value="60"/><param name="visible" value="!String.IsEmpty(Window(playerprocessinfo).Property(DV.Reconstruction))"/></include>
+-          <include content="DVInfoRow"><param name="label" value="Metadata"/><param name="value" value="$INFO[Window(playerprocessinfo).Property(DV.Reconstruction)]"/><param name="visible" value="!String.IsEmpty(Window(playerprocessinfo).Property(DV.Reconstruction))"/></include>
+-          <include content="DVInfoRow"><param name="label" value="Estimated L1 min/max/avg"/><param name="value" value="$INFO[Window(playerprocessinfo).Property(DV.AIL1)]"/><param name="visible" value="!String.IsEmpty(Window(playerprocessinfo).Property(DV.AIL1))"/></include>
+-          <include content="DVInfoRow"><param name="label" value="Estimated L3 min/max/avg"/><param name="value" value="$INFO[Window(playerprocessinfo).Property(DV.AIL3)]"/><param name="visible" value="!String.IsEmpty(Window(playerprocessinfo).Property(DV.AIL3))"/></include>
+-          <include content="DVInfoRow"><param name="label" value="Output L1 min/max/avg"/><param name="value" value="$INFO[Window(playerprocessinfo).Property(DV.OutputL1)]"/><param name="visible" value="!String.IsEmpty(Window(playerprocessinfo).Property(DV.OutputL1))"/></include>
+-        </control>
+-        <control type="grouplist" id="$PARAM[col3]"><left>1256</left><top>108</top><width>564</width><height>700</height><itemgap>0</itemgap>
+-          <include content="DVRenderingFields"><param name="gauge" value="$PARAM[gauge]"/></include>
+-        </control>
+-      </control>
+-    </definition></include>
+-  <include name="DVProcessPanel">
+-    <control type="group" id="9500"><visible>String.IsEqual(Window(playerprocessinfo).Property(DV.Enhanced),true) + String.IsEqual(VideoPlayer.HdrType,dolbyvision)</visible>
+-      <include content="DVProcessLayout"><param name="height" value="774"/><param name="background" value="814"/><param name="panel" value="9600"/><param name="surface" value="9610"/><param name="col1" value="9620"/><param name="col2" value="9621"/><param name="col3" value="9622"/><param name="dv" value="true"/><param name="gauge" value="9400"/></include>
+-    </control>
+-    <control type="group" id="9501"><visible>String.IsEqual(Window(playerprocessinfo).Property(DV.Enhanced),true) + !String.IsEqual(VideoPlayer.HdrType,dolbyvision)</visible>
+-      <include content="DVProcessLayout"><param name="height" value="620"/><param name="background" value="660"/><param name="panel" value="9601"/><param name="surface" value="9611"/><param name="col1" value="9630"/><param name="col2" value="9631"/><param name="col3" value="9632"/><param name="dv" value="false"/><param name="gauge" value="9401"/></include>
+-    </control>
+-  </include>
+-</includes>
+diff -ruN -x .git -x '*.orig' -x '*.rej' a/CMakeLists.txt b/CMakeLists.txt
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -7,6 +7,8 @@
+ 
+ option(ENABLE_DVBRIDGE "Build experimental native DV bridge (requires patched dependencies)" OFF)
+ option(CB1_ENABLE_HDR10_AI "Build matched native HDR10 AI circuits" OFF)
++option(CB1_ENABLE_MASTER_IPT "Build the diagnostic Master Reference IPT circuit" OFF)
++option(CB1_DEBUG_BUILD "Build bounded diagnostic logging and driver-profile controls" OFF)
+ set(DVBRIDGE_SOURCE_DIR "" CACHE PATH "DVBridge common source directory")
+ if(NOT EXISTS "${DVBRIDGE_SOURCE_DIR}/dvbridge_metadata_bounds.h")
+   message(FATAL_ERROR "DVBRIDGE_SOURCE_DIR must provide the shared metadata validation headers")
+@@ -14,6 +16,12 @@
+ if(ENABLE_DVBRIDGE)
+   # Headers change class layout: every translation unit must use the same ABI.
+   add_compile_definitions(HAVE_DVBRIDGE=1)
++  if(CB1_ENABLE_MASTER_IPT)
++    add_compile_definitions(CB1_ENABLE_MASTER_IPT=1)
++  endif()
++  if(CB1_DEBUG_BUILD)
++    add_compile_definitions(CB1_DEBUG_BUILD=1)
++  endif()
+   if(CB1_ENABLE_HDR10_AI)
+     add_compile_definitions(CB1_HAS_HDR10_AI=1)
+     include_directories("${DVBRIDGE_SOURCE_DIR}")
+diff -ruN -x .git -x '*.orig' -x '*.rej' a/system/settings/settings.xml b/system/settings/settings.xml
+--- a/system/settings/settings.xml
++++ b/system/settings/settings.xml
+@@ -19,6 +19,7 @@
+             <options>
+               <option label="40812">0</option>
+               <option label="40913">4</option>
++              <option label="40916">6</option>
+               <option label="40914">5</option>
+               <option label="40814">2</option>
+               <option label="40813">1</option>
+@@ -3999,6 +4000,14 @@
+       </group>
+     </category>
+     <category id="logging" label="14092" help="36391">
++      <group id="99" label="40810">
++        <setting id="debug.cb1standarddrivers" type="boolean" label="40917" help="40918">
++          <requirement>HAVE_CB1_DEBUG</requirement>
++          <level>2</level><default>false</default>
++          <dependencies><dependency type="enable" on="property" name="cb1driverprofilesavailable" /></dependencies>
++          <control type="toggle" />
++        </setting>
++      </group>
+       <group id="1" label="14260">
+         <setting id="debug.showloginfo" type="boolean" label="20191" help="36392">
+           <level>1</level>
+diff -ruN -x .git -x '*.orig' -x '*.rej' a/xbmc/addons/Skin.cpp b/xbmc/addons/Skin.cpp
+--- a/xbmc/addons/Skin.cpp
++++ b/xbmc/addons/Skin.cpp
+@@ -263,6 +263,9 @@
+                                    RESOLUTION_INFO* res,
+                                    std::string_view strBaseDir /* = "" */) const
+ {
++  if (StringUtils::StartsWith(strFile, "special://xbmc/media/cb1/"))
++    return strFile;
++
+   if (m_resolutions.empty())
+     return ""; // invalid skin
+ 
+diff -ruN -x .git -x '*.orig' -x '*.rej' a/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVDVideoCodecFFmpeg.cpp b/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVDVideoCodecFFmpeg.cpp
+--- a/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVDVideoCodecFFmpeg.cpp
++++ b/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVDVideoCodecFFmpeg.cpp
+@@ -38,6 +38,7 @@
+ #include "dvbridge_metadata_bounds.h"
+ #ifdef HAVE_DVBRIDGE
+ #include "DVPlaybackPolicy.h"
++#include "DVOutputSettings.h"
+ #include <cstdlib>
+ #include <cmath>
+ extern "C"
+@@ -359,6 +360,7 @@
+   m_options = options;
+ #ifdef HAVE_DVBRIDGE
+   m_dvNativeOutput = DVBRIDGE::RetainsDVSource(hints);
++  m_iptDoviSource = false;
+   m_dvSourceOwner.BeginStream();
+   m_dvHasStreamDisplayMetadata = false;
+   m_dvHasStreamLightMetadata = false;
+@@ -571,6 +573,7 @@
+   m_dvFel.reset();
+   m_dvFailed = false;
+   m_dvNativeOutput = false;
++  m_iptDoviSource = false;
+ #endif
+   av_frame_free(&m_pFrame);
+   av_frame_free(&m_pDecodedFrame);
+@@ -801,7 +804,7 @@
+     VCReturn paired = emit();
+     if (paired != VC_NONE)
+       return paired;
+-    if (m_dvPending.size() >= 16)
++    if (m_dvPending.size() >= DVEnhancementPendingPictures)
+       return VC_ERROR;
+     auto base = std::make_shared<VideoPicture>();
+     base->Reset();
+@@ -1335,6 +1338,20 @@
+   pVideoPicture->qscale_type = 0;
+ 
+   pVideoPicture->hdrType = m_hints.hdrType;
++#ifdef HAVE_DVBRIDGE
++  bool retainStaticDV = m_dvNativeOutput;
++  // TS and headerless remuxes can carry valid RPUs without a container DV record.
++  if (DVBRIDGE::playbackMode.load() == DVBRIDGE::OutputMode::MasterReferenceIPT)
++  {
++    const auto* metadata = av_frame_get_side_data(m_pFrame, AV_FRAME_DATA_DOVI_METADATA);
++    m_iptDoviSource |= metadata && dvbridge_metadata_bounds(metadata->data, metadata->size);
++    if (m_iptDoviSource)
++    {
++      pVideoPicture->hdrType = StreamHdrType::HDR_TYPE_DOLBYVISION;
++      retainStaticDV = true;
++    }
++  }
++#endif
+ 
+   AVFrameSideData* sd;
+ 
+@@ -1382,7 +1399,7 @@
+   // format change, the renderer is rebuilt and native DV output is restarted
+   // (two full HDMI modesets mid-playback). Keep the last in-band values for
+   // the rest of this DV stream; a new SEI still replaces them.
+-  else if (m_dvNativeOutput && m_dvHasStreamDisplayMetadata)
++  else if (retainStaticDV && m_dvHasStreamDisplayMetadata)
+   {
+     pVideoPicture->displayMetadata = m_dvStreamDisplayMetadata;
+     pVideoPicture->hasDisplayMetadata = true;
+@@ -1404,7 +1421,7 @@
+ #endif
+   }
+ #ifdef HAVE_DVBRIDGE
+-  else if (m_dvNativeOutput && m_dvHasStreamLightMetadata)
++  else if (retainStaticDV && m_dvHasStreamLightMetadata)
+   {
+     pVideoPicture->lightMetadata = m_dvStreamLightMetadata;
+     pVideoPicture->hasLightMetadata = true;
+diff -ruN -x .git -x '*.orig' -x '*.rej' a/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVDVideoCodecFFmpeg.h b/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVDVideoCodecFFmpeg.h
+--- a/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVDVideoCodecFFmpeg.h
++++ b/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVDVideoCodecFFmpeg.h
+@@ -58,6 +58,7 @@
+   void BindHDR10AISource(VideoPicture& picture);
+ #endif
+ #ifdef HAVE_DVBRIDGE
++  static constexpr unsigned DVEnhancementPendingPictures = 16;
+   bool NeedsDVEnhancement() const
+   {
+     return m_dvNativeOutput && m_hints.dovi.dv_profile == 7 && m_hints.dovi.el_present_flag;
+@@ -74,6 +75,7 @@
+   std::deque<std::shared_ptr<VideoPicture>> m_dvPending;
+   bool m_dvFailed{false};
+   bool m_dvNativeOutput{false};
++  bool m_iptDoviSource{false};
+   DVBRIDGE::SourceOwner m_dvSourceOwner;
+   // Last in-band HDR10 static metadata of this stream (see GetPictureCommon).
+   bool m_dvHasStreamDisplayMetadata{false};
+diff -ruN -x .git -x '*.orig' -x '*.rej' a/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVOutputSelection.h b/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVOutputSelection.h
+--- a/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVOutputSelection.h
++++ b/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVOutputSelection.h
+@@ -43,7 +43,7 @@
+     return result;
+   }
+   auto policy = preferences.Policy();
+-  if (policy.mode == DVBRIDGE_MODE_MASTER_REFERENCE && preferences.fastRenderingMode == 2 &&
++  if (policy.mode == DVBRIDGE_MODE_MASTER_REFERENCE && !policy.master_ipt && preferences.fastRenderingMode == 2 &&
+       automaticFastRendering.load())
+     policy.mode = DVBRIDGE_MODE_STANDARD;
+   const auto admission = [&](dvbridge_mode mode) {
+@@ -61,6 +61,7 @@
+     return {requestedDV ? OutputRoute::NativeDV : OutputRoute::HDR10, policy, OutputReason::None};
+   result.reason = !(requestedDV ? caps.nativeDV : caps.hdr10) ?
+       (requestedDV ? OutputReason::NoDVTransport : OutputReason::NoHDR10Transport) : candidate.reason;
++  if (policy.master_ipt) return result;
+   if (!requestedDV) return result;
+   if (!caps.hdr10)
+   {
+@@ -74,6 +75,7 @@
+     return result;
+   }
+   policy.mode = DVBRIDGE_MODE_HDR10_BASIC;
++  policy.master_ipt = false;
+   policy.adaptive = DVBRIDGE_ADAPTIVE_A;
+   policy.tv = {};
+   return {OutputRoute::HDR10, policy, result.reason};
+diff -ruN -x .git -x '*.orig' -x '*.rej' a/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVOutputSettings.h b/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVOutputSettings.h
+--- a/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVOutputSettings.h
++++ b/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVOutputSettings.h
+@@ -17,7 +17,7 @@
+ 
+ namespace DVBRIDGE
+ {
+-enum class OutputMode : int { Standard = 0, HDR10 = 1, Disabled = 2, EnhancedDV = 3, MasterReference = 4, AdaptiveB = 5 };
++enum class OutputMode : int { Standard = 0, HDR10 = 1, Disabled = 2, EnhancedDV = 3, MasterReference = 4, AdaptiveB = 5, MasterReferenceIPT = 6 };
+ enum class HDR10SourceMode : int { Native = 0, ReferenceDV = 1, EnhancedDV = 2 };
+ 
+ // Decoder ingress sees the last complete frame-boundary preference snapshot.
+@@ -28,7 +28,7 @@
+ #ifdef HAVE_DVBRIDGE
+ inline int PolicyCode(const dvbridge_policy& policy)
+ {
+-  return policy.mode==DVBRIDGE_MODE_ENHANCED_DV && policy.adaptive!=DVBRIDGE_ADAPTIVE_A ? 6 : int(policy.mode);
++  return policy.master_ipt ? 7 : policy.mode==DVBRIDGE_MODE_ENHANCED_DV && policy.adaptive!=DVBRIDGE_ADAPTIVE_A ? 6 : int(policy.mode);
+ }
+ #endif
+ 
+@@ -85,6 +85,8 @@
+         result.adaptive=DVBRIDGE_ADAPTIVE_B_FP16;
+         break;
+       case OutputMode::MasterReference: result.mode = DVBRIDGE_MODE_MASTER_REFERENCE; break;
++      case OutputMode::MasterReferenceIPT:
++        result.mode=DVBRIDGE_MODE_MASTER_REFERENCE; result.master_ipt=true; break;
+       case OutputMode::HDR10:
+         result.mode = method == 1 ? DVBRIDGE_MODE_HDR10_EXPERT : DVBRIDGE_MODE_HDR10_BASIC;
+         break;
+@@ -99,6 +101,7 @@
+   dvbridge_policy HDR10Policy() const
+   {
+     auto result = Policy();
++    result.master_ipt=false;
+     result.adaptive=DVBRIDGE_ADAPTIVE_A;
+     result.mode = hdr10Source == HDR10SourceMode::ReferenceDV ? DVBRIDGE_MODE_STANDARD :
+         hdr10Source == HDR10SourceMode::EnhancedDV ? DVBRIDGE_MODE_ENHANCED_DV : DVBRIDGE_MODE_DISABLED;
+@@ -132,7 +135,7 @@
+   const int mode = settings ? settings->GetInt("dvbridge.outputmode") : 0;
+   OutputPreferences next;
+   next.output = mode == 3 ? OutputMode::AdaptiveB :
+-      mode >= 0 && mode <= 5 ? static_cast<OutputMode>(mode) : OutputMode::Standard;
++      mode >= 0 && mode <= 6 ? static_cast<OutputMode>(mode) : OutputMode::Standard;
+   if (settings)
+   {
+     const int hdr10 = settings->GetInt("dvbridge.hdr10source");
+diff -ruN -x .git -x '*.orig' -x '*.rej' a/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVPlaybackInfo.h b/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVPlaybackInfo.h
+--- a/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVPlaybackInfo.h
++++ b/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVPlaybackInfo.h
+@@ -70,6 +70,7 @@
+       case 3: return "HDR10 Reference Expert";
+       case 4: return "Dolby Vision Adaptive HDR Mapping";
+       case 5: return "Dolby Vision Master Reference";
++      case 7: return "Dolby Vision Master Reference (IPT-PQc2)";
+       case 6: return "Dolby Vision Adaptive HDR Mapping";
+       default: return output.flags & HDR10 ? "HDR10 Reference Basic" : "Dolby Vision Standard";
+     }
+@@ -86,6 +87,7 @@
+       case 3:return "HDR10 Reference Expert";
+       case 4:return "Dolby Vision Adaptive HDR Mapping";
+       case 5:return "Dolby Vision Master Reference";
++      case 7:return "Dolby Vision Master Reference (IPT-PQc2)";
+       case 6:return "Dolby Vision Adaptive HDR Mapping";
+       default:return "";
+     }
+@@ -95,6 +97,7 @@
+   {
+     if (!output.flags) return "Kodi default";
+     std::string mode = output.flags & HDR10 ? Policy(output) :
++        output.effective == 7 ? "Dolby Vision Master Reference (IPT-PQc2)" :
+         output.effective == 6 ? "Dolby Vision Adaptive HDR Mapping" :
+         output.effective == 5 ? "Dolby Vision Master Reference" :
+         output.effective == 4 ? "Dolby Vision Adaptive HDR Mapping" : "Dolby Vision Standard";
+diff -ruN -x .git -x '*.orig' -x '*.rej' a/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVStreamTelemetry.h b/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVStreamTelemetry.h
+--- a/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVStreamTelemetry.h
++++ b/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVStreamTelemetry.h
+@@ -86,6 +86,7 @@
+         if (effective==3) return cb1_circuit_version(CB1_DV_HDR10_EXPERT);
+         if (effective==4) return cb1_circuit_version(CB1_DV_DV_ADAPTIVE);
+         if (effective==5) return cb1_circuit_version(CB1_DV_DV_MASTER_REFERENCE);
++        if (effective==7) return cb1_circuit_version(CB1_DV_DV_MASTER_IPT);
+         if (effective==6) return cb1_circuit_version(CB1_DV_DV_ADAPTIVE_B);
+       }
+       return "";
+diff -ruN -x .git -x '*.orig' -x '*.rej' a/xbmc/cores/VideoPlayer/DVDCodecs/Video/VAAPI.cpp b/xbmc/cores/VideoPlayer/DVDCodecs/Video/VAAPI.cpp
+--- a/xbmc/cores/VideoPlayer/DVDCodecs/Video/VAAPI.cpp
++++ b/xbmc/cores/VideoPlayer/DVDCodecs/Video/VAAPI.cpp
+@@ -761,6 +761,17 @@
+       DVBRIDGE::HDR10AIBuffers::DecodeSurfaces(m_vaapiConfig.maxReferences, m_hdr10AIBuffers);
+   m_vaapiConfig.renderPictures = DVBRIDGE::HDR10AIBuffers::RenderPictures(m_hdr10AIBuffers);
+ #endif
++#ifdef HAVE_DVBRIDGE
++  const auto* felDecoder = dynamic_cast<CDVDVideoCodecFFmpeg*>(
++      static_cast<ICallbackHWAccel*>(avctx->opaque));
++  if (felDecoder && felDecoder->NeedsDVEnhancement())
++  {
++    // Pairing retains BL output pictures while waiting for independently reordered EL.
++    // Reserve those slots in addition to the unchanged native decode/render headroom.
++    m_vaapiConfig.maxReferences += CDVDVideoCodecFFmpeg::DVEnhancementPendingPictures;
++    m_vaapiConfig.renderPictures += CDVDVideoCodecFFmpeg::DVEnhancementPendingPictures;
++  }
++#endif
+ 
+   if (!ConfigVAAPI())
+   {
+diff -ruN -x .git -x '*.orig' -x '*.rej' a/xbmc/cores/VideoPlayer/DVDDemuxers/DVDDemuxFFmpeg.cpp b/xbmc/cores/VideoPlayer/DVDDemuxers/DVDDemuxFFmpeg.cpp
+--- a/xbmc/cores/VideoPlayer/DVDDemuxers/DVDDemuxFFmpeg.cpp
++++ b/xbmc/cores/VideoPlayer/DVDDemuxers/DVDDemuxFFmpeg.cpp
+@@ -1474,6 +1474,8 @@
+     else
+     {
+ #ifdef HAVE_DVBRIDGE
++      if (m_blurayDovi) m_blurayDovi->Reset(true);
++      int64_t layerPosition = -1;
+       // Preserve the requested startpts while seeking to a shared layer anchor.
+       if (!m_checkTransportStream && m_seekStream == -1)
+       {
+@@ -1484,11 +1486,13 @@
+             continue;
+           CDVDStreamInfo hints(*stream);
+           if (hints.dovi.dv_profile != 7 || !hints.dovi.el_present_flag ||
+-              !DVBRIDGE::RetainsDVSource(hints))
++              (!m_blurayDovi && !DVBRIDGE::RetainsDVSource(hints)))
+             continue;
+           AVStream* video = m_pFormatContext->streams[id];
+           const int64_t target = av_rescale_q(seek_pts, AV_TIME_BASE_Q, video->time_base);
+-          const int64_t anchor = dvbridge_fel_seek_point(m_pFormatContext, id, target);
++          const auto* original = m_blurayDovi && id == m_blurayBase ?
++              m_blurayDovi->OriginalBaseParameters() : nullptr;
++          const int64_t anchor = dvbridge_fel_seek_point_at(m_pFormatContext, id, target, &layerPosition, original);
+           if (anchor != AV_NOPTS_VALUE)
+           {
+             seek_pts = av_rescale_q(anchor, video->time_base, AV_TIME_BASE_Q);
+@@ -1501,9 +1505,16 @@
+           break;
+         }
+       }
++      // A transport PCR seek may land after the layer IRAP identified above.
++      ret = -1;
++      if (layerPosition >= 0 && m_blurayDovi && m_pFormatContext->pb &&
++          (m_pFormatContext->pb->seekable & AVIO_SEEKABLE_NORMAL) &&
++          std::strcmp(m_pFormatContext->iformat->name, "mpegts") == 0)
++        ret = av_seek_frame(m_pFormatContext, -1, layerPosition, AVSEEK_FLAG_BYTE);
++      if (ret < 0)
+ #endif
+-      ret = av_seek_frame(m_pFormatContext, m_seekStream, seek_pts,
+-                          backwards ? AVSEEK_FLAG_BACKWARD : 0);
++        ret = av_seek_frame(m_pFormatContext, m_seekStream, seek_pts,
++                            backwards ? AVSEEK_FLAG_BACKWARD : 0);
+     }
+ 
+     if (ret < 0)
+@@ -1575,7 +1586,12 @@
+   int ret = av_seek_frame(m_pFormatContext, -1, pos, AVSEEK_FLAG_BYTE);
+ 
+   if (ret >= 0)
++  {
+     m_currentPts = DVD_NOPTS_VALUE;
++#ifdef HAVE_DVBRIDGE
++    if (m_blurayDovi) m_blurayDovi->Reset(true);
++#endif
++  }
+ 
+   m_pkt.result = -1;
+   av_packet_unref(&m_pkt.pkt);
+@@ -3167,32 +3183,83 @@
+ #ifdef HAVE_DVBRIDGE
+ void CDVDDemuxFFmpeg::InitBlurayDovi(unsigned int program)
+ {
++  const bool bluray = m_pInput->IsStreamType(DVDSTREAM_TYPE_BLURAY);
++  const char* format = m_pFormatContext->iformat->name;
++  unsigned groups = 0, qualified = 0, hevc = 0;
++  for (unsigned i = 0; i < m_pFormatContext->nb_streams; ++i)
++    hevc += m_pFormatContext->streams[i]->codecpar->codec_id == AV_CODEC_ID_HEVC;
++  for (unsigned i = 0; i < m_pFormatContext->nb_stream_groups; ++i)
++  {
++    const auto* group = m_pFormatContext->stream_groups[i];
++    if (group->type != AV_STREAM_GROUP_PARAMS_DOLBY_VISION)
++      continue;
++    ++groups;
++    if (group->nb_streams == 2 && group->params.layered_video &&
++        group->params.layered_video->el_index <= 1 && group->streams[0] != group->streams[1] &&
++        group->streams[0]->codecpar->codec_type == AVMEDIA_TYPE_VIDEO &&
++        group->streams[1]->codecpar->codec_type == AVMEDIA_TYPE_VIDEO &&
++        group->streams[0]->codecpar->codec_id == AV_CODEC_ID_HEVC &&
++        group->streams[1]->codecpar->codec_id == AV_CODEC_ID_HEVC)
++      ++qualified;
++  }
++  // No source URL, filename or metadata: cloud URLs can contain access tokens.
++  const auto report = [&](const char* reason)
++  {
++    const unsigned inventory = !m_blurayDovi && hevc > 1 ?
++        std::min(m_pFormatContext->nb_streams, 16u) : 0;
++    CLog::Log(LOGINFO, "DV input selection: format={} bluray={} dv_groups={} qualified_groups={} "
++        "streams={} hevc={} reason={} BL={} EL={} inventory_count={}",
++        format, bluray, groups, qualified, m_pFormatContext->nb_streams, hevc, reason,
++        static_cast<unsigned>(m_blurayBase) < m_pFormatContext->nb_streams ?
++            m_pFormatContext->streams[m_blurayBase]->id : -1,
++        static_cast<unsigned>(m_blurayEnhancement) < m_pFormatContext->nb_streams ?
++            m_pFormatContext->streams[m_blurayEnhancement]->id : -1,
++        inventory);
++    for (unsigned i = 0; i < inventory; ++i)
++    {
++      const auto* stream = m_pFormatContext->streams[i];
++      const auto* sideData = av_packet_side_data_get(stream->codecpar->coded_side_data,
++          stream->codecpar->nb_coded_side_data, AV_PKT_DATA_DOVI_CONF);
++      const auto* dv = sideData && sideData->size >= sizeof(AVDOVIDecoderConfigurationRecord) ?
++          reinterpret_cast<const AVDOVIDecoderConfigurationRecord*>(sideData->data) : nullptr;
++      CLog::Log(LOGINFO, "DV input stream: index={} pid={} codec={} type={} "
++          "dv_profile={} dv_bl={} dv_el={} dv_rpu={} extradata={}",
++          stream->index, stream->id, static_cast<int>(stream->codecpar->codec_id),
++          static_cast<int>(stream->codecpar->codec_type), dv ? dv->dv_profile : 0,
++          dv ? dv->bl_present_flag : 0, dv ? dv->el_present_flag : 0,
++          dv ? dv->rpu_present_flag : 0, stream->codecpar->extradata_size);
++    }
++  };
+   // Stream-list rebuilds must configure filters from the original container framing.
+   if (m_blurayDovi && m_blurayDovi->OriginalBaseParameters() && m_blurayBase >= 0 &&
+       static_cast<unsigned>(m_blurayBase) < m_pFormatContext->nb_streams)
+     if (avcodec_parameters_copy(m_pFormatContext->streams[m_blurayBase]->codecpar,
+                                m_blurayDovi->OriginalBaseParameters()) < 0)
++    {
++      report("restore-failed");
+       return;
++    }
+   m_blurayDovi.reset();
+   m_blurayBase = m_blurayEnhancement = -1;
+-  const bool bluray = m_pInput->IsStreamType(DVDSTREAM_TYPE_BLURAY);
+-  const char* format = m_pFormatContext->iformat->name;
+   const bool mov = std::strcmp(format, "mov") == 0 || std::strncmp(format, "mov,", 4) == 0;
+   const bool transport = std::strcmp(format, "mpegts") == 0;
+   const bool normalize = !bluray && (m_bMatroska || mov || transport);
+   if (!bluray && !normalize)
++  {
++    report("unsupported-format");
+     return;
++  }
+   const auto component = CServiceBroker::GetSettingsComponent();
+   const auto settings = component ? component->GetSettings() : nullptr;
+   if (settings && settings->GetInt("dvbridge.outputmode") == 2)
++  {
++    report("output-disabled");
+     return;
+-  if (normalize)
++  }
++  if (normalize && groups != 1)
+   {
+-    unsigned groups = 0;
+-    for (unsigned i = 0; i < m_pFormatContext->nb_stream_groups; ++i)
+-      groups += m_pFormatContext->stream_groups[i]->type == AV_STREAM_GROUP_PARAMS_DOLBY_VISION;
+-    if (groups != 1)
+-      return;
++    report(groups ? "ambiguous-dv-groups" : "no-dv-group");
++    return;
+   }
+   if (program >= m_pFormatContext->nb_programs)
+   {
+@@ -3201,6 +3268,7 @@
+            !m_pFormatContext->programs[program]->nb_stream_indexes)
+       ++program;
+   }
++  const char* reason = groups ? "invalid-group-layout" : "no-dv-group";
+   for (unsigned int i = 0; i < m_pFormatContext->nb_stream_groups; ++i)
+   {
+     const auto* group = m_pFormatContext->stream_groups[i];
+@@ -3209,30 +3277,43 @@
+       continue;
+     const auto elIndex = group->params.layered_video->el_index;
+     if (elIndex > 1)
++    {
++      reason = "invalid-layer-index";
+       continue;
++    }
+     AVStream* el = group->streams[elIndex];
+     AVStream* bl = group->streams[1 - elIndex];
+     if (bl == el || bl->codecpar->codec_type != AVMEDIA_TYPE_VIDEO ||
+         el->codecpar->codec_type != AVMEDIA_TYPE_VIDEO ||
+         bl->codecpar->codec_id != AV_CODEC_ID_HEVC || el->codecpar->codec_id != AV_CODEC_ID_HEVC)
++    {
++      reason = "invalid-layer-codecs";
+       continue;
++    }
+     if (program < m_pFormatContext->nb_programs)
+     {
+       const auto* selected = m_pFormatContext->programs[program];
+       const auto end = selected->stream_index + selected->nb_stream_indexes;
+       if (std::find(selected->stream_index, end, bl->index) == end ||
+           std::find(selected->stream_index, end, el->index) == end)
++      {
++        reason = "layers-outside-program";
+         continue;
++      }
+     }
+     if (!normalize && av_cmp_q(bl->time_base, el->time_base))
+     {
+       CLog::Log(LOGWARNING, "DV Blu-ray: incompatible layer time bases");
++      report("incompatible-layer-clocks");
+       return;
+     }
+     auto join = std::make_unique<CBlurayDovi>();
+     std::unique_ptr<AVCodecParameters, AVCodecParametersDeleter> combined(avcodec_parameters_alloc());
+     if (!combined || avcodec_parameters_copy(combined.get(), bl->codecpar) < 0)
++    {
++      report("base-parameters-failed");
+       return;
++    }
+     AVDOVIDecoderConfigurationRecord sourceConfig{};
+     bool hasSourceConfig = false;
+     if (normalize)
+@@ -3242,20 +3323,30 @@
+       if (source)
+       {
+         if (source->size < sizeof(sourceConfig))
++        {
++          report("truncated-dv-config");
+           return;
++        }
+         std::memcpy(&sourceConfig, source->data, sizeof(sourceConfig));
+         if (sourceConfig.dv_profile != 7 || !sourceConfig.el_present_flag ||
+             !sourceConfig.rpu_present_flag)
++        {
++          report("invalid-dv-config");
+           return;
++        }
+         hasSourceConfig = true;
+       }
+       // FFmpeg also establishes descriptor-less Profile 7 groups for HDMV.
+       else if (!transport)
++      {
++        report("missing-dv-config");
+         return;
++      }
+       if (!join->Configure(bl->codecpar, el->codecpar, bl->time_base, el->time_base) ||
+           avcodec_parameters_copy(combined.get(), join->BaseParameters()) < 0)
+       {
+         CLog::Log(LOGWARNING, "DV layers: HEVC normalization unavailable");
++        report("normalization-unavailable");
+         return;
+       }
+     }
+@@ -3263,7 +3354,10 @@
+         &combined->nb_coded_side_data, AV_PKT_DATA_DOVI_CONF,
+         sizeof(AVDOVIDecoderConfigurationRecord), 0);
+     if (!config)
++    {
++      report("config-allocation-failed");
+       return;
++    }
+     auto* dv = reinterpret_cast<AVDOVIDecoderConfigurationRecord*>(config->data);
+     // HDMV dual-layer HEVC is Profile 7. Blu-ray does not signal a DV level.
+     *dv = {};
+@@ -3282,11 +3376,17 @@
+           &combined->nb_coded_side_data, AV_PKT_DATA_HEVC_CONF,
+           el->codecpar->extradata_size, 0);
+       if (!extra)
++      {
++        report("enhancement-config-allocation-failed");
+         return;
++      }
+       std::memcpy(extra->data, el->codecpar->extradata, extra->size);
+     }
+     if (avcodec_parameters_copy(bl->codecpar, combined.get()) < 0)
++    {
++      report("combined-parameters-failed");
+       return;
++    }
+     m_blurayBase = bl->index;
+     m_blurayEnhancement = el->index;
+     bl->discard = el->discard = AVDISCARD_NONE;
+@@ -3295,8 +3395,10 @@
+         bluray ? "Blu-ray" : m_bMatroska ? "Matroska" : mov ? "MP4" : "MPEG-TS", bl->id, el->id,
+         normalize ? "HEVC Annex B" : "none", bl->time_base.num, bl->time_base.den,
+         el->time_base.num, el->time_base.den);
++    report("joined");
+     return;
+   }
++  report(reason);
+ }
+ 
+ int CDVDDemuxFFmpeg::ReadBlurayDovi(AVPacket* packet)
+diff -ruN -x .git -x '*.orig' -x '*.rej' a/xbmc/cores/VideoPlayer/VideoPlayerAudio.cpp b/xbmc/cores/VideoPlayer/VideoPlayerAudio.cpp
+--- a/xbmc/cores/VideoPlayer/VideoPlayerAudio.cpp
++++ b/xbmc/cores/VideoPlayer/VideoPlayerAudio.cpp
+@@ -262,10 +262,12 @@
+     if (m_paused)
+       priority = 1;
+ 
+-    if (onlyPrioMsgs)
++    const bool pendingSink = audioframe.nb_frames > audioframe.framesOut &&
++                             !m_audioSink.IsValidFormat(audioframe);
++    if (onlyPrioMsgs || pendingSink)
+     {
+       priority = 1;
+-      timeout = 0ms;
++      timeout = pendingSink ? 10ms : 0ms;
+     }
+ 
+     MsgQueueReturnCode ret = m_messageQueue.Get(pMsg, timeout, priority);
+@@ -388,6 +390,7 @@
+     else if (pMsg->IsType(CDVDMsg::GENERAL_STREAMCHANGE))
+     {
+       auto msg = std::static_pointer_cast<CDVDMsgAudioCodecChange>(pMsg);
++      audioframe.nb_frames = audioframe.framesOut = 0;
+       OpenStream(msg->m_hints, std::move(msg->m_codec));
+       msg->m_codec = NULL;
+     }
+@@ -451,7 +454,8 @@
+ 
+ bool CVideoPlayerAudio::ProcessDecoderOutput(DVDAudioFrame &audioframe)
+ {
+-  if (audioframe.nb_frames <= audioframe.framesOut)
++  const bool newFrame = audioframe.nb_frames <= audioframe.framesOut;
++  if (newFrame)
+   {
+     audioframe.hasDownmix = false;
+ 
+@@ -513,35 +517,46 @@
+     if (m_streaminfo.codec == AV_CODEC_ID_FLAC && m_streaminfo.channellayout)
+       audioframe.format.m_channelLayout = CAEUtil::GetAEChannelLayout(m_streaminfo.channellayout);
+ 
+-    // we have successfully decoded an audio frame, setup renderer to match
+-    if (!m_audioSink.IsValidFormat(audioframe))
+-    {
+-      if (m_speed)
+-        m_audioSink.Drain();
++    // downmix
++    double clev = audioframe.hasDownmix ? audioframe.centerMixLevel : M_SQRT1_2;
++    double curDB = 20 * log10(clev);
++    audioframe.centerMixLevel = pow(10, (curDB + m_processInfo.GetVideoSettings().m_CenterMixLevel) / 20);
++    audioframe.hasDownmix = true;
++  }
+ 
+-      m_audioSink.Destroy(false);
++  // A display reset can temporarily reject a stream. Retain this frame for retry.
++  if (!m_audioSink.IsValidFormat(audioframe))
++  {
++    if (!newFrame && CServiceBroker::GetActiveAE()->IsSuspended())
++      return true;
+ 
+-      if (!m_audioSink.Create(audioframe, m_streaminfo.codec, m_synctype == SYNC_RESAMPLE))
+-        CLog::Log(LOGERROR, "{} - failed to create audio renderer", __FUNCTION__);
++    if (m_speed)
++      m_audioSink.Drain();
+ 
+-      m_prevsynctype = -1;
++    m_audioSink.Destroy(false);
+ 
+-      if (m_syncState == IDVDStreamPlayer::SYNC_INSYNC)
+-        m_audioSink.Resume();
++    if (!m_audioSink.Create(audioframe, m_streaminfo.codec, m_synctype == SYNC_RESAMPLE))
++    {
++      if (newFrame)
++        CLog::Log(LOGERROR, "{} - failed to create audio renderer; decoded frame retained for retry",
++                  __FUNCTION__);
++      return true;
+     }
+ 
+-    m_audioSink.SetDynamicRangeCompression(
+-        static_cast<long>(m_processInfo.GetVideoSettings().m_VolumeAmplification * 100));
++    if (!newFrame)
++      CLog::Log(LOGINFO, "{} - audio renderer recovered with pending decoded frame", __FUNCTION__);
+ 
+-    SetSyncType(audioframe.passthrough);
++    m_prevsynctype = -1;
+ 
+-    // downmix
+-    double clev = audioframe.hasDownmix ? audioframe.centerMixLevel : M_SQRT1_2;
+-    double curDB = 20 * log10(clev);
+-    audioframe.centerMixLevel = pow(10, (curDB + m_processInfo.GetVideoSettings().m_CenterMixLevel) / 20);
+-    audioframe.hasDownmix = true;
++    if (m_syncState == IDVDStreamPlayer::SYNC_INSYNC)
++      m_audioSink.Resume();
+   }
+ 
++  m_audioSink.SetDynamicRangeCompression(
++      static_cast<long>(m_processInfo.GetVideoSettings().m_VolumeAmplification * 100));
++
++  SetSyncType(audioframe.passthrough);
++
+   if (m_synctype == SYNC_DISCON)
+   {
+     double syncerror = m_audioSink.GetSyncError();
+diff -ruN -x .git -x '*.orig' -x '*.rej' a/xbmc/cores/VideoPlayer/VideoRenderers/DVBridgeDebugReadback.h b/xbmc/cores/VideoPlayer/VideoRenderers/DVBridgeDebugReadback.h
+--- a/xbmc/cores/VideoPlayer/VideoRenderers/DVBridgeDebugReadback.h
++++ b/xbmc/cores/VideoPlayer/VideoRenderers/DVBridgeDebugReadback.h
+@@ -1,61 +0,0 @@
+-/* SPDX-License-Identifier: GPL-2.0-or-later */
+-#pragma once
+-#include "utils/DVBridgeDebug.h"
+-#include <GLES3/gl3.h>
+-
+-namespace DVBRIDGE
+-{
+-struct DebugReadback
+-{
+-  bool read{}, blend{}, dither{}, scissor{};
+-  unsigned priorError{}, error{}, status{}, draw{}, encoding{}, writeMask{};
+-  std::array<int,4> viewport{};
+-  std::array<std::array<unsigned,3>,3> ycc{};
+-  DebugCarrier carrier;
+-};
+-
+-inline DebugReadback ReadDebugCarrier(unsigned framebuffer, int width, int height, bool flip,
+-    std::span<const uint32_t> expected, unsigned count)
+-{
+-  DebugReadback out;
+-  if (width!=3840 || height!=2160) return out;
+-  out.priorError=glGetError();
+-  // A lost context cannot safely service an observational readback.
+-  if (out.priorError==0x0507) return out; // GL_CONTEXT_LOST, also on GLES 3.0 headers.
+-  GLint read=0,buffer=0,alignment=0,row=0,skipPixels=0,skipRows=0,readBuffer=0;
+-  glGetIntegerv(GL_READ_FRAMEBUFFER_BINDING,&read);
+-  glGetIntegerv(GL_PIXEL_PACK_BUFFER_BINDING,&buffer);
+-  glGetIntegerv(GL_PACK_ALIGNMENT,&alignment); glGetIntegerv(GL_PACK_ROW_LENGTH,&row);
+-  glGetIntegerv(GL_PACK_SKIP_PIXELS,&skipPixels); glGetIntegerv(GL_PACK_SKIP_ROWS,&skipRows);
+-  GLint draw=0;glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING,&draw);out.draw=draw;
+-  glGetIntegerv(GL_VIEWPORT,out.viewport.data());
+-  out.blend=glIsEnabled(GL_BLEND);out.dither=glIsEnabled(GL_DITHER);out.scissor=glIsEnabled(GL_SCISSOR_TEST);
+-  GLboolean mask[4];glGetBooleanv(GL_COLOR_WRITEMASK,mask);
+-  for(unsigned i=0;i<4;++i)if(mask[i])out.writeMask|=1u<<i;
+-  glBindFramebuffer(GL_READ_FRAMEBUFFER,framebuffer);
+-  glGetIntegerv(GL_READ_BUFFER,&readBuffer);
+-  glReadBuffer(framebuffer ? GL_COLOR_ATTACHMENT0 : GL_BACK);
+-  out.status=glCheckFramebufferStatus(GL_READ_FRAMEBUFFER);
+-  GLint encoding=0;
+-  glGetFramebufferAttachmentParameteriv(GL_READ_FRAMEBUFFER,framebuffer ? GL_COLOR_ATTACHMENT0 : GL_BACK,
+-      GL_FRAMEBUFFER_ATTACHMENT_COLOR_ENCODING,&encoding);out.encoding=encoding;
+-  glBindBuffer(GL_PIXEL_PACK_BUFFER,0);glPixelStorei(GL_PACK_ALIGNMENT,1);
+-  glPixelStorei(GL_PACK_ROW_LENGTH,0);glPixelStorei(GL_PACK_SKIP_PIXELS,0);glPixelStorei(GL_PACK_SKIP_ROWS,0);
+-  std::array<uint8_t,3840*4*4> pixels{};
+-  glReadPixels(0,flip ? height-4 : 0,3840,4,GL_RGBA,GL_UNSIGNED_BYTE,pixels.data());
+-  for(unsigned sample=0;sample<3;++sample) {
+-    uint8_t pair[8]{};
+-    glReadPixels(960+sample*960,height/2,2,1,GL_RGBA,GL_UNSIGNED_BYTE,pair);
+-    out.ycc[sample]={(unsigned(pair[1])<<4)|(pair[2]&15),
+-        (unsigned(pair[0])<<4)|(pair[2]>>4),(unsigned(pair[4])<<4)|(pair[6]>>4)};
+-  }
+-  out.error=glGetError();
+-  glPixelStorei(GL_PACK_ALIGNMENT,alignment);glPixelStorei(GL_PACK_ROW_LENGTH,row);
+-  glPixelStorei(GL_PACK_SKIP_PIXELS,skipPixels);glPixelStorei(GL_PACK_SKIP_ROWS,skipRows);
+-  glBindBuffer(GL_PIXEL_PACK_BUFFER,buffer);glReadBuffer(readBuffer);
+-  glBindFramebuffer(GL_READ_FRAMEBUFFER,read);
+-  out.read=out.status==GL_FRAMEBUFFER_COMPLETE && !out.error;
+-  if (out.read) out.carrier=DecodeDebugCarrier(pixels,3840*4,flip,expected,count);
+-  return out;
+-}
+-}
+diff -ruN -x .git -x '*.orig' -x '*.rej' a/xbmc/cores/VideoPlayer/VideoRenderers/DVBridgeGLES.cpp b/xbmc/cores/VideoPlayer/VideoRenderers/DVBridgeGLES.cpp
+--- a/xbmc/cores/VideoPlayer/VideoRenderers/DVBridgeGLES.cpp
++++ b/xbmc/cores/VideoPlayer/VideoRenderers/DVBridgeGLES.cpp
+@@ -3,7 +3,6 @@
+ #include "utils/DVBridgeDiagnosticLog.h"
+ #include "DVBridgeShaders.h"
+ #include "DVBridgeScreenshot.h"
+-#include "DVBridgeDebugReadback.h"
+ #include "rendering/capture/CaptureReadback.h"
+ #include "cores/VideoPlayer/DVDCodecs/Video/DVPlaybackInfo.h"
+ #include "cores/VideoPlayer/DVDCodecs/Video/DVStreamTelemetry.h"
+@@ -606,7 +605,6 @@
+   m_pendingOverlayVisible = m_overlayVisible;
+   m_sourceGeometry = geometry;m_geometryKnown = true;
+   m_pendingBinding = base.binding;m_pendingSourceInfo = base.sourceInfo;
+-  m_debugPTS = base.pts;
+   m_pendingMetadata = {};
+   m_pendingIdentity = {prediction.id.stream,prediction.id.picture,prediction.id.revision};
+   m_pendingInfo = CDVPlaybackInfo::HDMI;
+@@ -1038,7 +1036,18 @@
+   {
+     if(m_effectiveMode == DVBRIDGE_MODE_MASTER_REFERENCE)
+     {
+-      const auto status=dvbridge_render_master_reference(m_renderer,&bl.frame,metadata.Data(),metadata.Size(),
++      auto renderMaster=dvbridge_render_master_reference;
++#ifdef CB1_ENABLE_MASTER_IPT
++      if(m_requested.output==DVBRIDGE::OutputMode::MasterReferenceIPT)
++        renderMaster=dvbridge_render_master_reference_ipt;
++#else
++      if(m_requested.output==DVBRIDGE::OutputMode::MasterReferenceIPT)
++      {
++        Failure("master-ipt-not-built");
++        return false;
++      }
++#endif
++      const auto status=renderMaster(m_renderer,&bl.frame,metadata.Data(),metadata.Size(),
+           base.pts,elPts,geometry,m_scanout,true,m_nativeOverlayEnabled ? &m_nativeOverlay : nullptr);
+       m_direct=status==CB1_MASTER_READY;
+       if(!m_direct) Failure(status==CB1_MASTER_INVALID ? "master-reference-invalid-metadata" :
+@@ -1159,6 +1168,7 @@
+         DVBRIDGE_MODE_HDR10_BASIC : DVBRIDGE_MODE_STANDARD;
+     policy.tv = {};
+     policy.adaptive = DVBRIDGE_ADAPTIVE_A;
++    policy.master_ipt = false;
+   }
+   // Capture the proven observation key before geometry or refresh rekeys work.
+   const auto admissionIdentity = SelectionIdentity(base.binding, preferences,
+@@ -1172,10 +1182,13 @@
+   m_sourceGeometry = geometry;
+   m_geometryKnown = true;
+   uint64_t revision = std::max({preferences.revision,base.binding.revision,m_geometryRevision});
++  bool masterOverlayRefresh = false;
+   if (!m_pending && m_hasCommitted && base.binding == m_committedBinding &&
+       revision == m_committedRevision && (!allowPacked || !m_committedPacked ||
+           m_nativeOverlayRevision != m_committedOverlayRevision))
+   {
++    masterOverlayRefresh = policy.mode == DVBRIDGE_MODE_MASTER_REFERENCE &&
++        sameGeometry && allowPacked && m_committedPacked;
+     // Explicit refresh of an equal-PTS source is a new processing transaction.
+     revision = m_geometryRevision = DVBRIDGE::NextRevisionAfter(revision);
+     if (!revision) return FrameStatus::Failed;
+@@ -1209,7 +1222,8 @@
+       base.lease && (!enhancement || enhancement->lease) &&
+       (m_directUsable || policy.mode == DVBRIDGE_MODE_MASTER_REFERENCE) &&
+       m_committedMode == policy.mode && base.binding.stream == m_committedBinding.stream &&
+-      base.binding.revision == m_committedBinding.revision && revision == m_committedRevision;
++      base.binding.revision == m_committedBinding.revision &&
++      (revision == m_committedRevision || masterOverlayRefresh);
+   if (m_dvPolicyActive)
+   {
+     const auto status = eligible && allowPacked ?
+@@ -1246,7 +1260,6 @@
+   m_effectiveMode = policy.mode;
+   if (policy.mode == DVBRIDGE_MODE_DISABLED) return FrameStatus::Unsupported;
+   m_pendingBinding = base.binding;
+-  m_debugPTS = base.pts;
+   m_pendingSourceInfo = base.sourceInfo;
+   m_pendingIdentity = {base.binding.stream,base.binding.picture,revision};
+   DVBRIDGE::StreamTelemetry::NativeRequest({base.binding.stream,base.binding.picture,revision},
+@@ -1460,6 +1473,7 @@
+ 
+ bool CDVBridgeGLES::ReadScreenshot(KODI::RENDERING::CAPTURE::ReadbackBuffer& out)
+ {
++  if(m_requested.output==DVBRIDGE::OutputMode::MasterReferenceIPT)return false;
+   using namespace KODI::RENDERING::CAPTURE;
+   const bool master=m_effectiveMode==DVBRIDGE_MODE_MASTER_REFERENCE;
+   if (!m_prepared || (master && !m_direct)) return false;
+@@ -1730,7 +1744,6 @@
+       if (!output) return m_packed = false;
+       m_submission = {m_pendingIdentity,m_scanout,output->resolve_serial,++m_submissionSequence,m_asyncEligible};
+     }
+-    if (m_packed) DebugTransport(framebuffer,width,height,flipY);
+     return m_packed;
+   }
+   if (m_direct)
+@@ -1739,7 +1752,6 @@
+     if (m_packed && m_live)
+       m_submission = {m_pendingIdentity,m_scanout,0,++m_submissionSequence,
+           m_asyncEligible && (m_directUsable || m_effectiveMode == DVBRIDGE_MODE_MASTER_REFERENCE)};
+-    if (m_packed) DebugTransport(framebuffer,width,height,flipY);
+     return m_packed || Failure("direct-pack-target");
+   }
+   unsigned int count;
+@@ -1748,71 +1760,9 @@
+                              packets, count, flipY);
+   if (m_packed && m_live)
+     m_submission = {m_pendingIdentity,m_scanout,0,++m_submissionSequence,m_asyncEligible && m_directUsable};
+-  if (m_packed) DebugTransport(framebuffer,width,height,flipY);
+   return m_packed || Failure("composition-pack");
+ }
+ 
+-void CDVBridgeGLES::DebugTransport(unsigned framebuffer, int width, int height, bool flipY) noexcept try
+-{
+-  m_submission.debugSample = 0;
+-  if (!DVBRIDGE::DiagnosticsEnabled() || !DVBRIDGE::DebugDiagnosticsEnabled() || !m_live || m_hdr10)
+-    return;
+-  const auto sample=m_debugProbe.Due(DVBRIDGE::DiagnosticNowMs(),m_pendingBinding.stream,
+-      m_pendingBinding.picture,m_pendingIdentity.revision,m_overlayVisible);
+-  if (!sample) return;
+-  m_submission.debugSample=sample;
+-  const auto* authored=m_advanced && m_dvPolicyActive ? dvbridge_render_dv_policy_output(m_renderer) : nullptr;
+-  const auto* candidate=authored ? authored->candidate : dvbridge_render_candidate(m_renderer);
+-  unsigned count=0;
+-  const auto* words=dvbridge_packets(candidate,&count);
+-  const auto started=std::chrono::steady_clock::now();
+-  const auto read=DVBRIDGE::ReadDebugCarrier(framebuffer,width,height,flipY,
+-      {words,words ? count*128 : 0},count);
+-  const double elapsed=std::chrono::duration<double,std::milli>(std::chrono::steady_clock::now()-started).count();
+-  const auto& wire=read.carrier;
+-  const auto el=m_hardwareFrame.lock();
+-  const bool fel=(m_pendingInfo&CDVPlaybackInfo::FEL)!=0;
+-  DVBRIDGE::DiagnosticLog(LOGINFO,
+-      "CB1 debug render: sample={} source={}/{} cause={} pts={:.6f} mode={} fast={} async={} direct={} osd={} inline={} overlay_revision={} source={}x{} placement={},{},{}x{} el={}x{} el_matches={} vpp={} profile={} fel={}",
+-      sample,m_pendingBinding.stream,m_pendingBinding.picture,m_debugProbe.Reason(),m_debugPTS,int(m_effectiveMode),
+-      m_requested.EffectiveFastChroma(m_effectiveMode,m_pendingSourceInfo.profile==0),m_asyncEligible,m_direct,
+-      m_overlayVisible,m_nativeOverlayEnabled,m_pendingOverlayRevision,m_sourceGeometry.source_width,
+-      m_sourceGeometry.source_height,m_sourceGeometry.x,m_sourceGeometry.y,m_sourceGeometry.width,m_sourceGeometry.height,
+-      el ? el->width : 0,el ? el->height : 0,m_hardwareBinding==m_pendingBinding,m_hardwareFELVpp,m_pendingSourceInfo.profile,fel);
+-  DVBRIDGE::DiagnosticLog(LOGINFO,
+-      "CB1 debug carrier: sample={} source={}/{} scope=pre-swap-framebuffer read={} expected_packets={} decoded={} copies=3 byte_errors={} crc_errors={} packet_id={} refresh={} L1_known={} L1_PQ={},{},{} L5_known={} L5={},{},{},{} readback_ms={:.3f}",
+-      sample,m_pendingBinding.stream,m_pendingBinding.picture,read.read,count,wire.valid,wire.byteErrors,wire.crcErrors,
+-      wire.id,wire.refresh,wire.l1Known,wire.l1[0],wire.l1[1],wire.l1[2],wire.l5Known,
+-      wire.l5[0],wire.l5[1],wire.l5[2],wire.l5[3],elapsed);
+-  DVBRIDGE::DiagnosticLog(LOGINFO,
+-      "CB1 debug GL: sample={} target={} draw={} size={}x{} flip={} prior_error={} error={} framebuffer_status={} encoding={} blend={} dither={} scissor={} write_mask={} viewport={},{},{},{} sampled_YCbCr={},{},{}|{},{},{}|{},{},{}",
+-      sample,framebuffer,read.draw,width,height,flipY,read.priorError,read.error,read.status,read.encoding,
+-      read.blend,read.dither,read.scissor,read.writeMask,read.viewport[0],read.viewport[1],read.viewport[2],read.viewport[3],
+-      read.ycc[0][0],read.ycc[0][1],read.ycc[0][2],read.ycc[1][0],read.ycc[1][1],read.ycc[1][2],
+-      read.ycc[2][0],read.ycc[2][1],read.ycc[2][2]);
+-  dvbridge_color mapped{};
+-  if (dvbridge_map_color(&mapped,m_pendingMetadata.Data(),m_pendingMetadata.Size(),fel))
+-  {
+-    const auto* metadata=reinterpret_cast<const AVDOVIMetadata*>(m_pendingMetadata.Data());
+-    const auto* header=av_dovi_get_header(metadata);
+-    const auto* color=av_dovi_get_color(metadata);
+-    std::array<unsigned,3> l1{};
+-    std::array<unsigned,4> l5{};
+-    bool haveL1=false,haveL5=false;
+-    for (int i=0;i<metadata->num_ext_blocks;++i) {
+-      const auto* block=av_dovi_get_ext(metadata,i);
+-      if (block->level==1) {l1={block->l1.min_pq,block->l1.max_pq,block->l1.avg_pq};haveL1=true;}
+-      if (block->level==5) {l5={block->l5.left_offset,block->l5.right_offset,block->l5.top_offset,block->l5.bottom_offset};haveL5=true;}
+-    }
+-    DVBRIDGE::DiagnosticLog(LOGINFO,
+-        "CB1 debug source metadata: sample={} rpu_bytes={} residual_disabled={} el_spatial_filter={} source_PQ={},{} signal_depth={} eotf={} scene_refresh={} L1_known={} L1_PQ={},{},{} L5_known={} L5={},{},{},{}",
+-        sample,m_pendingMetadata.Size(),header->disable_residual_flag,header->el_spatial_resampling_filter_flag,
+-        color->source_min_pq,color->source_max_pq,color->signal_bit_depth,color->signal_eotf,color->scene_refresh_flag,
+-        haveL1,l1[0],l1[1],l1[2],haveL5,l5[0],l5[1],l5[2],l5[3]);
+-  }
+-}
+-catch (...) {}
+-
+ bool CDVBridgeGLES::ResolveHDR10(bool limited)
+ {
+   if (m_hdr10 && m_prepared && m_direct)
+@@ -1994,6 +1944,8 @@
+   output.fastChroma = m_requested.EffectiveFastChroma(m_effectiveMode, CDVPlaybackInfo::IsHDR10AI(output));
+   output.fastRenderingMode = m_requested.EffectiveFastRenderingMode(m_effectiveMode, CDVPlaybackInfo::IsHDR10AI(output));
+   output.effective = static_cast<int>(m_effectiveMode);
++  if(m_effectiveMode==DVBRIDGE_MODE_MASTER_REFERENCE &&
++      m_requested.output==DVBRIDGE::OutputMode::MasterReferenceIPT)output.effective=7;
+   if(m_effectiveMode==DVBRIDGE_MODE_ENHANCED_DV &&
+ #ifdef CB1_HAS_HDR10_AI
+       !output.hdr10AI &&
+diff -ruN -x .git -x '*.orig' -x '*.rej' a/xbmc/cores/VideoPlayer/VideoRenderers/DVBridgeGLES.h b/xbmc/cores/VideoPlayer/VideoRenderers/DVBridgeGLES.h
+--- a/xbmc/cores/VideoPlayer/VideoRenderers/DVBridgeGLES.h
++++ b/xbmc/cores/VideoPlayer/VideoRenderers/DVBridgeGLES.h
+@@ -4,7 +4,6 @@
+ #include "cores/VideoPlayer/DVDCodecs/Video/DVMetadataBuffer.h"
+ #include "cores/VideoPlayer/DVDCodecs/Video/DVPlaybackInfo.h"
+ #include "utils/DVBridgeDiagnosticState.h"
+-#include "utils/DVBridgeDebug.h"
+ #include "utils/Geometry.h"
+ #include <optional>
+ #include <span>
+@@ -137,7 +136,6 @@
+     uint64_t informationGeneration{};
+     std::shared_ptr<const VideoSourceSideData> sourceSideData{};
+     int felFilter{-1}, felBackend{};
+-    unsigned debugSample{};
+   };
+   Submission CaptureSubmission() const
+   {
+@@ -194,9 +192,6 @@
+   bool Presented(bool success);
+ 
+ private:
+-  void DebugTransport(unsigned framebuffer, int width, int height, bool flipY) noexcept;
+-  DVBRIDGE::DebugProbe m_debugProbe;
+-  double m_debugPTS{};
+   struct FELPrefetch;
+   std::shared_ptr<FELPrefetch> m_felPrefetch;
+   FrameStatus TakeFELPrefetch(const std::shared_ptr<AVFrame>& frame,
+diff -ruN -x .git -x '*.orig' -x '*.rej' a/xbmc/cores/VideoPlayer/VideoRenderers/LinuxRendererGLES.cpp b/xbmc/cores/VideoPlayer/VideoRenderers/LinuxRendererGLES.cpp
+--- a/xbmc/cores/VideoPlayer/VideoRenderers/LinuxRendererGLES.cpp
++++ b/xbmc/cores/VideoPlayer/VideoRenderers/LinuxRendererGLES.cpp
+@@ -270,9 +270,10 @@
+     auto* window = dynamic_cast<KODI::WINDOWING::GBM::CWinSystemGbmGLESContext*>(
+         CServiceBroker::GetWinSystem());
+     m_passthroughHDR = false;
++    // Native activation follows source import and its output-surface transaction.
+     m_hdrFboActive = window &&
+-        (window->SelectedDVOutput(&picture).route == DVBRIDGE::OutputRoute::HDR10 ?
+-         window->ConfigureHDR10Conversion(picture) : window->BeginDVBridge());
++        (window->SelectedDVOutput(&picture).route != DVBRIDGE::OutputRoute::HDR10 ||
++         window->ConfigureHDR10Conversion(picture));
+     if (!m_hdrFboActive)
+     {
+       m_bConfigured = false;
+diff -ruN -x .git -x '*.orig' -x '*.rej' a/xbmc/dialogs/DVPlaybackModes.cpp b/xbmc/dialogs/DVPlaybackModes.cpp
+--- a/xbmc/dialogs/DVPlaybackModes.cpp
++++ b/xbmc/dialogs/DVPlaybackModes.cpp
+@@ -6,6 +6,7 @@
+ #include "GUIDialogNumeric.h"
+ #include "GUIDialogKaiToast.h"
+ #include "GUIDialogSelect.h"
++#include "GUIDialogBusy.h"
+ #include "cores/VideoPlayer/DVDCodecs/Video/DVOutputSettings.h"
+ #include "cores/VideoPlayer/DVDCodecs/Video/DVPlaybackNotification.h"
+ #include "cores/VideoPlayer/DVDCodecs/Video/DVStreamTelemetry.h"
+@@ -19,6 +20,45 @@
+ #include "settings/lib/Setting.h"
+ #include "settings/lib/SettingDefinitions.h"
+ #include "utils/StringUtils.h"
++#include "utils/JSONVariantParser.h"
++#include "utils/Variant.h"
++#include "utils/log.h"
++#include "threads/IRunnable.h"
++#include <cstdio>
++
++#ifdef CB1_DEBUG_BUILD
++namespace
++{
++bool DriverProfileCommand(const char* command, CVariant& status)
++{
++  const std::string invocation = std::string("/usr/bin/cb1-driver-profile ") + command;
++  FILE* pipe = popen(invocation.c_str(), "r");
++  if (!pipe) return false;
++  std::string output;
++  char buffer[512];
++  while (fgets(buffer, sizeof(buffer), pipe) && output.size() < 16384)
++    output += buffer;
++  const int result = pclose(pipe);
++  return result == 0 && output.size() < 16384 && CJSONVariantParser::Parse(output, status);
++}
++
++bool SelectDriverProfile(bool standard, CVariant& status)
++{
++  struct Selection : IRunnable
++  {
++    Selection(bool selected, CVariant& output) : standard(selected), status(output) {}
++    bool standard;
++    CVariant& status;
++    bool success{false};
++    void Run() override
++    {
++      success = DriverProfileCommand(standard ? "select standard" : "select modified", status);
++    }
++  } selection(standard, status);
++  return CGUIDialogBusy::Wait(&selection, 100, false) && selection.success;
++}
++}
++#endif
+ 
+ CDVPlaybackModes& CDVPlaybackModes::GetInstance()
+ {
+@@ -80,7 +120,11 @@
+   const auto settings=CServiceBroker::GetSettingsComponent()->GetSettings();
+   const auto& strings=CServiceBroker::GetResourcesComponent().GetLocalizeStrings();
+   struct Choice { int output,method,label; };
+-  constexpr Choice dvChoices[]={{0,0,40812},{4,0,40913},{5,0,40914},
++  constexpr Choice dvChoices[]={{0,0,40812},{4,0,40913},
++#ifdef CB1_ENABLE_MASTER_IPT
++      {6,0,40916},
++#endif
++      {5,0,40914},
+       {2,0,40814},{1,0,40822},{1,1,40823}};
+   const auto source=DVBRIDGE::StreamTelemetry::Read().transaction.capabilities;
+   if (source.stereoSource || !source.sourceKnown || (!source.isDV && !source.isHDR10)) return false;
+@@ -158,6 +202,64 @@
+   if (setting && setting->GetId()=="dvbridge.configureprofile") ConfigureProfile();
+ }
+ 
++bool CDVPlaybackModes::DriverProfilesAvailable()
++{
++  return GetInstance().m_driverProfilesAvailable;
++}
++
++void CDVPlaybackModes::OnSettingsLoaded()
++{
++#ifdef CB1_DEBUG_BUILD
++  CVariant status;
++  m_driverProfilesAvailable = DriverProfileCommand("status", status) && status["available"].asBoolean();
++  CLog::Log(LOGINFO, "CB1 driver profile: active={} pending={} available={} reason={}",
++      status["active"].asString(), status["pending"].asString(), m_driverProfilesAvailable,
++      status["reason"].asString());
++  if (m_driverProfilesAvailable)
++    CLog::Log(LOGINFO, "CB1 Debug boot: build={} kernel={} kernel_sha256={} system_sha256={} modules_sha256={}",
++        status["build"]["id"].asString(), status["kernel_release"].asString(),
++        status["payloads"]["kernel"]["sha256"].asString(),
++        status["payloads"]["system"]["sha256"].asString(),
++        status["payloads"]["modules_sha256"].asString());
++  if (m_driverProfilesAvailable)
++  {
++    m_standardProfile = status["pending"].asString() == "standard";
++    m_syncingProfile = true;
++    CServiceBroker::GetSettingsComponent()->GetSettings()->SetBool(
++        "debug.cb1standarddrivers", m_standardProfile);
++    m_syncingProfile = false;
++  }
++#endif
++}
++
++bool CDVPlaybackModes::OnSettingChanging(const std::shared_ptr<const CSetting>& setting)
++{
++#ifdef CB1_DEBUG_BUILD
++  if (!setting || setting->GetId() != "debug.cb1standarddrivers" || m_syncingProfile)
++    return true;
++  const bool standard = std::static_pointer_cast<const CSettingBool>(setting)->GetValue();
++  // Kodi repeats this callback with the previous value after a refused change.
++  if (standard == m_standardProfile) return true;
++  CVariant status;
++  const auto& strings = CServiceBroker::GetResourcesComponent().GetLocalizeStrings();
++  if (!SelectDriverProfile(standard, status) ||
++      !status["available"].asBoolean() ||
++      status["pending"].asString() != (standard ? "standard" : "modified"))
++  {
++    CLog::Log(LOGERROR, "CB1 driver profile selection refused: {}", status["reason"].asString());
++    CGUIDialogKaiToast::QueueNotification(CGUIDialogKaiToast::Info,
++        strings.Get(40917), strings.Get(40920), 5000, false);
++    return false;
++  }
++  m_standardProfile = standard;
++  CLog::Log(LOGINFO, "CB1 driver profile selected: active={} pending={} reboot_required=true",
++      status["active"].asString(), status["pending"].asString());
++  CGUIDialogKaiToast::QueueNotification(CGUIDialogKaiToast::Info,
++      strings.Get(40917), strings.Get(40919), 3000, false);
++#endif
++  return true;
++}
++
+ void DVBRIDGE::PlaybackNotification::Emit(const std::string& text)
+ {
+   const auto component=CServiceBroker::GetSettingsComponent();
+diff -ruN -x .git -x '*.orig' -x '*.rej' a/xbmc/dialogs/DVPlaybackModes.h b/xbmc/dialogs/DVPlaybackModes.h
+--- a/xbmc/dialogs/DVPlaybackModes.h
++++ b/xbmc/dialogs/DVPlaybackModes.h
+@@ -2,14 +2,22 @@
+ #pragma once
+ #ifdef HAVE_DVBRIDGE
+ #include "settings/lib/ISettingCallback.h"
++#include "settings/lib/ISettingsHandler.h"
+ 
+-class CDVPlaybackModes : public ISettingCallback
++class CDVPlaybackModes : public ISettingCallback, public ISettingsHandler
+ {
+ public:
+   static CDVPlaybackModes& GetInstance();
+   static bool MenuEnabled();
+   static bool ShowMenu();
+   static bool ConfigureProfile();
++  static bool DriverProfilesAvailable();
++  bool OnSettingChanging(const std::shared_ptr<const CSetting>& setting) override;
++  void OnSettingsLoaded() override;
+   void OnSettingAction(const std::shared_ptr<const CSetting>& setting) override;
++private:
++  bool m_syncingProfile{false};
++  bool m_driverProfilesAvailable{false};
++  bool m_standardProfile{false};
+ };
+ #endif
+diff -ruN -x .git -x '*.orig' -x '*.rej' a/xbmc/dialogs/GUIDialogPlayerProcessInfo.cpp b/xbmc/dialogs/GUIDialogPlayerProcessInfo.cpp
+--- a/xbmc/dialogs/GUIDialogPlayerProcessInfo.cpp
++++ b/xbmc/dialogs/GUIDialogPlayerProcessInfo.cpp
+@@ -24,6 +24,7 @@
+ #include "resources/ResourcesComponent.h"
+ #include "guilib/GUIMessage.h"
+ #include "guilib/GUIControlGroupList.h"
++#include "guilib/GUIFontManager.h"
+ #include "windowing/WinSystem.h"
+ #include "windowing/GraphicContext.h"
+ #include <algorithm>
+@@ -38,6 +39,36 @@
+ 
+ CGUIDialogPlayerProcessInfo::~CGUIDialogPlayerProcessInfo(void) = default;
+ 
++bool CGUIDialogPlayerProcessInfo::OnMessage(CGUIMessage& message)
++{
++#ifdef HAVE_DVBRIDGE
++  if (message.GetMessage() == GUI_MSG_WINDOW_INIT)
++  {
++    const bool enhanced = DVBRIDGE::EnhancedInfoEnabled();
++    const std::string file = enhanced ?
++        "special://xbmc/media/cb1/DialogPlayerProcessInfo.xml" :
++        "DialogPlayerProcessInfo.xml";
++    if (GetProperty("xmlfile").asString() != file)
++    {
++      FreeResources(true);
++      SetProperty("xmlfile", file);
++    }
++    if (enhanced)
++    {
++      const RESOLUTION_INFO resolution(1920, 1080);
++      SetCoordsRes(resolution);
++      g_fontManager.LoadTTF("CB1.InfoBody", "special://xbmc/media/Fonts/arial.ttf",
++                            0xfff4f6f6, 0, 23, 0, false, 1.0f, 1.0f, &resolution);
++      g_fontManager.LoadTTF("CB1.InfoSection", "special://xbmc/media/Fonts/arial.ttf",
++                            0xfff4f6f6, 0, 25, 0, false, 1.0f, 1.0f, &resolution);
++      g_fontManager.LoadTTF("CB1.InfoTitle", "special://xbmc/media/Fonts/arial.ttf",
++                            0xfff4f6f6, 0, 30, 1, false, 1.0f, 1.0f, &resolution);
++    }
++  }
++#endif
++  return CGUIDialog::OnMessage(message);
++}
++
+ void CGUIDialogPlayerProcessInfo::OnInitWindow()
+ {
+ #ifdef HAVE_DVBRIDGE
+diff -ruN -x .git -x '*.orig' -x '*.rej' a/xbmc/dialogs/GUIDialogPlayerProcessInfo.h b/xbmc/dialogs/GUIDialogPlayerProcessInfo.h
+--- a/xbmc/dialogs/GUIDialogPlayerProcessInfo.h
++++ b/xbmc/dialogs/GUIDialogPlayerProcessInfo.h
+@@ -20,6 +20,7 @@
+   ~CGUIDialogPlayerProcessInfo(void) override;
+ 
+   bool OnAction(const CAction &action) override;
++  bool OnMessage(CGUIMessage& message) override;
+   void OnInitWindow() override;
+   void OnDeinitWindow(int nextWindowID) override;
+   void Process(unsigned int currentTime, CDirtyRegionList& dirtyregions) override;
+diff -ruN -x .git -x '*.orig' -x '*.rej' a/xbmc/dialogs/GUIDialogSelect.cpp b/xbmc/dialogs/GUIDialogSelect.cpp
+--- a/xbmc/dialogs/GUIDialogSelect.cpp
++++ b/xbmc/dialogs/GUIDialogSelect.cpp
+@@ -18,6 +18,7 @@
+ #include "resources/ResourcesComponent.h"
+ #ifdef HAVE_DVBRIDGE
+ #include "DVPlaybackMenuLayout.h"
++#include "guilib/GUIImage.h"
+ #endif
+ #include "utils/StringUtils.h"
+ 
+@@ -368,13 +369,15 @@
+ #ifdef HAVE_DVBRIDGE
+   if (GetProperty("CB1.PlaybackModes").asBoolean())
+   {
+-    if (auto* group = GetControl(9100))
++    auto* background = dynamic_cast<CGUIImage*>(GetControl(9101));
++    if (auto* group = GetControl(9100); group && background &&
++        background->GetFileName() == "special://xbmc/media/cb1-panel.png")
+     {
+       const float rowsHeight = DVBRIDGE::PlaybackMenuRowsHeight(m_vecList->Size());
+       const float height = 112.0f + rowsHeight;
+       group->SetPosition(group->GetXPosition(), GetCoordsRes().iHeight - 40.0f - height);
+       group->SetHeight(height);
+-      if (auto* background = GetControl(9101)) background->SetHeight(height);
++      background->SetHeight(height);
+       for (int id : {CONTROL_SIMPLE_LIST, CONTROL_DETAILED_LIST})
+         if (auto* list = GetControl(id)) list->SetHeight(rowsHeight);
+       if (auto* help = GetControl(9102))
+diff -ruN -x .git -x '*.orig' -x '*.rej' a/xbmc/settings/SettingConditions.cpp b/xbmc/settings/SettingConditions.cpp
+--- a/xbmc/settings/SettingConditions.cpp
++++ b/xbmc/settings/SettingConditions.cpp
+@@ -27,6 +27,7 @@
+ #include "utils/StringUtils.h"
+ #include "windowing/WinSystem.h"
+ #ifdef HAVE_DVBRIDGE
++#include "dialogs/DVPlaybackModes.h"
+ #include "cores/VideoPlayer/DVDCodecs/Video/DVOutputSelection.h"
+ #include "cores/VideoPlayer/DVDCodecs/Video/DVStreamTelemetry.h"
+ #include "resources/LocalizeStrings.h"
+@@ -376,6 +377,13 @@
+ #endif
+ #ifdef HAVE_DVBRIDGE
+   m_simpleConditions.emplace("have_dvbridge");
++#ifdef CB1_DEBUG_BUILD
++  m_simpleConditions.emplace("have_cb1_debug");
++  m_complexConditions.try_emplace("cb1driverprofilesavailable",
++      [](const std::string&, const std::string&, const SettingConstPtr&) {
++        return CDVPlaybackModes::DriverProfilesAvailable();
++      });
++#endif
+ #endif
+ #ifdef CB1_HAS_HDR10_AI
+   m_simpleConditions.emplace("have_cb1_hdr10_ai");
+@@ -509,10 +517,17 @@
+   const auto preferences=DVBRIDGE::FrameOutputSettings();
+   const auto data=DVBRIDGE::StreamTelemetry::Read();
+   auto caps=data.transaction.capabilities;
++  auto* window=dynamic_cast<KODI::WINDOWING::GBM::CWinSystemGbmGLESContext*>(CServiceBroker::GetWinSystem());
++  const auto available=window ? window->GetDVOutputCapabilities(nullptr, true) : DVBRIDGE::OutputCapabilities{};
+   if (!caps.sourceKnown && !data.transaction.identity.Valid())
++    caps=available;
++  // A failed frame or disabled import does not remove reusable output capabilities.
++  caps.nativeDV=available.nativeDV;
++  caps.hdr10=available.hdr10;
++  if (caps.isDV && preferences.output==DVBRIDGE::OutputMode::Disabled)
+   {
+-    auto* window=dynamic_cast<KODI::WINDOWING::GBM::CWinSystemGbmGLESContext*>(CServiceBroker::GetWinSystem());
+-    caps=window ? window->GetDVOutputCapabilities(nullptr, true) : DVBRIDGE::OutputCapabilities{};
++    caps.processingKnown=available.processingKnown;
++    caps.processing=available.processing;
+   }
+   const auto& localizer=CServiceBroker::GetResourcesComponent().GetLocalizeStrings();
+   const bool method=setting->GetId()=="dvbridge.hdr10method";
+@@ -520,7 +535,15 @@
+   const bool hdr10Menu=setting->GetId()=="dvbridge.hdr10playbackchoice";
+   const bool hdr10Source=hdr10Menu || setting->GetId()=="dvbridge.hdr10source";
+   const auto& processing=hdr10Source && !caps.sourceKnown ? caps.hdr10Processing : caps.processing;
+-  constexpr int menuModes[]{1,5,4,0,2,3};
++  constexpr int menuModes[]{1,5,
++#ifdef CB1_ENABLE_MASTER_IPT
++      5,
++#endif
++      4,0,2,3};
++#ifndef CB1_ENABLE_MASTER_IPT
++  if (!menu && !hdr10Menu && !method && !hdr10Source)
++    std::erase_if(list, [](const auto& option) { return option.value == 6; });
++#endif
+ #ifdef CB1_HAS_HDR10_AI
+   constexpr int hdr10MenuModes[]{1,4,0};
+ #else
+@@ -532,7 +555,7 @@
+         hdr10Source ? (option.value==1 ? 1 : option.value==2 ? 4 : 0) :
+         menu ? (option.value>=0 && option.value<int(std::size(menuModes)) ? menuModes[option.value] : 0) :
+         method ? (option.value==0 ? 2 : option.value==1 ? 3 : 0) :
+-        (option.value==0 ? 1 : option.value==1 ? 2 : option.value==3 || option.value==5 ? 4 : option.value==4 ? 5 : 0);
++        (option.value==0 ? 1 : option.value==1 ? 2 : option.value==3 || option.value==5 ? 4 : option.value==4 || option.value==6 ? 5 : 0);
+     auto reason=DVBRIDGE::OutputReason::None;
+     if (mode)
+     {
+diff -ruN -x .git -x '*.orig' -x '*.rej' a/xbmc/settings/Settings.cpp b/xbmc/settings/Settings.cpp
+--- a/xbmc/settings/Settings.cpp
++++ b/xbmc/settings/Settings.cpp
+@@ -571,6 +571,9 @@
+ 
+ void CSettings::InitializeISettingsHandlers()
+ {
++#ifdef HAVE_DVBRIDGE
++  GetSettingsManager()->RegisterSettingsHandler(&CDVPlaybackModes::GetInstance());
++#endif
+   // register ISettingsHandler implementations
+   // The order of these matters! Handlers are processed in the order they were registered.
+   GetSettingsManager()->RegisterSettingsHandler(&CMediaSourceSettings::GetInstance());
+@@ -585,6 +588,9 @@
+ 
+ void CSettings::UninitializeISettingsHandlers()
+ {
++#ifdef HAVE_DVBRIDGE
++  GetSettingsManager()->UnregisterSettingsHandler(&CDVPlaybackModes::GetInstance());
++#endif
+   // unregister ISettingsHandler implementations
+   GetSettingsManager()->UnregisterSettingsHandler(&CMediaSettings::GetInstance());
+   GetSettingsManager()->UnregisterSettingsHandler(&g_langInfo);
+@@ -619,7 +625,8 @@
+ void CSettings::InitializeISettingCallbacks()
+ {
+ #ifdef HAVE_DVBRIDGE
+-  GetSettingsManager()->RegisterCallback(&CDVPlaybackModes::GetInstance(),{"dvbridge.configureprofile"});
++  GetSettingsManager()->RegisterCallback(&CDVPlaybackModes::GetInstance(),
++      {"dvbridge.configureprofile", "debug.cb1standarddrivers"});
+ #endif
+   // register any ISettingCallback implementations
+   GetSettingsManager()->RegisterCallback(
+diff -ruN -x .git -x '*.orig' -x '*.rej' a/xbmc/utils/DVBridgeDebug.h b/xbmc/utils/DVBridgeDebug.h
+--- a/xbmc/utils/DVBridgeDebug.h
++++ b/xbmc/utils/DVBridgeDebug.h
+@@ -1,103 +0,0 @@
+-/* SPDX-License-Identifier: GPL-2.0-or-later */
+-#pragma once
+-#include <algorithm>
+-#include <array>
+-#include <bit>
+-#include <cstdint>
+-#include <span>
+-extern "C" {
+-#include <libavutil/crc.h>
+-}
+-
+-namespace DVBRIDGE
+-{
+-class DebugProbe
+-{
+-public:
+-  unsigned Due(uint64_t now, uint64_t stream, uint64_t picture, uint64_t revision, bool visible)
+-  {
+-    if (!stream || !picture || stream < m_stream) return 0;
+-    if (stream != m_stream) { *this = {}; m_stream = stream; m_revision = revision; m_visible = visible; }
+-    if (m_count >= 32 || (m_count && now < m_last)) return 0;
+-    if (visible != m_visible || revision != m_revision)
+-    {
+-      m_reason = visible != m_visible ? "osd-edge" : "source-change";
+-      m_pending = true; m_visible = visible; m_revision = revision;
+-    }
+-    if (m_count && (now - m_last < 500 || (!m_pending && now < m_next))) return 0;
+-    const bool follow = !m_count || m_pending;
+-    if (!m_count) m_reason = "start";
+-    else if (!m_pending) m_reason = m_settling ? "settled" : "periodic";
+-    m_next = now + (follow ? 500 : 10000);
+-    m_last = now; m_pending = false; m_settling = follow;
+-    return ++m_count;
+-  }
+-  const char* Reason() const { return m_reason; }
+-private:
+-  uint64_t m_stream{}, m_revision{}, m_last{}, m_next{};
+-  unsigned m_count{};
+-  bool m_visible{}, m_pending{}, m_settling{};
+-  const char* m_reason{"start"};
+-};
+-
+-struct DebugCarrier
+-{
+-  bool valid{}, l1Known{}, l5Known{};
+-  unsigned packets{}, byteErrors{}, crcErrors{}, id{}, refresh{};
+-  std::array<unsigned,3> l1{};
+-  std::array<unsigned,4> l5{};
+-};
+-
+-inline DebugCarrier DecodeDebugCarrier(std::span<const uint8_t> pixels, unsigned stride,
+-    bool flip, std::span<const uint32_t> expected, unsigned count)
+-{
+-  DebugCarrier out;
+-  if (!count || count > 5 || expected.size() < count*128 || stride < 3840*4 ||
+-      pixels.size() < size_t(stride)*4) return out;
+-  std::array<uint8_t,512> payload{};
+-  unsigned size = 0, offset = 0;
+-  for (unsigned packet=0;packet<count;++packet) for (unsigned copy=0;copy<3;++copy)
+-  {
+-    std::array<uint8_t,128> bytes{};
+-    for (unsigned bit=0;bit<1024;++bit)
+-    {
+-      const unsigned index=packet*3072+copy*1024+bit, row=index/3840;
+-      const auto* p=pixels.data()+(flip ? 3-row : row)*stride+(index%3840)*4;
+-      const unsigned y=(unsigned(p[1])<<4)|(p[2]&15), c=(unsigned(p[0])<<4)|(p[2]>>4);
+-      const unsigned value=(c&1)^(std::popcount(y^(c>>1))&1);
+-      bytes[bit/8]|=value<<(7-bit%8);
+-    }
+-    out.crcErrors+=av_crc(av_crc_get_table(AV_CRC_32_IEEE),0xffffffff,bytes.data(),bytes.size())!=0;
+-    for (unsigned byte=0;byte<128;++byte) out.byteErrors+=bytes[byte]!=expected[packet*128+byte];
+-    if (copy) continue;
+-    if (!packet) { size=(unsigned(bytes[3])<<8)|bytes[4]; out.id=bytes[1]; }
+-    if (!size || size>payload.size() || offset>size) return out;
+-    const unsigned take=std::min(size-offset,packet ? 121u : 119u);
+-    std::copy_n(bytes.data()+(packet ? 3 : 5),take,payload.data()+offset);
+-    offset+=take;
+-  }
+-  out.packets=count;
+-  if (offset!=size || size<71) return out;
+-  out.refresh=payload[1];
+-  unsigned at=71;
+-  for (unsigned i=0;i<payload[70];++i)
+-  {
+-    if (at+5>size) return out;
+-    const uint32_t n=(uint32_t(payload[at])<<24)|(uint32_t(payload[at+1])<<16)|
+-                     (uint32_t(payload[at+2])<<8)|payload[at+3];
+-    const unsigned level=payload[at+4]; at+=5;
+-    if (n>size-at) return out;
+-    if (level==1 && n==6) {
+-      for (unsigned j=0;j<3;++j) out.l1[j]=(unsigned(payload[at+j*2])<<8)|payload[at+j*2+1];
+-      out.l1Known=true;
+-    }
+-    if (level==5 && n==8) {
+-      for (unsigned j=0;j<4;++j) out.l5[j]=(unsigned(payload[at+j*2])<<8)|payload[at+j*2+1];
+-      out.l5Known=true;
+-    }
+-    at+=n;
+-  }
+-  out.valid=at==size;
+-  return out;
+-}
+-}
+diff -ruN -x .git -x '*.orig' -x '*.rej' a/xbmc/utils/DVBridgeDiagnosticLog.h b/xbmc/utils/DVBridgeDiagnosticLog.h
+--- a/xbmc/utils/DVBridgeDiagnosticLog.h
++++ b/xbmc/utils/DVBridgeDiagnosticLog.h
+@@ -49,6 +49,10 @@
+   message += fmt::format(" stream={} picture={} revision={} policy={} suppressed={} truncations={}",
+       diagnosticSession.Stream(), diagnosticSession.Picture(), diagnosticSession.Revision(),
+       diagnosticSession.Policy(), diagnosticSession.Suppressed(), diagnosticSession.Truncations());
++#ifdef CB1_DEBUG_BUILD
++  // Expose bounded diagnostic details without enabling Kodi's global debug log.
++  if (level == LOGDEBUG) level = LOGINFO;
++#endif
+   CLog::Log(level, "{}", message);
+   return true;
+ }
+diff -ruN -x .git -x '*.orig' -x '*.rej' a/xbmc/utils/DVBridgeDiagnosticState.h b/xbmc/utils/DVBridgeDiagnosticState.h
+--- a/xbmc/utils/DVBridgeDiagnosticState.h
++++ b/xbmc/utils/DVBridgeDiagnosticState.h
+@@ -3,7 +3,6 @@
+ #include <chrono>
+ #include <cstdint>
+ #include <cstdlib>
+-#include <cstdio>
+ #include <array>
+ #include <optional>
+ #include <string>
+@@ -11,18 +10,6 @@
+ 
+ namespace DVBRIDGE
+ {
+-inline bool DebugDiagnosticsEnabled()
+-{
+-  static const bool enabled = [] {
+-    if (const char* setting = std::getenv("DVBRIDGE_DEBUG_DIAGNOSTICS"))
+-      return std::string_view(setting) == "1";
+-    if (FILE* marker = std::fopen("/usr/share/kodi/system/dvbridge-debug", "r"))
+-    { std::fclose(marker); return true; }
+-    return false;
+-  }();
+-  return enabled;
+-}
+-
+ // Enabled without Kodi's global debug mode. Developers can disable the entire
+ // supplement in one place; it must never change output or retry decisions.
+ inline bool DiagnosticsEnabled()
+@@ -103,8 +90,7 @@
+     m_lastNow = now;
+     while (m_size && now >= m_lines[m_head] && now - m_lines[m_head] >= 30000)
+     { m_head = (m_head + 1) % m_lines.size(); --m_size; }
+-    const size_t limit = DebugDiagnosticsEnabled() ? m_lines.size() : 24;
+-    if (m_size == limit) { ++m_suppressed; return false; }
++    if (m_size == m_lines.size()) { ++m_suppressed; return false; }
+     m_lines[(m_head + m_size) % m_lines.size()] = now;
+     ++m_size;
+     return true;
+@@ -138,7 +124,7 @@
+   const char* Stage() const { return m_stage ? m_stage : "unavailable"; }
+   const char* FirstFailure() const { return m_failure ? m_failure : "none"; }
+ private:
+-  std::array<uint64_t, 128> m_lines{};
++  std::array<uint64_t, 24> m_lines{};
+   size_t m_head{}, m_size{};
+   uint64_t m_lastNow{}, m_suppressed{}, m_truncated{};
+   uint64_t m_stream{}, m_picture{}, m_revision{}, m_policy{};
+diff -ruN -x .git -x '*.orig' -x '*.rej' a/xbmc/windowing/gbm/drm/DRMAtomic.cpp b/xbmc/windowing/gbm/drm/DRMAtomic.cpp
+--- a/xbmc/windowing/gbm/drm/DRMAtomic.cpp
++++ b/xbmc/windowing/gbm/drm/DRMAtomic.cpp
+@@ -459,7 +459,6 @@
+ bool CDRMAtomic::FlipPageTransactional(struct gbm_bo* bo, bool restore, bool async)
+ {
+   if (m_cb1Pending) return false;
+-  const auto debug=std::exchange(m_debugProbe,{});
+   // The window owns the bounded retry decision after coherent restoration.
+   m_dvRestoring = restore;
+   if (!bo)
+@@ -487,31 +486,7 @@
+   const int flags = (m_need_modeset || m_dvActivating || restore)
+                         ? DRM_MODE_ATOMIC_ALLOW_MODESET :
+                             asynchronous ? DRM_MODE_ATOMIC_NONBLOCK : 0;
+-  const int debugInput=m_inFenceFd;
+-  const auto debugStarted=debug[2] ? std::chrono::steady_clock::now() : std::chrono::steady_clock::time_point{};
+   const bool accepted = DrmAtomicCommit(fb, flags, true, false, true);
+-  if (debug[2] && !restore && DVBRIDGE::DiagnosticsEnabled())
+-  {
+-    const double ms=std::chrono::duration<double,std::milli>(std::chrono::steady_clock::now()-debugStarted).count();
+-    DVBRIDGE::DiagnosticLog(LOGINFO,
+-        "CB1 debug submit: sample={} source={}/{} framebuffer={} gbm={}x{} format={:08x} stride={} in_fence={} async={} accepted={} commit_ms={:.3f}",
+-        debug[2],debug[0],debug[1],fb,gbm_bo_get_width(bo),gbm_bo_get_height(bo),gbm_bo_get_format(bo),
+-        gbm_bo_get_stride(bo),debugInput>=0,asynchronous,accepted,ms);
+-    if (auto* layout=drmModeGetFB2(m_fd,fb))
+-    {
+-      DVBRIDGE::DiagnosticLog(LOGINFO,
+-          "CB1 debug framebuffer: sample={} format={:08x} size={}x{} modifier_known={} modifier={:016x} stride={} offset={}",
+-          debug[2],layout->pixel_format,layout->width,layout->height,
+-          bool(layout->flags & DRM_MODE_FB_MODIFIERS),layout->modifier,layout->pitches[0],layout->offsets[0]);
+-      // GETFB2 returns fresh GEM handles; multiple planes can share one handle.
+-      for (unsigned i=0;i<4;++i)
+-        if (layout->handles[i] && std::find(layout->handles,layout->handles+i,layout->handles[i])==layout->handles+i)
+-          drmCloseBufferHandle(m_fd,layout->handles[i]);
+-      drmModeFreeFB2(layout);
+-    }
+-    else DVBRIDGE::DiagnosticLog(LOGINFO,"CB1 debug framebuffer: sample={} query_error={}",debug[2],errno);
+-    ReportDebugState(debug[0],debug[1],debug[2],fb,accepted,accepted && asynchronous);
+-  }
+   if (!accepted || !asynchronous)
+   {
+     ResetCB1PresentationTime();
+@@ -746,45 +721,6 @@
+ 
+ catch (...) {}
+ 
+-void CDRMAtomic::ReportDebugState(uint64_t stream, uint64_t picture, unsigned sample,
+-                                 uint32_t fb, bool accepted, bool pending) noexcept
+-{
+-  const int savedError=errno;
+-  try
+-  {
+-    auto* plane=m_gui_plane ? m_gui_plane : m_video_plane;
+-    const auto query=[&](const auto* object,uint32_t type) {
+-      return std::unique_ptr<drmModeObjectProperties,decltype(&drmModeFreeObjectProperties)>(
+-          object ? drmModeObjectGetProperties(m_fd,object->GetId(),type) : nullptr,drmModeFreeObjectProperties);
+-    };
+-    auto p=query(plane,DRM_MODE_OBJECT_PLANE);const int planeError=p ? 0 : errno;
+-    auto c=query(m_connector,DRM_MODE_OBJECT_CONNECTOR);const int connectorError=c ? 0 : errno;
+-    auto r=query(m_crtc,DRM_MODE_OBJECT_CRTC);const int crtcError=r ? 0 : errno;
+-    const auto value=[](const auto& properties,const auto* object,const char* name) {
+-      if (properties && object) for (unsigned i=0;i<properties->count_props;++i)
+-        if (properties->props[i]==object->GetPropertyId(name)) return std::to_string(properties->prop_values[i]);
+-      return std::string("unavailable");
+-    };
+-    DVBRIDGE::DiagnosticLog(LOGINFO,
+-        "CB1 debug plane: sample={} source={}/{} scope=kernel-query-after-submit accepted={} pending={} requested_fb={} actual_fb={} plane={} query_error={} crtc={} src_16_16={},{},{},{} dst={},{},{},{}",
+-        sample,stream,picture,accepted,pending,fb,value(p,plane,"FB_ID"),plane ? plane->GetId() : 0,planeError,
+-        value(p,plane,"CRTC_ID"),value(p,plane,"SRC_X"),value(p,plane,"SRC_Y"),value(p,plane,"SRC_W"),value(p,plane,"SRC_H"),
+-        value(p,plane,"CRTC_X"),value(p,plane,"CRTC_Y"),value(p,plane,"CRTC_W"),value(p,plane,"CRTC_H"));
+-    DVBRIDGE::DiagnosticLog(LOGINFO,
+-        "CB1 debug link: sample={} connector={} query_error={} dv={} hdr_blob={} colorspace={} rgb={} max_bpc_ceiling={} nv_vsif={} dither={} crtc_query_error={} active={} mode_blob={}",
+-        sample,m_connector ? m_connector->GetId() : 0,connectorError,value(c,m_connector,"DVBRIDGE_DV_STANDARD_LAB"),
+-        value(c,m_connector,"HDR_OUTPUT_METADATA"),value(c,m_connector,"Colorspace"),value(c,m_connector,"Broadcast RGB"),
+-        value(c,m_connector,"max bpc"),value(c,m_connector,"NV_HDMI_VSIF_METADATA"),value(c,m_connector,"dithering mode"),
+-        crtcError,value(r,m_crtc,"ACTIVE"),value(r,m_crtc,"MODE_ID"));
+-    DVBRIDGE::DiagnosticLog(LOGINFO,
+-        "CB1 debug color state: sample={} alpha={} blend={} rotation={} gamma_lut={} degamma_lut={} ctm={}",
+-        sample,value(p,plane,"alpha"),value(p,plane,"pixel blend mode"),value(p,plane,"rotation"),
+-        value(r,m_crtc,"GAMMA_LUT"),value(r,m_crtc,"DEGAMMA_LUT"),value(r,m_crtc,"CTM"));
+-  }
+-  catch (...) {}
+-  errno=savedError;
+-}
+-
+ CDRMAtomic::CDRMAtomicRequest::CDRMAtomicRequest() : m_atomicRequest(drmModeAtomicAlloc())
+ {
+ }
+diff -ruN -x .git -x '*.orig' -x '*.rej' a/xbmc/windowing/gbm/drm/DRMAtomic.h b/xbmc/windowing/gbm/drm/DRMAtomic.h
+--- a/xbmc/windowing/gbm/drm/DRMAtomic.h
++++ b/xbmc/windowing/gbm/drm/DRMAtomic.h
+@@ -33,8 +33,6 @@
+   ~CDRMAtomic() override;
+   void FlipPage(struct gbm_bo* bo, bool rendered, bool videoLayer, bool async) override;
+   bool LastPageAccepted() const { return m_lastPageAccepted; }
+-  void SetDebugProbe(uint64_t stream, uint64_t picture, unsigned sample)
+-  { if (DVBRIDGE::DebugDiagnosticsEnabled()) m_debugProbe={stream,picture,sample}; }
+   bool TestFramebuffer(struct gbm_bo* bo);
+   bool IsSelectedModeCommitted() const;
+   bool SetVideoMode(const RESOLUTION_INFO& res, struct gbm_bo* bo) override;
+@@ -72,9 +70,6 @@
+   static bool SupportsAtomicModesetting();
+ 
+ private:
+-  std::array<uint64_t,3> m_debugProbe{};
+-  void ReportDebugState(uint64_t stream, uint64_t picture, unsigned sample,
+-                        uint32_t fb, bool accepted, bool pending) noexcept;
+   bool DrmAtomicCommit(int fb_id, int flags, bool rendered, bool videoLayer,
+                        bool strict = false);
+   void FinishRequest(bool accepted);
+diff -ruN -x .git -x '*.orig' -x '*.rej' a/xbmc/windowing/gbm/WinSystemGbm.cpp b/xbmc/windowing/gbm/WinSystemGbm.cpp
+--- a/xbmc/windowing/gbm/WinSystemGbm.cpp
++++ b/xbmc/windowing/gbm/WinSystemGbm.cpp
+@@ -613,6 +613,8 @@
+ bool CWinSystemGbm::SetHDR(const VideoPicture* videoPicture)
+ {
+   m_queuedHdrMetadata = 0;
++  m_eotf = KODI::UTILS::Eotf::TRADITIONAL_SDR;
++  m_hdrBlob.Reset();
+   auto settingsComponent = CServiceBroker::GetSettingsComponent();
+   if (!settingsComponent)
+     return false;
+@@ -640,10 +642,8 @@
+       drm->AddProperty(connector, "HDR_OUTPUT_METADATA", 0);
+       drm->SetActive(true);
+ 
+-      m_hdrBlob.Reset();
+     }
+ 
+-    m_eotf = KODI::UTILS::Eotf::TRADITIONAL_SDR;
+     return false;
+   }
+ 
+@@ -651,12 +651,10 @@
+   if (videoPicture->color_transfer != AVCOL_TRC_SMPTE2084 &&
+       videoPicture->color_transfer != AVCOL_TRC_ARIB_STD_B67)
+   {
+-    m_eotf = KODI::UTILS::Eotf::TRADITIONAL_SDR;
+     return false;
+   }
+ 
+   KODI::UTILS::Eotf eotf = KODI::UTILS::GetEOTF(*videoPicture);
+-  m_eotf = eotf;
+ 
+   if (connector->SupportsProperty("HDR_OUTPUT_METADATA") && m_info &&
+       m_info->SupportsHDRStaticMetadataType1() && m_info->SupportsEOTF(eotf))
+@@ -667,8 +665,6 @@
+     hdr_metadata.hdmi_metadata_type1.eotf = static_cast<uint8_t>(eotf);
+     hdr_metadata.hdmi_metadata_type1.metadata_type = KODI::UTILS::HDMI_STATIC_METADATA_TYPE1;
+ 
+-    m_hdrBlob.Reset();
+-
+     if (hdr_metadata.hdmi_metadata_type1.eotf)
+     {
+       const AVMasteringDisplayMetadata* mdmd =
+@@ -732,10 +728,24 @@
+       m_hdrBlob = CDRMPropertyBlob(drm->GetFileDescriptor(), &hdr_metadata, sizeof(hdr_metadata));
+     }
+ 
+-    drm->AddProperty(connector, "HDR_OUTPUT_METADATA", m_hdrBlob.Get());
++    if (!m_hdrBlob.IsValid() ||
++        !drm->AddProperty(connector, "HDR_OUTPUT_METADATA", m_hdrBlob.Get()))
++    {
++      m_hdrBlob.Reset();
++      CLog::LogF(LOGWARNING, "HDR output rejected: metadata blob allocation or property staging failed");
++      return false;
++    }
++    m_eotf = eotf;
+     m_queuedHdrMetadata = m_hdrBlob.Get();
+     drm->SetActive(true);
+   }
++  else
++  {
++    CLog::LogF(LOGWARNING, "HDR output unavailable: metadata_property={} display_metadata={} eotf_supported={}",
++               connector->SupportsProperty("HDR_OUTPUT_METADATA"),
++               m_info && m_info->SupportsHDRStaticMetadataType1(),
++               m_info && m_info->SupportsEOTF(eotf));
++  }
+ 
+   return m_hdrBlob.IsValid();
+ }
+diff -ruN -x .git -x '*.orig' -x '*.rej' a/xbmc/windowing/gbm/WinSystemGbmGLESContext.cpp b/xbmc/windowing/gbm/WinSystemGbmGLESContext.cpp
+--- a/xbmc/windowing/gbm/WinSystemGbmGLESContext.cpp
++++ b/xbmc/windowing/gbm/WinSystemGbmGLESContext.cpp
+@@ -491,7 +491,6 @@
+       const bool asynchronous = CreateCB1GPUFence(submitted);
+       if (!asynchronous && !m_dvBridge->Advanced()) glFinish();
+       auto drm = std::dynamic_pointer_cast<CDRMAtomic>(m_DRM);
+-      if (drm) drm->SetDebugProbe(submitted.identity.stream,submitted.identity.picture,submitted.debugSample);
+       if (m_eglContext.TrySwapBuffers())
+       {
+         const bool link = !m_hdrDeepColorPrevious || (drm && drm->AddProperty(
+@@ -1791,6 +1790,7 @@
+   if (capabilities.processingKnown && capabilities.isDV &&
+       (m_dvSelection.route == DVBRIDGE::OutputRoute::HDR10 || !capabilities.nativeDV) &&
+       preferences.output != DVBRIDGE::OutputMode::HDR10 &&
++      preferences.output != DVBRIDGE::OutputMode::MasterReferenceIPT &&
+       preferences.output != DVBRIDGE::OutputMode::Disabled)
+   {
+     std::lock_guard lock(m_dvCapabilityMutex);
+@@ -1802,7 +1802,8 @@
+   const bool ordinaryBL = !source.profile || source.profile == 7 ||
+       source.compatibility == 1 || source.compatibility == 2 || source.compatibility == 4;
+   if (m_dvSelection.route == DVBRIDGE::OutputRoute::Vanilla && capabilities.processingKnown &&
+-      !ordinaryBL && preferences.output != DVBRIDGE::OutputMode::Disabled &&
++      (!ordinaryBL || (capabilities.isDV && preferences.output == DVBRIDGE::OutputMode::MasterReferenceIPT)) &&
++      preferences.output != DVBRIDGE::OutputMode::Disabled &&
+       !(source.el && !picture.doviEnhancement))
+   {
+     std::lock_guard lock(m_dvCapabilityMutex);
