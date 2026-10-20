@@ -2,8 +2,8 @@
 # Copyright (C) 2026-present Team LibreELEC (https://libreelec.tv)
 
 PKG_NAME="game.libretro.crocods"
-PKG_VERSION="0.0.1.35-Omega"
-PKG_SHA256="e27ded0dadd772e51ae9a066c420c6fd6058858d816ca51c816b095682285b96"
+PKG_VERSION="0.0.1.36-Omega"
+PKG_SHA256="264af34c89696e0d34632af9fce3f1cb04789f07c7fd384e00e1ee3199ea722a"
 PKG_REV="1"
 PKG_ARCH="any"
 PKG_LICENSE="MIT"
