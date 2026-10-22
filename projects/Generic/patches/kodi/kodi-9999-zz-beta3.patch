@@ -2848,10 +2848,11 @@ diff --git a/xbmc/cores/VideoPlayer/DVDDemuxers/test/CMakeLists.txt b/xbmc/cores
 index dbdbff9c45c88e395e83c98f28a269f15cf4fea1..d42936e9303b1aee7ccfa79087d6e30f81fb597e 100644
 --- a/xbmc/cores/VideoPlayer/DVDDemuxers/test/CMakeLists.txt
 +++ b/xbmc/cores/VideoPlayer/DVDDemuxers/test/CMakeLists.txt
-@@ -1,3 +1,4 @@
--set(SOURCES TestDVDDemuxUtils.cpp)
+@@ -1,4 +1,5 @@
+-set(SOURCES TestDVDDemuxClient.cpp
 +set(SOURCES TestBlurayOffsetMetadata.cpp
-+            TestDVDDemuxUtils.cpp)
++            TestDVDDemuxClient.cpp
+             TestDVDDemuxUtils.cpp)
  
  core_add_test_library(dvddemuxers_test)
 diff --git a/xbmc/cores/VideoPlayer/DVDDemuxers/test/TestBlurayOffsetMetadata.cpp b/xbmc/cores/VideoPlayer/DVDDemuxers/test/TestBlurayOffsetMetadata.cpp

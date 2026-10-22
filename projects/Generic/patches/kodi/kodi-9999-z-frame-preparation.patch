@@ -2725,10 +2725,10 @@ index 96bb99cd1c..2299c9589d 100644
  #include "utils/DVBridgeDiagnosticState.h"
  #endif
  
-@@ -30,6 +32,28 @@ namespace
- {
- const std::string SETTING_VIDEOSCREEN_LIMITGUISIZE = "videoscreen.limitguisize";
+@@ -28,6 +30,28 @@ using namespace KODI::WINDOWING::GBM;
  
+ namespace
+ {
 +#ifdef HAVE_DVBRIDGE
 +void ReportDisplayRoute(int fd, CDRMConnector* connector)
 +{

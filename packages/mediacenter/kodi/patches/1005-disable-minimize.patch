@@ -15,7 +15,7 @@ index 5d11805..ae10c4b 100644
        break;
  
      case TMSG_MINIMIZE:
--      CServiceBroker::GetWinSystem()->Minimize();
+-      winSystem->Minimize();
        break;
  
      case TMSG_EXECUTE_OS:
