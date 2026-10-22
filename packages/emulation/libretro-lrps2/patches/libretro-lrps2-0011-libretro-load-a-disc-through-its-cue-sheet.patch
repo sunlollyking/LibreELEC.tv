@@ -1,0 +1,72 @@
+From ad0d9ca6fb2cdc3125aa6c60997e2d94f5ac205f Mon Sep 17 00:00:00 2001
+From: Chris <meischris39@hotmail.com>
+Date: Thu, 22 Oct 2026 20:09:54 +0100
+Subject: [PATCH] libretro: Load a disc through its cue sheet
+
+The core offered .cue but opened the sheet itself as a disc image, so a
+game given as a .cue booted to the console's browser. Open the image the
+sheet names instead, for a single disc and for each disc in an .m3u.
+---
+ libretro/main.cpp | 39 +++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 39 insertions(+)
+
+diff --git a/libretro/main.cpp b/libretro/main.cpp
+index 3dd326e9b..36af1579f 100644
+--- a/libretro/main.cpp
++++ b/libretro/main.cpp
+@@ -625,6 +625,41 @@ static bool set_hw_render(retro_hw_context_type type)
+ 	return environ_cb(RETRO_ENVIRONMENT_SET_HW_RENDER, &hw_render);
+ }
+ 
++/* A cue sheet names the image holding the disc's data, which is what the
++   CDVD code reads */
++static wxString read_cue_file(const wxFileName& cue_file)
++{
++	wxTextFile cue_data;
++
++	if (!cue_data.Open(cue_file.GetFullPath()))
++	{
++		log_cb(RETRO_LOG_ERROR, "Cue sheet \"%s\" cannot be read\n", cue_file.GetFullPath().c_str());
++		return cue_file.GetFullPath();
++	}
++
++	for (wxString line = cue_data.GetFirstLine(); !cue_data.Eof(); line = cue_data.GetNextLine())
++	{
++		line.Trim(false);
++		if (!line.Upper().StartsWith("FILE "))
++			continue;
++
++		wxString name = line.Mid(5).Trim(false);
++		if (name.StartsWith("\""))
++			name = name.Mid(1).BeforeFirst('"');
++		else
++			name = name.BeforeFirst(' ');
++
++		wxFileName data_file(cue_file.GetPath(), name);
++		if (data_file.Exists())
++			return data_file.GetFullPath();
++
++		log_cb(RETRO_LOG_ERROR, "File in cue sheet \"%s\" was not found: %s\n", cue_file.GetFullPath().c_str(), data_file.GetFullPath().c_str());
++		break;
++	}
++
++	return cue_file.GetFullPath();
++}
++
+ static wxVector<wxString> read_m3u_file(const wxFileName& m3u_file)
+ {
+ 	wxString base_path, line;
+@@ -828,6 +863,10 @@ bool retro_load_game(const struct retro_game_info* game)
+ 		else
+ 			game_paths.push_back(game->path);
+ 
++		for (wxString& path : game_paths)
++			if (wxFileName(path).GetExt().Lower() == "cue")
++				path = read_cue_file(wxFileName(path));
++
+ 		DiskControl::disk_images.assign(game_paths.begin(), game_paths.end());
+ 
+ 		if (!(fp = fopen(game_paths[0], "rb")))
+-- 
+2.53.0
+
