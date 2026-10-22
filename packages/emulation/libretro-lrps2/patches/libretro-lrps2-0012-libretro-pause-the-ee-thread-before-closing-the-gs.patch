@@ -1,0 +1,171 @@
+From bae73fa318e34bad70e2cf956063667aacedd7db Mon Sep 17 00:00:00 2001
+From: Chris <meischris39@hotmail.com>
+Date: Thu, 22 Oct 2026 21:51:12 +0100
+Subject: [PATCH] libretro: Pause the EE thread before closing the GS
+
+The GS ring only drains in retro_run, on the frontend's thread, so when
+a game is closed the EE thread can be left waiting for it. The GS was
+then closed under the still-running EE thread, which crashed in WaitGS,
+as quitting TimeSplitters did every time. Kodi destroys the context
+before unloading the game, so that happens in context_destroy.
+
+Ask the EE thread to pause without blocking, and drain the ring until it
+has, before closing the GS. A context that comes back resumes it.
+---
+ libretro/main.cpp           | 25 +++++++++++++++++++++++++
+ pcsx2/GS.h                  |  2 ++
+ pcsx2/MTGS.cpp              | 19 ++++++++++++++++++-
+ pcsx2/gui/SysThreadBase.cpp | 16 ++++++++++++++++
+ pcsx2/gui/SysThreads.h      |  1 +
+ 5 files changed, 62 insertions(+), 1 deletion(-)
+
+diff --git a/libretro/main.cpp b/libretro/main.cpp
+index 36af1579f..c21cbf71b 100644
+--- a/libretro/main.cpp
++++ b/libretro/main.cpp
+@@ -553,13 +553,35 @@ void retro_reset(void)
+ 	DiskControl::eject_state = false;
+ }
+ 
++static bool ee_paused_for_context = false;
++
++// The EE thread can be waiting for the GS ring, which only drains on this
++// thread, so it is paused without blocking and the ring drained until it gets
++// there. Left running, it crashes once the GS is closed under it.
++static void pause_ee_thread(void)
++{
++	GetCoreThread().RequestPause();
++	while (!GetCoreThread().IsPaused())
++		GetMTGS().FlushRing();
++}
++
+ static void context_reset(void)
+ {
+ 	GetMTGS().OpenGS();
++
++	if (ee_paused_for_context)
++	{
++		ee_paused_for_context = false;
++		GetCoreThread().Resume();
++	}
+ }
+ 
+ static void context_destroy(void)
+ {
++	// The context is still current here, which the GS needs to drain the ring
++	ee_paused_for_context = !GetCoreThread().IsPaused();
++	pause_ee_thread();
++
+ 	GetMTGS().FinishTaskInThread();
+ 
+ 	while (pcsx2->HasPendingEvents())
+@@ -962,6 +984,9 @@ bool retro_load_game(const struct retro_game_info* game)
+ 
+ void retro_unload_game(void)
+ {
++	pause_ee_thread();
++	ee_paused_for_context = false;
++
+ 	//	GetMTGS().FinishTaskInThread();
+ 	//		GetMTGS().CloseGS();
+ 	GetMTGS().FinishTaskInThread();
+diff --git a/pcsx2/GS.h b/pcsx2/GS.h
+index ca9822bfd..b8120807b 100644
+--- a/pcsx2/GS.h
++++ b/pcsx2/GS.h
+@@ -269,6 +269,7 @@ public:
+ 
+ 	Semaphore		m_sem_OpenDone;
+ 	std::atomic<bool>	m_Opened;
++	bool			m_FlushOnly = false;
+ 
+ 	// These vars maintain instance data for sending Data Packets.
+ 	// Only one data packet can be constructed and uploaded at a time.
+@@ -290,6 +291,7 @@ public:
+ 	void SendGameCRC( u32 crc );
+ 	void WaitForOpen();
+ 	void Freeze( int mode, MTGS_FreezeData& data );
++	void FlushRing();
+ 
+ 	void SendSimpleGSPacket( MTGS_RingCommand type, u32 offset, u32 size, GIF_PATH path );
+ 	void SendSimplePacket( MTGS_RingCommand type, int data0, int data1, int data2 );
+diff --git a/pcsx2/MTGS.cpp b/pcsx2/MTGS.cpp
+index a9d6c0333..57736b5ac 100644
+--- a/pcsx2/MTGS.cpp
++++ b/pcsx2/MTGS.cpp
+@@ -245,8 +245,16 @@ void SysMtgsThread::ExecuteTaskInThread()
+ 		{
+ 			while (wxTheApp->HasPendingEvents())
+ 				wxTheApp->ProcessPendingEvents();
++
++			if (m_FlushOnly)
++			{
++				if (m_ReadPos.load(std::memory_order_relaxed) == m_WritePos.load(std::memory_order_acquire))
++					return;
++				break;
++			}
+ 		}
+-		StateCheckInThread();
++		if (!m_FlushOnly)
++			StateCheckInThread();
+ 
+ 		// note: m_ReadPos is intentionally not volatile, because it should only
+ 		// ever be modified by this thread.
+@@ -386,6 +394,15 @@ void SysMtgsThread::ExecuteTaskInThread()
+ 	}
+ }
+ 
++// Processes what the EE has queued for the GS, returning once the ring is empty
++// instead of at the next vsync, which may never come
++void SysMtgsThread::FlushRing()
++{
++	m_FlushOnly = true;
++	ExecuteTaskInThread();
++	m_FlushOnly = false;
++}
++
+ void SysMtgsThread::FinishTaskInThread()
+ {
+ 	if( m_SignalRingEnable.exchange(false) )
+diff --git a/pcsx2/gui/SysThreadBase.cpp b/pcsx2/gui/SysThreadBase.cpp
+index 60d9417eb..c742853fc 100644
+--- a/pcsx2/gui/SysThreadBase.cpp
++++ b/pcsx2/gui/SysThreadBase.cpp
+@@ -134,6 +134,22 @@ void SysThreadBase::Pause()
+ 	m_RunningLock.Release();
+ }
+ 
++// Asks the thread to pause without waiting for it, for a caller that has to keep
++// servicing the thread until it gets there.
++void SysThreadBase::RequestPause()
++{
++	if( IsSelf() || !IsRunning() ) return;
++
++	ScopedLock locker( m_ExecModeMutex );
++
++	if( m_ExecMode == ExecMode_Opened )
++	{
++		m_ExecMode = ExecMode_Pausing;
++		OnPause();
++		m_sem_event.Post();
++	}
++}
++
+ // Resumes the core execution state, or does nothing is the core is already running.  If
+ // settings were changed, resets will be performed as needed and emulation state resumed from
+ // memory savestates.
+diff --git a/pcsx2/gui/SysThreads.h b/pcsx2/gui/SysThreads.h
+index 8437566bb..f8e46d87c 100644
+--- a/pcsx2/gui/SysThreads.h
++++ b/pcsx2/gui/SysThreads.h
+@@ -102,6 +102,7 @@ public:
+ 	virtual void Suspend();
+ 	virtual void Resume();
+ 	virtual void Pause();
++	void RequestPause();
+ 
+ protected:
+ 	virtual void OnStart();
+-- 
+2.53.0
+
