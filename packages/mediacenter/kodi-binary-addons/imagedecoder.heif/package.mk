@@ -4,7 +4,7 @@
 PKG_NAME="imagedecoder.heif"
 PKG_VERSION="22.1.3-Piers"
 PKG_SHA256="186539681e6067fa24ed3c0f526301224de30edbbda24e347af3d79569603cdd"
-PKG_REV="4"
+PKG_REV="5"
 PKG_ARCH="any"
 PKG_LICENSE="GPL-2.0-or-later"
 PKG_SITE="https://github.com/xbmc/imagedecoder.heif"
@@ -13,9 +13,10 @@ PKG_DEPENDS_TARGET="toolchain tinyxml ${MEDIACENTER}:host libheif tinyxml2"
 PKG_SECTION=""
 PKG_SHORTDESC="imagedecoder.heif"
 PKG_LONGDESC="imagedecoder.heif"
-# gold leaves libde265's __cpu_model unresolved: it takes libgcc_s's compat
-# symbol for a definition and never pulls the real one from libgcc.a
-PKG_BUILD_FLAGS="-gold"
+# libde265 checks the CPU with __builtin_cpu_supports. Its __cpu_model is only
+# in libgcc.a (libgcc_s keeps a compat copy that can't be linked to), and g++
+# links a shared library against libgcc_s alone, so add libgcc.a at the end.
+PKG_CMAKE_OPTS_TARGET="-DCMAKE_CXX_STANDARD_LIBRARIES=-lgcc"
 
 PKG_IS_ADDON="yes"
 PKG_ADDON_TYPE="kodi.imagedecoder"
