@@ -2,9 +2,9 @@
 # Copyright (C) 2026-present Team LibreELEC (https://libreelec.tv)
 
 PKG_NAME="game.libretro.flycast"
-PKG_VERSION="0.1.0.70-Omega"
-PKG_SHA256="7af8c2595241a989d0ed267a775d74ae481261c981c4bc20eea6b6dc7fbdc660"
-PKG_REV="2"
+PKG_VERSION="0.1.0.71-Piers"
+PKG_SHA256="f1a5162c4acac0be17849a6723bf40ce4e86ea5d855664ce609915440775a400"
+PKG_REV="1"
 PKG_ARCH="any"
 PKG_LICENSE="GPL-2.0-or-later"
 PKG_SITE="https://github.com/kodi-game/game.libretro.flycast"

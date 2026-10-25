@@ -2,8 +2,8 @@
 # Copyright (C) 2024-present Team LibreELEC (https://libreelec.tv)
 
 PKG_NAME="game.libretro.swanstation"
-PKG_VERSION="1.0.0.42-Omega"
-PKG_SHA256="29c9f1effad9b70218885790ed710fbb62c68ca7989b7453ad2ffd1407ee5e28"
+PKG_VERSION="1.0.0.43-Piers"
+PKG_SHA256="e0bc16cd2fa51d4cd1c41fc631d45e626cb504012992169646e71fd05cba735d"
 PKG_REV="1"
 PKG_ARCH="any"
 PKG_LICENSE="GPL-3.0-only"

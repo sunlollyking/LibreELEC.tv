@@ -2,8 +2,8 @@
 # Copyright (C) 2016-present Team LibreELEC (https://libreelec.tv)
 
 PKG_NAME="game.libretro.picodrive"
-PKG_VERSION="2.05.0.63-Omega"
-PKG_SHA256="8e5bd8f2c8112ee17abca748ee1d2f659c8a4a0876a1cddf59057e71d447717d"
+PKG_VERSION="2.05.0.64-Piers"
+PKG_SHA256="395c7f6e9abda3a856759726a8a2a61a385d58b4cca6bfd9c1e55a7954b06480"
 PKG_REV="1"
 PKG_ARCH="any"
 PKG_LICENSE="LicenseRef-MAME"

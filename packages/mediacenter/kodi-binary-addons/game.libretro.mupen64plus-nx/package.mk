@@ -2,8 +2,8 @@
 # Copyright (C) 2025-present Team LibreELEC (https://libreelec.tv)
 
 PKG_NAME="game.libretro.mupen64plus-nx"
-PKG_VERSION="2.8.0.68-Omega"
-PKG_SHA256="92f06711b0fa35820e2f844e67d4fea4c932ebe69101c33c88923a932c713350"
+PKG_VERSION="3.0.0.70-Piers"
+PKG_SHA256="a8b81f06d01138bf02099b997f3d439e87f98b3eda06936a92b93c13edee5dea"
 PKG_REV="1"
 PKG_ARCH="any"
 PKG_LICENSE="GPL-2.0-or-later"

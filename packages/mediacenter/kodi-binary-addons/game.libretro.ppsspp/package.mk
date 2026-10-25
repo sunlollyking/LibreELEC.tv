@@ -2,8 +2,8 @@
 # Copyright (C) 2026-present Team LibreELEC (https://libreelec.tv)
 
 PKG_NAME="game.libretro.ppsspp"
-PKG_VERSION="0.0.1.32-Omega"
-PKG_SHA256="b95f1b804b0dea866ae5a251a7eb4db2d02c418bece7896c4ac97bb3923ccd4a"
+PKG_VERSION="0.0.1.33-Piers"
+PKG_SHA256="09ba8f0daeb7fb3fb91f907143b03ff9cba2b0917cb1b0c7d4a2b597da6b6254"
 PKG_REV="1"
 PKG_ARCH="any"
 PKG_LICENSE="GPL-2.0-or-later"

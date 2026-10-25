@@ -2,7 +2,7 @@
 # Copyright (C) 2026-present Team LibreELEC (https://libreelec.tv)
 
 PKG_NAME="libretro-ppsspp"
-PKG_VERSION="1265a3cef4463000b78af5b7c31ab5fd219f2344"
+PKG_VERSION="b4386554795949491a26e51b7d74082bb9b2470f"
 PKG_LICENSE="GPL-2.0-or-later"
 PKG_SITE="https://github.com/hrydgard/ppsspp"
 # A git source rather than an archive: the core needs its submodules -- glslang
