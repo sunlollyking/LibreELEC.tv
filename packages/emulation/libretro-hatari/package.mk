@@ -8,6 +8,7 @@ PKG_LICENSE="GPL-2.0-or-later"
 PKG_SITE="https://github.com/libretro/hatari"
 PKG_URL="https://github.com/libretro/hatari/archive/${PKG_VERSION}.tar.gz"
 PKG_DEPENDS_TARGET="toolchain zlib"
+PKG_DEPENDS_UNPACK="capsimg"
 PKG_LONGDESC="New rebasing of Hatari based on Mercurial upstream. Tries to be a shallow fork for easy upstreaming later on."
 PKG_TOOLCHAIN="cmake"
 
@@ -16,7 +17,8 @@ PKG_LIBPATH="src/${PKG_LIBNAME}"
 PKG_LIBVAR="HATARI_LIB"
 
 # The core is a target of the main CMake build now; only it is built, without
-# the emulator's own executable and tools or the libraries only they use.
+# the emulator's own executable and tools or the libraries only they use. IPF
+# disk images need the SPS decoder library built in, as libretro's own builds do.
 PKG_CMAKE_OPTS_TARGET="-DENABLE_LIBRETRO=ON \
                        -DENABLE_HATARI=OFF \
                        -DENABLE_TOOLS=OFF \
@@ -24,7 +26,10 @@ PKG_CMAKE_OPTS_TARGET="-DENABLE_LIBRETRO=ON \
                        -DENABLE_SDL3=0 \
                        -DCMAKE_DISABLE_FIND_PACKAGE_SDL2=ON \
                        -DCMAKE_DISABLE_FIND_PACKAGE_Readline=ON \
-                       -DCMAKE_DISABLE_FIND_PACKAGE_LibArchive=ON"
+                       -DCMAKE_DISABLE_FIND_PACKAGE_LibArchive=ON \
+                       -DENABLE_STATIC_CAPSIMAGE=ON \
+                       -DFETCHCONTENT_SOURCE_DIR_CAPSIMG=$(get_build_dir capsimg) \
+                       -DFETCHCONTENT_FULLY_DISCONNECTED=ON"
 
 makeinstall_target() {
   mkdir -p ${SYSROOT_PREFIX}/usr/lib/cmake/${PKG_NAME}
