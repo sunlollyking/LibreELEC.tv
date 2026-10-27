@@ -2,8 +2,8 @@
 # Copyright (C) 2026-present Team LibreELEC (https://libreelec.tv)
 
 PKG_NAME="game.libretro.px68k"
-PKG_VERSION="0.15.0.41-Omega"
-PKG_SHA256="08ab4a1cb3314e2916fa694b2cc1e7ee65e6115e249ab2e88e6b8330d7f9f838"
+PKG_VERSION="0.15.0.42-Piers"
+PKG_SHA256="c8fbfee70d063d34703cdc2a1987c7ebeaf9aab1a413bb0772d5938fb046c917"
 PKG_REV="1"
 PKG_ARCH="any"
 PKG_LICENSE="LicenseRef-Non-commercial"

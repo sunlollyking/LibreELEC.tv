@@ -2,8 +2,8 @@
 # Copyright (C) 2026-present Team LibreELEC (https://libreelec.tv)
 
 PKG_NAME="libretro-gearcoleco"
-PKG_VERSION="fd6c7ccca76358b41aff646f85a9c0bbaa69b36a"
-PKG_SHA256="54be3e86d4466f3bba4c168d56faba467360c00c0a405702bd5580987868cb87"
+PKG_VERSION="ec25661cc37d4dcdddfc769041352d057569ca6a"
+PKG_SHA256="1f2f125ea069504c133b76f4208ebca3596723740d4a6d8cef7241e44094ac26"
 PKG_LICENSE="GPL-3.0-only"
 PKG_SITE="https://github.com/drhelius/Gearcoleco"
 PKG_URL="https://github.com/drhelius/Gearcoleco/archive/${PKG_VERSION}.tar.gz"

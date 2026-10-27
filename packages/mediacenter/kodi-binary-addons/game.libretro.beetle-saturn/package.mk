@@ -2,8 +2,8 @@
 # Copyright (C) 2023-present Team LibreELEC (https://libreelec.tv)
 
 PKG_NAME="game.libretro.beetle-saturn"
-PKG_VERSION="1.32.1.63-Omega"
-PKG_SHA256="3e3ee4fa1640247473e4a6b8c82f81cffd28791909371be7359da5b16691829f"
+PKG_VERSION="1.32.1.64-Piers"
+PKG_SHA256="e45f91918bbb9d0ada7e6b813652b62bb77b3e9fb5f6625b2d5ad6f6edfb7ee4"
 PKG_REV="1"
 PKG_LICENSE="GPL-2.0-or-later"
 PKG_SITE="https://github.com/kodi-game/game.libretro.beetle-saturn"

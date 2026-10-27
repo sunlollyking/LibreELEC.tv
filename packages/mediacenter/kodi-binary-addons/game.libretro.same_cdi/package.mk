@@ -2,8 +2,8 @@
 # Copyright (C) 2026-present Team LibreELEC (https://libreelec.tv)
 
 PKG_NAME="game.libretro.same_cdi"
-PKG_VERSION="0.287.0.20-Omega"
-PKG_SHA256="03ca185f6760fae192c9d9886697eb46d3b4276f464d0318898af9e4c1f16e6b"
+PKG_VERSION="0.287.0.21-Piers"
+PKG_SHA256="08a128ee9700047b3520c1035f2eb94dc7fd60c06eda5d56b9d3aa2ad836d690"
 PKG_REV="1"
 PKG_ARCH="any"
 PKG_LICENSE="GPL-2.0-or-later"

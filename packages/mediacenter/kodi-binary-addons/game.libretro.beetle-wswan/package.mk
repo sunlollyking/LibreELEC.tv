@@ -2,8 +2,8 @@
 # Copyright (C) 2016-present Team LibreELEC (https://libreelec.tv)
 
 PKG_NAME="game.libretro.beetle-wswan"
-PKG_VERSION="0.9.35.56-Omega"
-PKG_SHA256="917cb9771e8f5f866980baca43befb21a8e04b371bfeb2e5934c00c9812ee24b"
+PKG_VERSION="0.9.35.57-Piers"
+PKG_SHA256="0992d1d8af14b5c4a76216c24d68efbe24b2174a01ee9890372c62dd2cdfe421"
 PKG_REV="1"
 PKG_ARCH="any"
 PKG_LICENSE="GPL-2.0-or-later"
