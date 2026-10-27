@@ -1,0 +1,114 @@
+From aa11d77ddc1113b0c855054101a31e71406b2596 Mon Sep 17 00:00:00 2001
+From: Chris <meischris39@hotmail.com>
+Date: Tue, 27 Oct 2026 18:19:51 +0000
+Subject: [PATCH] vidogl: keep a sprite's colour calculation bits out of its
+ dot colour
+
+Vdp1MaskSpritePixel() ORed the sprite's colour calculation value back
+into the pixel before splitting the pixel into dot colour and colour
+calculation. In the 8-bit sprite types whose colour calculation bits
+overlap the dot colour, that changed the colour index. Die Hard Arcade
+draws its FOX Interactive and SEGA logos as type 0xF sprites in its
+hi-res mode, and they came out nearly black.
+
+devMiyax's later YabaSanshiro drops the same lines.
+---
+ yabause/src/vidogl.c | 12 ------------
+ 1 file changed, 12 deletions(-)
+
+diff --git a/yabause/src/vidogl.c b/yabause/src/vidogl.c
+index b9bd2bb..b97d712 100644
+--- a/yabause/src/vidogl.c
++++ b/yabause/src/vidogl.c
+@@ -272,56 +272,48 @@ static INLINE void Vdp1MaskSpritePixel(int type, u16 * pixel, int *colorcalc)
+   {
+   case 0x0:
+   {
+-    *pixel |= (*colorcalc & 0x07) << 11;
+     *colorcalc = (*pixel >> 11) & 0x7;
+     *pixel &= 0x7FF;
+     break;
+   }
+   case 0x1:
+   {
+-    *pixel |= (*colorcalc & 0x03) << 11;
+     *colorcalc = (*pixel >> 11) & 0x3;
+     *pixel &= 0x7FF;
+     break;
+   }
+   case 0x2:
+   {
+-    *pixel |= (*colorcalc & 0x07) << 11;
+     *colorcalc = (*pixel >> 11) & 0x7;
+     *pixel &= 0x7FF;
+     break;
+   }
+   case 0x3:
+   {
+-    *pixel |= (*colorcalc & 0x03) << 11;
+     *colorcalc = (*pixel >> 11) & 0x3;
+     *pixel &= 0x7FF;
+     break;
+   }
+   case 0x4:
+   {
+-    *pixel |= (*colorcalc & 0x07) << 10;
+     *colorcalc = (*pixel >> 10) & 0x7;
+     *pixel &= 0x3FF;
+     break;
+   }
+   case 0x5:
+   {
+-    *pixel |= (*colorcalc & 0x01) << 11;
+     *colorcalc = (*pixel >> 11) & 0x1;
+     *pixel &= 0x7FF;
+     break;
+   }
+   case 0x6:
+   {
+-    *pixel |= (*colorcalc & 0x03) << 10;
+     *colorcalc = (*pixel >> 10) & 0x3;
+     *pixel &= 0x3FF;
+     break;
+   }
+   case 0x7:
+   {
+-    *pixel |= (*colorcalc & 0x09) << 7;
+     *colorcalc = (*pixel >> 9) & 0x7;
+     *pixel &= 0x1FF;
+     break;
+@@ -334,7 +326,6 @@ static INLINE void Vdp1MaskSpritePixel(int type, u16 * pixel, int *colorcalc)
+   }
+   case 0x9:
+   {
+-    *pixel |= (*colorcalc & 0x01) << 6;
+     *colorcalc = (*pixel >> 6) & 0x1;
+     *pixel &= 0x3F;
+     break;
+@@ -347,7 +338,6 @@ static INLINE void Vdp1MaskSpritePixel(int type, u16 * pixel, int *colorcalc)
+   }
+   case 0xB:
+   {
+-    *pixel |= (*colorcalc & 0x03) << 6;
+     *colorcalc = (*pixel >> 6) & 0x3;
+     *pixel &= 0x3F;
+     break;
+@@ -360,7 +350,6 @@ static INLINE void Vdp1MaskSpritePixel(int type, u16 * pixel, int *colorcalc)
+   }
+   case 0xD:
+   {
+-    *pixel |= (*colorcalc & 0x01) << 6;
+     *colorcalc = (*pixel >> 6) & 0x1;
+     *pixel &= 0xFF;
+     break;
+@@ -373,7 +362,6 @@ static INLINE void Vdp1MaskSpritePixel(int type, u16 * pixel, int *colorcalc)
+   }
+   case 0xF:
+   {
+-    *pixel |= (*colorcalc & 0x03) << 6;
+     *colorcalc = (*pixel >> 6) & 0x3;
+     *pixel &= 0xFF;
+     break;
+-- 
+2.53.0
+
