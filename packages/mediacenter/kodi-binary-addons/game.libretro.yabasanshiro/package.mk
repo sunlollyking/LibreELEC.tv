@@ -2,8 +2,8 @@
 # Copyright (C) 2026-present Team LibreELEC (https://libreelec.tv)
 
 PKG_NAME="game.libretro.yabasanshiro"
-PKG_VERSION="3.4.2.13-Omega"
-PKG_SHA256="36a8ac8a7c7da29996280947fc6aff466bc4abcfd49d9191db08fa78ef69b81d"
+PKG_VERSION="3.4.2.21-Piers"
+PKG_SHA256="8375baa91df63b25558f6616f119ffdc2c95502d842496d703fb81092b136a65"
 PKG_REV="1"
 PKG_ARCH="any"
 PKG_LICENSE="GPL-2.0-or-later"
