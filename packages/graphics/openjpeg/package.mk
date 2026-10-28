@@ -9,7 +9,6 @@ PKG_SITE="https://www.openjpeg.org"
 PKG_URL="https://github.com/uclouvain/openjpeg/archive/v${PKG_VERSION}.tar.gz"
 PKG_DEPENDS_TARGET="toolchain"
 PKG_LONGDESC="A JPEG 2000 codec, used by Poppler for the scanned pages of game manuals."
-PKG_TOOLCHAIN="cmake"
 PKG_BUILD_FLAGS="+pic"
 
 PKG_CMAKE_OPTS_TARGET="-DBUILD_SHARED_LIBS=OFF \
