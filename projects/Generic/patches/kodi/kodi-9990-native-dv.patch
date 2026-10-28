@@ -3139,7 +3139,7 @@ index 8ff226216d..bff3f22069 100644
  
      /**
       * @brief Get the underlying gbm_device
-@@ -127,9 +142,16 @@ public:
+@@ -127,11 +142,18 @@ public:
         */
        CGBMSurfaceBuffer& LockFrontBuffer();
  
@@ -3149,6 +3149,8 @@ index 8ff226216d..bff3f22069 100644
 +      void EndTransactionalMode();
 +
      private:
+       static constexpr size_t BUFFERS_HELD{2};
+ 
        gbm_surface* m_surface{nullptr};
        std::queue<std::unique_ptr<CGBMSurfaceBuffer>> m_buffers;
 +      std::unique_ptr<CGBMSurfaceBuffer> m_scanoutBuffer;
