@@ -1,4 +1,4 @@
-/* SPDX-License-Identifier: GPL-3.0-or-later */
+/* SPDX-License-Identifier: GPL-2.0-or-later */
 /* Validate parsed Dolby Vision metadata before handing reshaping parameters to libplacebo. */
 #include "dvbridge_placebo.h"
 #include "dvbridge_metadata.h"
@@ -162,6 +162,8 @@ bool dvbridge_reference_map(struct dvbridge_color *out, struct pl_color_space *n
     /* Explicit primaries prevent inference from inventing a source gamut. */
     mapped.color.hdr.prim = *pl_raw_primaries_get(PL_COLOR_PRIM_BT_2020);
     if(policy->mode==DVBRIDGE_MODE_HDR10_EXPERT){
+        /* Mastering-display black is not the absolute-PQ content floor. */
+        mapped.color.hdr.min_luma=PL_COLOR_HDR_BLACK;
         struct dvbridge_creative_plan creative;
         enum dvbridge_creative_status status=dvbridge_creative_resolve(&creative,m,bytes,policy);
         if(status==DVBRIDGE_CREATIVE_INVALID || status==DVBRIDGE_CREATIVE_UNSUPPORTED)return false;

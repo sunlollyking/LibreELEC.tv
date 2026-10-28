@@ -1,0 +1,241 @@
+From: CroqueMr
+Subject: [PATCH] libreelec-x86-DV R1.0.0 RC1 (changes since Beta5)
+
+https://github.com/CroqueMr/libreelec-x86-DV/releases/tag/R1.0.0-RC1
+---
+--- a/libavcodec/hevc/parser.c
++++ b/libavcodec/hevc/parser.c
+@@ -291,6 +291,11 @@
+             int first_slice_segment_in_pic_flag = buf[i] >> 7;
+             if (first_slice_segment_in_pic_flag) {
+                 if (!pc->frame_start_found) {
++                    /* Capture the real clock across a split NAL header before
++                     * later PES chunks overwrite its timestamp descriptor. */
++                    for (int off = i; off >= i - 5 - !((pc->state64 >> 6 * 8) & 0xFF) &&
++                         s->pts == AV_NOPTS_VALUE && s->dts == AV_NOPTS_VALUE; off--)
++                        ff_fetch_timestamp(s, off, 0, 0);
+                     pc->frame_start_found = 1;
+                 } else { // First slice of next frame found
+                     pc->frame_start_found = 0;
+--- a/libavformat/matroskadec.c
++++ b/libavformat/matroskadec.c
+@@ -3348,18 +3348,19 @@
+     return 0;
+ }
+ 
+-static int matroska_parse_dovi_streams(AVFormatContext *s)
++static int matroska_parse_dovi_streams(AVFormatContext *s, const AVPacket *pkt)
+ {
+     AVStream *bl_st = NULL, *el_st = NULL;
++    const AVPacketSideData *source_config = NULL;
+     AVStreamGroup *stg;
++    const uint8_t *data;
++    int remaining, length_size, has_rpu = 0, has_vcl = 0;
+     int err;
+ 
+-    /* Matroska has no explicit cross-track Dolby Vision reference, so the
+-     * pairing is recovered from the dvcC/dvvC config records. Find a single
+-     * HEVC track whose record declares a profile 7 enhancement layer
+-     * (el_present_flag=1) and a single sibling HEVC BL candidate. If either
+-     * side is ambiguous, leave the streams ungrouped. */
+-    if (s->nb_streams <= 1)
++    /* A configuration record may describe both layers from either track.
++     * Require Profile 7 signalling and actual EL/RPU access-unit evidence. */
++    if (s->nb_stream_groups || s->nb_streams <= 1 ||
++        s->streams[pkt->stream_index]->codecpar->codec_id != AV_CODEC_ID_HEVC)
+         return 0;
+ 
+     for (int i = 0; i < s->nb_streams; i++) {
+@@ -3373,29 +3374,57 @@
+         sd = av_packet_side_data_get(st->codecpar->coded_side_data,
+                                      st->codecpar->nb_coded_side_data,
+                                      AV_PKT_DATA_DOVI_CONF);
+-        if (sd) {
++        if (sd && sd->size >= sizeof(*dovi)) {
+             dovi = (const AVDOVIDecoderConfigurationRecord *)sd->data;
+-            if (dovi->dv_profile == 7 && dovi->el_present_flag) {
+-                /* bl_present_flag is not checked, because the files in the
+-                 * wild set it to 1 for EL stream, while the expectation, based
+-                 * on Dolby spec for MPEG-TS would be that it's set to 0.
+-                 * Ignore this, if we have EL track and single other video track
+-                 * it's safe to assume it's BL. */
+-                if (el_st)
+-                    return 0;
+-                el_st = st;
+-                continue;
+-            }
++            if (dovi->dv_profile != 7 || !dovi->el_present_flag || !dovi->rpu_present_flag)
++                return 0;
++            if (!source_config || st->index == pkt->stream_index)
++                source_config = sd;
+         }
+ 
+-        if (bl_st)
+-            return 0;
+-        bl_st = st;
++        if (st->index == pkt->stream_index)
++            el_st = st;
++        else {
++            if (bl_st)
++                return 0;
++            bl_st = st;
++        }
+     }
+ 
+-    if (!el_st || !bl_st)
++    if (!source_config || !el_st || !bl_st ||
++        el_st->codecpar->width > bl_st->codecpar->width ||
++        el_st->codecpar->height > bl_st->codecpar->height ||
++        el_st->codecpar->extradata_size < 23 || el_st->codecpar->extradata[0] != 1)
+         return 0;
+ 
++    length_size = (el_st->codecpar->extradata[21] & 3) + 1;
++    data = pkt->data;
++    remaining = pkt->size;
++    while (remaining >= length_size) {
++        unsigned size = 0;
++        for (int j = 0; j < length_size; j++)
++            size = (size << 8) | *data++;
++        remaining -= length_size;
++        if (size < 2 || size > remaining || (data[0] & 0x80) || !(data[1] & 7))
++            return 0;
++        has_vcl |= (data[0] >> 1) < 32;
++        has_rpu |= (data[0] >> 1) == 62;
++        data += size;
++        remaining -= size;
++    }
++    if (remaining || !has_rpu || !has_vcl)
++        return 0;
++
++    if (!av_packet_side_data_get(el_st->codecpar->coded_side_data,
++                                el_st->codecpar->nb_coded_side_data, AV_PKT_DATA_DOVI_CONF)) {
++        AVPacketSideData *sd = av_packet_side_data_new(&el_st->codecpar->coded_side_data,
++            &el_st->codecpar->nb_coded_side_data, AV_PKT_DATA_DOVI_CONF, source_config->size, 0);
++        if (!sd)
++            return AVERROR(ENOMEM);
++        memcpy(sd->data, source_config->data, source_config->size);
++        ffstream(el_st)->need_context_update = 1;
++    }
++
+     stg = avformat_stream_group_create(s, AV_STREAM_GROUP_PARAMS_DOLBY_VISION, NULL);
+     if (!stg)
+         return AVERROR(ENOMEM);
+@@ -3566,10 +3595,6 @@
+ 
+     matroska_convert_tags(s);
+ 
+-    res = matroska_parse_dovi_streams(s);
+-    if (res < 0)
+-        return res;
+-
+     return 0;
+ }
+ 
+@@ -4255,6 +4280,12 @@
+     pkt->pos = pos;
+     pkt->duration = lace_duration;
+ 
++    res = matroska_parse_dovi_streams(matroska->ctx, pkt);
++    if (res < 0) {
++        av_packet_unref(pkt);
++        return res;
++    }
++
+     res = ff_packet_list_put(&matroska->queue, pkt, NULL, 0);
+     if (res < 0) {
+         av_packet_unref(pkt);
+--- a/libavformat/mov.c
++++ b/libavformat/mov.c
+@@ -2675,9 +2675,15 @@
+     if (!tag)
+         return AVERROR(ENOMEM);
+ 
+-    int ret = mov_add_tref_id(tag, avio_rb32(pb));
+-    if (ret < 0)
+-        return ret;
++    /* Two distinct targets suffice to reject an ambiguous DV association. */
++    for (int64_t i = 0; i < atom.size / 4 && tag->nb_id < 2; i++) {
++        uint32_t id = avio_rb32(pb);
++        if (avio_feof(pb))
++            return AVERROR_INVALIDDATA;
++        int ret = mov_add_tref_id(tag, id);
++        if (ret < 0)
++            return ret;
++    }
+ 
+     return 0;
+ }
+@@ -11249,6 +11255,7 @@
+ static int mov_parse_dovi_streams(AVFormatContext *s)
+ {
+     int err;
++    unsigned reported = 0;
+ 
+     if (s->nb_streams <= 1)
+         return 0;
+@@ -11256,9 +11263,8 @@
+     /* Identify legacy dual-track Dolby Vision profile 7 carriage per Annex
+      * C of "Dolby Vision Streams Within the ISO Base Media File Format",
+      * v2.7.1. The 'vdep' track reference type is shared with depth video
+-     * and multi-view dependencies. The spec-mandated DV-specific sample
+-     * entry combined with the dvcC configuration record disambiguates
+-     * those uses. */
++     * and multi-view dependencies. Require the DV configuration record
++     * even when a muxer uses an ordinary HEVC sample entry. */
+     for (int i = 0; i < s->nb_streams; i++) {
+         AVStreamGroup *stg;
+         AVStream *st = s->streams[i];
+@@ -11268,16 +11274,38 @@
+         const AVPacketSideData *sd;
+         const AVDOVIDecoderConfigurationRecord *dovi;
+ 
+-        if (st->codecpar->codec_id != AV_CODEC_ID_HEVC || !tag)
+-            continue;
+-
+-        if (st->codecpar->codec_tag != MKTAG('d','v','h','e') &&
+-            st->codecpar->codec_tag != MKTAG('d','v','h','1'))
++        if (st->codecpar->codec_id != AV_CODEC_ID_HEVC)
+             continue;
+ 
+         sd = av_packet_side_data_get(st->codecpar->coded_side_data,
+                                      st->codecpar->nb_coded_side_data,
+                                      AV_PKT_DATA_DOVI_CONF);
++        if (sd && sd->size >= sizeof(*dovi)) {
++            const AVDOVIDecoderConfigurationRecord *config = (const void *)sd->data;
++            if (config->dv_profile == 7 && config->rpu_present_flag &&
++                config->el_present_flag && !config->bl_present_flag && reported++ < 16) {
++                const char *reason = !tag ? "no-vdep" : tag->nb_id != 1 ? "ambiguous-vdep" :
++                    st->codecpar->codec_tag != MKTAG('d','v','h','e') &&
++                    st->codecpar->codec_tag != MKTAG('d','v','h','1') &&
++                    st->codecpar->codec_tag != MKTAG('h','v','c','1') &&
++                    st->codecpar->codec_tag != MKTAG('h','e','v','1') ?
++                    "unsupported-sample-entry" : "declared";
++                av_log(s, AV_LOG_INFO, "DV MOV association: el_index=%d el_track=%d codec_tag=0x%08x "
++                       "vdep_count=%d target0=%u target1=%u reason=%s\n", st->index, st->id,
++                       st->codecpar->codec_tag, tag ? tag->nb_id : 0,
++                       tag && tag->nb_id ? tag->id[0] : 0,
++                       tag && tag->nb_id > 1 ? tag->id[1] : 0, reason);
++            }
++        }
++        if (!tag || tag->nb_id != 1)
++            continue;
++
++        if (st->codecpar->codec_tag != MKTAG('d','v','h','e') &&
++            st->codecpar->codec_tag != MKTAG('d','v','h','1') &&
++            st->codecpar->codec_tag != MKTAG('h','v','c','1') &&
++            st->codecpar->codec_tag != MKTAG('h','e','v','1'))
++            continue;
++
+         if (!sd)
+             continue;
+         dovi = (const AVDOVIDecoderConfigurationRecord *)sd->data;
+@@ -11291,7 +11319,8 @@
+         st_base = mov_find_reference_track(s, st, tag->id, tag->nb_id, 0);
+         if (!st_base) {
+             int loglevel = (s->error_recognition & AV_EF_EXPLODE) ? AV_LOG_ERROR : AV_LOG_WARNING;
+-            av_log(s, loglevel, "Failed to find base layer for Dolby Vision EL stream\n");
++            av_log(s, loglevel, "DV MOV association rejected: el_track=%d target=%u reason=missing-base\n",
++                   st->id, tag->id[0]);
+             if (s->error_recognition & AV_EF_EXPLODE)
+                 return AVERROR_INVALIDDATA;
+             continue;

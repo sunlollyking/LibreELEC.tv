@@ -1,4 +1,4 @@
-/* SPDX-License-Identifier: GPL-3.0-or-later */
+/* SPDX-License-Identifier: GPL-2.0-or-later */
 #ifndef DVBRIDGE_RENDER_H
 #define DVBRIDGE_RENDER_H
 #include <libplacebo/renderer.h>
@@ -8,15 +8,27 @@
 #include "cb1_master_reference.h"
 struct dvbridge_renderer;
 struct dvbridge_native_overlay;
-#ifdef CB1_ENABLE_MASTER_IPT
-#define DVBRIDGE_MASTER_IPT_API 1
-enum cb1_master_status dvbridge_render_master_reference_ipt(struct dvbridge_renderer *renderer,
-    const struct pl_frame *source,const void *metadata,size_t bytes,double pts,double el_pts,
-    struct dvbridge_geometry geometry,pl_tex target,bool flip,
-    const struct dvbridge_native_overlay *overlay);
-#endif
 
 struct cb1_ai_result;
+#define DVBRIDGE_L2_TRIMS_API 1
+/* Next-picture authored Standard/Master output only (default false).
+ * Reconstruction still consumes the original metadata. Adaptive/AI clears it. */
+void dvbridge_renderer_set_l2_trims_disabled(struct dvbridge_renderer *renderer,bool disabled);
+#define DVBRIDGE_SPATIAL_API 1
+/* Synchronous final fitting of an already processed, single-plane picture.
+ * The player owns its native filter and the returned texture. Keep both alive
+ * through the renderer's existing last-use fence; never pass packed DV bytes.
+ * Floating storage requires 32 bits/channel in Master, at least 16 elsewhere.
+ * Failure rejects this picture, without a second scaler or implicit retry. */
+typedef bool (*dvbridge_spatial_fit)(void *priv,const struct pl_frame *source,
+    const struct pl_frame *target,struct pl_frame *fitted);
+void dvbridge_renderer_set_spatial_fit(struct dvbridge_renderer *renderer,
+    dvbridge_spatial_fit fit,void *priv);
+
+enum cb1_master_status dvbridge_render_master_reference_ipt(struct dvbridge_renderer *renderer,
+    const struct pl_frame *source,const void *metadata,size_t bytes,double pts,double el_pts,
+    struct dvbridge_geometry geometry,pl_tex target,bool flip_y,
+    const struct dvbridge_native_overlay *overlay);
 enum cb1_master_status dvbridge_render_master_reference(struct dvbridge_renderer *renderer,
     const struct pl_frame *source,const void *metadata,size_t bytes,double pts,double el_pts,
     struct dvbridge_geometry geometry,pl_tex target,bool flip_y,
@@ -45,7 +57,7 @@ struct dvbridge_retirement_owner;
 #define DVBRIDGE_CM4_GPU_API 1
 /* Trim-only shader in linear 203-nit units. The caller retains the shader. */
 bool dvbridge_creative_cm4_shader(pl_shader shader,const struct dvbridge_cm4_coefficients *coefficients);
-#define DVBRIDGE_DV_POLICY_API 6
+#define DVBRIDGE_DV_POLICY_API 9
 enum dvbridge_output_generation { DVBRIDGE_ETSI_LEGACY_LITERAL=1, DVBRIDGE_SOURCE_METADATA=2,
     DVBRIDGE_RECONSTRUCTED_ENHANCED=3 };
 struct dvbridge_dv_policy_snapshot {
@@ -76,9 +88,11 @@ struct dvbridge_dv_policy_output {
     const void *output_metadata;
     size_t bytes;
     const struct dvbridge_candidate *candidate;
-    pl_tex intermediate;
+    pl_tex intermediate; /* May be source-sized; use the RGB accessor for a 4K consumer. */
     uint64_t resolve_serial;
 };
+/* Materialize output-sized PQ only for an RGB consumer. Borrowed until cancel. */
+pl_tex dvbridge_render_dv_policy_rgb(struct dvbridge_renderer *renderer);
 enum dvbridge_dv_policy_status {
     DVBRIDGE_DV_FAILED, DVBRIDGE_DV_UNSUPPORTED, DVBRIDGE_DV_BUSY,
     DVBRIDGE_DV_PENDING, DVBRIDGE_DV_READY, DVBRIDGE_DV_IDLE
@@ -110,10 +124,6 @@ void dvbridge_renderer_reset(struct dvbridge_renderer *renderer);
 #define CB1_OPTIMIZED_DV_API 1
 /* Select the next picture's DV composition. Default false; HDR10 is unchanged. */
 void dvbridge_renderer_set_optimized_dv(struct dvbridge_renderer *renderer, bool enabled);
-#define CB1_FAST_CHROMA_API 1
-/* Next-picture input chroma filter for every CB1 circuit. Default false; luma is unchanged. */
-void dvbridge_renderer_set_fast_chroma(struct dvbridge_renderer *renderer, bool enabled);
-
 #define CB1_FEL_FILTER_API 1
 /* Next-picture EL enlargement only. Default false retains the existing filter. */
 void dvbridge_renderer_set_fel_nearest(struct dvbridge_renderer *renderer, bool enabled);
@@ -149,7 +159,7 @@ bool dvbridge_render_packed(struct dvbridge_renderer *renderer, const struct pl_
                            struct dvbridge_geometry geometry, pl_tex target, bool flip_y);
 #define DVBRIDGE_NATIVE_OVERLAY_API 1
 /* Borrowed Kodi subtitle texture and sRGB transfer LUTs. Row zero is the logical bottom;
- * rect is a clipped, even-x screen rectangle in top-down 3840x2160 coordinates.
+ * rect is a clipped, even-x screen rectangle in top-down output coordinates.
  * An all-zero rectangle keeps the same shader ready without drawing a subtitle.
  * The caller retains textures until GPU completion. Video metadata is unchanged. */
 struct dvbridge_native_overlay {

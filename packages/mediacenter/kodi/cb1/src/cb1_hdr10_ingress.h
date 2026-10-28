@@ -1,4 +1,4 @@
-/* SPDX-License-Identifier: GPL-3.0-or-later */
+/* SPDX-License-Identifier: GPL-2.0-or-later */
 #ifndef CB1_HDR10_INGRESS_H
 #define CB1_HDR10_INGRESS_H
 #include <libplacebo/renderer.h>
@@ -36,6 +36,9 @@ enum cb1_ai_status cb1_hdr10_ingress_rgb(struct cb1_hdr10_ingress *ctx,
     const struct pl_frame *source,pl_tex *out);
 /* Direct source-plane downsampling, quantized through binary16 for the model. */
 enum cb1_ai_status cb1_hdr10_ingress_small(struct cb1_hdr10_ingress *ctx,
+    const struct pl_frame *source,pl_tex *out);
+/* Model preview with frozen intermediate UNORM16 and final binary16 rounding. */
+enum cb1_ai_status cb1_hdr10_ingress_preview_u16(struct cb1_hdr10_ingress *ctx,
     const struct pl_frame *source,pl_tex *out);
 #ifdef __cplusplus
 }

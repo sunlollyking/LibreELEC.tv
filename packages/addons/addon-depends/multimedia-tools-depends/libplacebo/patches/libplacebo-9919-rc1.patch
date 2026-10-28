@@ -1,0 +1,642 @@
+From: CroqueMr
+Subject: [PATCH] libreelec-x86-DV R1.0.0 RC1 (changes since Beta5)
+
+https://github.com/CroqueMr/libreelec-x86-DV/releases/tag/R1.0.0-RC1
+---
+--- a/src/dispatch.c
++++ b/src/dispatch.c
+@@ -31,6 +31,7 @@
+ enum {
+     TMP_PRELUDE,   // GLSL version, global definitions, etc.
+     TMP_CUSTOM_PRELUDE, // custom extension directives, before declarations
++    TMP_PRELUDE_TAIL, // precision and declarations, after the extensions
+     TMP_MAIN,      // main GLSL shader body
+     TMP_VERT_HEAD, // vertex shader inputs/outputs
+     TMP_VERT_BODY, // vertex shader body
+@@ -324,18 +325,6 @@
+     if (pass_params->type == PL_PASS_COMPUTE)
+         ADD(pre, "#extension GL_ARB_compute_shader : enable\n");
+ 
+-    // Enable this unconditionally if the GPU supports it, since we have no way
+-    // of knowing whether subgroups are being used or not
+-    if (gpu->glsl.subgroup_size) {
+-        ADD(pre, "#extension GL_KHR_shader_subgroup_basic : enable \n"
+-                 "#extension GL_KHR_shader_subgroup_vote : enable \n"
+-                 "#extension GL_KHR_shader_subgroup_arithmetic : enable \n"
+-                 "#extension GL_KHR_shader_subgroup_ballot : enable \n"
+-                 "#extension GL_KHR_shader_subgroup_shuffle : enable \n"
+-                 "#extension GL_KHR_shader_subgroup_clustered : enable \n"
+-                 "#extension GL_KHR_shader_subgroup_quad : enable \n");
+-    }
+-
+     // Enable all extensions needed for different types of input
+     bool has_ssbo = false, has_ubo = false, has_img = false, has_texel = false,
+          has_ext = false, has_nofmt = false, has_gather = false;
+@@ -394,7 +383,8 @@
+     if (has_gather && !gpu->glsl.gles)
+         ADD(pre, "#extension GL_ARB_texture_gather : enable\n");
+ 
+-    pl_str_builder_concat(pre, custom_pre);
++    pl_str_builder head = pre;
++    pre = dp->tmp[TMP_PRELUDE_TAIL];
+ 
+     if (gpu->glsl.gles) {
+         // Use 32-bit precision for floats if possible
+@@ -620,6 +610,19 @@
+     }
+ 
+     pl_str_builder glsl = dp->tmp[TMP_MAIN];
++    ADD_CAT(glsl, head);
++    // Enable this unconditionally if the GPU supports it, since we have no way
++    // of knowing whether subgroups are being used or not
++    if (gpu->glsl.subgroup_size) {
++        ADD(glsl, "#extension GL_KHR_shader_subgroup_basic : enable \n"
++                  "#extension GL_KHR_shader_subgroup_vote : enable \n"
++                  "#extension GL_KHR_shader_subgroup_arithmetic : enable \n"
++                  "#extension GL_KHR_shader_subgroup_ballot : enable \n"
++                  "#extension GL_KHR_shader_subgroup_shuffle : enable \n"
++                  "#extension GL_KHR_shader_subgroup_clustered : enable \n"
++                  "#extension GL_KHR_shader_subgroup_quad : enable \n");
++    }
++    ADD_CAT(glsl, custom_pre);
+     ADD_CAT(glsl, pre);
+ 
+     switch(pass_params->type) {
+@@ -632,6 +635,7 @@
+         bool has_loc = gpu->glsl.version >= 430;
+ 
+         // Set up a trivial vertex shader
++        ADD_CAT(vert_head, head);
+         ADD_CAT(vert_head, pre);
+         ADD(vert_body, "void main() {\n");
+         for (int i = 0; i < sh->vas.num; i++) {
+--- a/src/include/libplacebo/renderer.h
++++ b/src/include/libplacebo/renderer.h
+@@ -358,6 +358,8 @@
+     // CB policy opt-in: colour management consumes the current hook domain.
+     // Default false retains original source-domain handling. Matched ABI only.
+     bool cb1_hook_color_space;
++    // Exact 2x centered taps; caller validates fragment quad support.
++    bool cb1_quad_scaler;
+     // CB native transport opt-in. Reconstruct opponent components instead of
+     // RGB; a caller-provided output hook packs them with matching DM matrices.
+     // Requires 1:1 geometry, no color operations/overlays and matched headers.
+--- a/src/include/libplacebo/shaders/colorspace.h
++++ b/src/include/libplacebo/shaders/colorspace.h
+@@ -44,7 +44,7 @@
+ // Reconstruct normalized opponent components, without display-management color
+ // conversion. Caller owns their representation and subsequent transport.
+ #define PL_HAVE_CB1_DOVI_TRANSPORT 1
+-#define PL_HAVE_CB1_PROCESSING 9
++#define PL_HAVE_CB1_PROCESSING 10
+ 
+ // CB1-owned source contract. No decoder objects cross this boundary.
+ struct pl_cb1_dovi_processing {
+@@ -60,6 +60,8 @@
+ // Produces the reconstructed integer code replicated in RGB, without normalization.
+ PL_API bool pl_shader_dovi_reference_component(pl_shader sh,
+     const struct pl_cb1_dovi_reference *data,int component,pl_shader base,pl_shader enhancement);
++struct pl_frame;
++PL_API bool pl_cb1_dovi_reference_frame_supported(const struct pl_frame *frame, unsigned depth);
+ 
+ // Borrowed for shader preparation; null preserves the reference path.
+ PL_API void pl_shader_dovi_reconstruct_ex(pl_shader sh, struct pl_color_repr *repr,
+--- a/src/include/libplacebo/shaders/sampling.h
++++ b/src/include/libplacebo/shaders/sampling.h
+@@ -170,6 +170,8 @@
+     bool cb1_fp32_lut;
+     // Opt-in cache for the validated native transport interpolation behavior.
+     bool cb1_exact_lut_cache;
++    // Exact 2x centered taps; caller validates fragment quad support.
++    bool cb1_quad_scaler;
+ 
+ 
+     // This shader object is used to store the LUT, and will be recreated
+--- a/src/renderer.c
++++ b/src/renderer.c
+@@ -779,6 +779,7 @@
+ 
+     pl_assert(lut);
+     struct pl_sample_filter_params fparams = {
++        .cb1_quad_scaler = params->cb1_quad_scaler,
+         .filter      = *info.config,
+         .antiring    = params->antiringing_strength,
+         .no_widening = params->skip_anti_aliasing && usage != SAMPLER_LOWPASS,
+@@ -1769,6 +1770,43 @@
+         pass->params->lut || pass->rotation || pl_rect_w(pass->target.crop)!=w ||
+         pl_rect_h(pass->target.crop)!=h || w<=0 || h<=0) return false;
+     pl_tex planes[2]={0};
++    if(pass->params->cb1_fast_chroma){
++        pl_fmt fmt=pl_find_fmt(pass->rr->gpu,PL_FMT_UNORM,2,16,16,
++                              PL_FMT_CAP_RENDERABLE|PL_FMT_CAP_SAMPLEABLE|PL_FMT_CAP_LINEAR);
++        pl_tex chroma=fmt?get_fbo(pass,w/2,h/2,fmt,2,PL_DEBUG_TAG):NULL;
++        pl_shader sh=pl_dispatch_begin(pass->rr->dp);
++        bool ok=chroma && skip_reference_chroma_rows(pass,sh) &&
++            sh_dovi_p5_fast_grid(sh,data,image,true) &&
++            pl_dispatch_finish(pass->rr->dp,pl_dispatch_params(.shader=&sh,.target=chroma));
++        pl_dispatch_abort(pass->rr->dp,&sh);
++        if(!ok)return false;
++        pl_shader luma=pl_dispatch_begin_ex(pass->rr->dp,true);
++        sh=pl_dispatch_begin_ex(pass->rr->dp,true);
++        ok=skip_inactive_rows(pass,luma,h,true) && sh_dovi_p5_fast_grid(luma,data,image,false) &&
++            sh_dovi_p5_fast_output(sh,luma,chroma,w,h);
++        pl_dispatch_abort(pass->rr->dp,&luma);
++        if(!ok){pl_dispatch_abort(pass->rr->dp,&sh);return false;}
++        pass->img=(struct img){.sh=sh,.w=w,.h=h,.comps=3,.repr=pl_color_repr_rgb,
++            .color=image->color,.rect={0,0,w,h}};
++        pass->ref_rect=pass->img.rect;
++        pass_hook(pass,&pass->img,PL_HOOK_NATIVE);
++        return true;
++    }
++    if(pass->rr->gpu->glsl.subgroup_size && sh_dovi_reference_identity(data) &&
++       fmodf(pass->target.crop.y0,2.0f)==0.0f){
++        bool top_left=false;
++        for(int p=0;p<image->num_planes;p++)
++            if(image->planes[p].component_mapping[0]==1)top_left=image->planes[p].shift_y==-.5f;
++        pl_shader sh=pl_dispatch_begin_ex(pass->rr->dp,true);
++        /* Inactive rows must still reach the carrier output hook. */
++        bool ok=sh_dovi_reference_identity_output(sh,data,image,top_left);
++        if(!ok){pl_dispatch_abort(pass->rr->dp,&sh);return false;}
++        pass->img=(struct img){.sh=sh,.w=w,.h=h,.comps=3,.repr=pl_color_repr_rgb,
++            .color=image->color,.rect={0,0,w,h}};
++        pass->ref_rect=pass->img.rect;
++        pass_hook(pass,&pass->img,PL_HOOK_NATIVE);
++        return true;
++    }
+     pl_tex luma_el=NULL;
+     const struct pl_frame *el=image->enhancement_layer;
+     bool resize=data->residual && el && el->crop.x1*2==w && el->crop.y1*2==h;
+--- a/src/shaders/colorspace.c
++++ b/src/shaders/colorspace.c
+@@ -69,23 +69,27 @@
+ static bool cb1_colour_lookup(pl_shader sh, const struct pl_cb1_dovi_processing *p,
+                               bool encode)
+ {
+-    if (!p || !(p->groups & 8) || !p->pq_texture[encode]) return false;
+-    ident_t lut=sh_bind(sh,p->pq_texture[encode],PL_TEX_ADDRESS_CLAMP,
+-                       PL_TEX_SAMPLE_LINEAR,"cb1_colour_lut",NULL,NULL,NULL);
++    /* Public processing ABI: one 4096-entry table for each PQ direction. */
++    if (!p || !(p->groups & 8)) return false;
++    pl_tex texture = p->pq_texture[encode ? 1 : 0];
++    if (!texture) return false;
++    ident_t sample = sh_bind(sh, texture, PL_TEX_ADDRESS_CLAMP,
++                            PL_TEX_SAMPLE_LINEAR, "cb1_colour_lut", NULL, NULL, NULL);
++    const double domain[2][2] = {{0.02, 0.98}, {0.0000152587890625, 0.95}};
+     if (!encode) GLSL("vec3 cb1_pq_source=color.rgb;bool cb1_decode_coarse=false;\n");
+-    /* Per-fragment refinement is bounded: out-of-domain values stay dense. */
+-    GLSL("if (all(greaterThan(color.rgb, vec3("$"))) && "
+-         "all(lessThan(color.rgb, vec3("$")))) {\n",
+-         SH_FLOAT(encode ? 0.0000152587890625 : 0.02), SH_FLOAT(encode ? 0.95 : 0.98));
+-    if (encode) GLSL("vec3 cb1_pos=sqrt(sqrt(color.rgb));\n");
+-    else GLSL("cb1_decode_coarse=true;vec3 cb1_pos=color.rgb;\n");
+-    GLSL("cb1_pos=(cb1_pos*4095.0+vec3(0.5))/4096.0;\n"
+-         "color.rgb=vec3(texture("$",vec2(cb1_pos.r,0.5)).r,\n"
+-         "texture("$",vec2(cb1_pos.g,0.5)).r,texture("$",vec2(cb1_pos.b,0.5)).r);\n"
+-         "} else {\n",lut,lut,lut);
++    GLSL("if(all(greaterThan(color.rgb,vec3("$"))) && all(lessThan(color.rgb,vec3("$")))){\n",
++         SH_FLOAT(domain[encode][0]), SH_FLOAT(domain[encode][1]));
++    GLSL(encode ? "vec3 cb1_pos=sqrt(sqrt(color.rgb));\n" :
++                  "cb1_decode_coarse=true;vec3 cb1_pos=color.rgb;\n");
++    GLSL("cb1_pos=(cb1_pos*4095.0+vec3(0.5))/4096.0;\ncolor.rgb=vec3(\n");
++    const char *lanes[] = {"r", "g", "b"};
++    for (int c = 0; c != 3; c++)
++        GLSL("texture("$",vec2(cb1_pos.%s,0.5)).r%s\n", sample, lanes[c], c == 2 ? ");" : ",");
++    GLSL("}else{\n");
+     return true;
+ }
+ 
++
+ void pl_shader_set_alpha(pl_shader sh, struct pl_color_repr *repr,
+                          enum pl_alpha_mode mode)
+ {
+@@ -254,6 +258,40 @@
+ #endif
+ }
+ 
++/* Evaluate the processing ABI's axis tables and the remaining MMR cross terms.
++ * Keep axis/order accumulation and clamping identical to the numerical contract. */
++static bool cb1_reshape_texture(pl_shader sh, const struct pl_cb1_dovi_processing *p,
++                               const struct pl_reshape_data *curve, int channel, ident_t texture)
++{
++    if (!p || !texture) return false;
++    unsigned component = 1u << channel;
++    if (p->poly_components & component) {
++        ident_t row = SH_FLOAT((channel * 3 + 0.5) / 9.0);
++        ident_t low = SH_FLOAT_DYN(curve->pivots[0]);
++        ident_t high = SH_FLOAT_DYN(curve->pivots[curve->num_pivots - 1]);
++        GLSL("color[%d]=clamp(texture("$",vec2((sig[%d]*1023.0+0.5)/1024.0,"$")).r,"$","$");\n",
++             channel, texture, channel, row, low, high);
++        return true;
++    }
++    if (!(p->narrow_components & component)) return false;
++    GLSL("s="$";\n", SH_FLOAT_DYN(curve->mmr_constant[0]));
++    for (int axis = 0; axis != 3; axis++) {
++        ident_t row = SH_FLOAT((channel * 3 + axis + 0.5) / 9.0);
++        GLSL("s+=texture("$",vec2((sig[%d]*1023.0+0.5)/1024.0,"$")).r;\n", texture, axis, row);
++    }
++    GLSL("{vec4 cross1=vec4(sig.x*sig.y,sig.x*sig.z,sig.y*sig.z,sig.x*sig.y*sig.z);\n");
++    const char *terms[] = {"cross1", "cross1*cross1", "cross1*cross1*cross1"};
++    for (int order = 0; order < curve->mmr_order[0]; order++) {
++        ident_t weights = sh_var(sh, (struct pl_shader_var){.var=pl_var_vec4("cb1_cross"),
++            .data=&curve->mmr_coeffs[0][order][3]});
++        GLSL("s+=dot("$",%s);\n", weights, terms[order]);
++    }
++    ident_t low = SH_FLOAT_DYN(curve->pivots[0]);
++    ident_t high = SH_FLOAT_DYN(curve->pivots[curve->num_pivots - 1]);
++    GLSL("color[%d]=clamp(s,"$","$");}\n", channel, low, high);
++    return true;
++}
++
+ static void dovi_reshape(pl_shader sh, const struct pl_dovi_metadata *data,
+                          const struct pl_cb1_dovi_processing *processing)
+ {
+@@ -346,35 +384,7 @@
+             GLSL("color[%d] = sig[%d]; \n", c, c);
+             continue;
+         }
+-        if (processing && mmr_lut && (processing->poly_components&(1u<<c))) {
+-            ident_t row=SH_FLOAT((c*3+0.5)/9.0);
+-            ident_t lo=SH_FLOAT_DYN(comp->pivots[0]);
+-            ident_t hi=SH_FLOAT_DYN(comp->pivots[comp->num_pivots-1]);
+-            GLSL("color[%d]=clamp(texture("$",vec2((sig[%d]*1023.0+0.5)/1024.0,"$")).r,"$","$"); \n",
+-                c,mmr_lut,c,row,lo,hi);
+-            continue;
+-        }
+-        if (processing && mmr_lut &&
+-            (processing->narrow_components&(1u<<c))) {
+-            ident_t constant=SH_FLOAT_DYN(comp->mmr_constant[0]);
+-            GLSL("s = "$"; \n",constant);
+-            for (int input=0;input<3;input++) {
+-                ident_t row=SH_FLOAT((c*3+input+0.5)/9.0);
+-                GLSL("s += texture("$",vec2((sig[%d]*1023.0+0.5)/1024.0,"$")).r; \n",
+-                     mmr_lut,input,row);
+-            }
+-            GLSL("{ vec4 cross1=vec4(sig.x*sig.y,sig.x*sig.z,sig.y*sig.z,sig.x*sig.y*sig.z); \n");
+-            for (int order=0;order<comp->mmr_order[0];order++) {
+-                float values[4];
+-                memcpy(values,&comp->mmr_coeffs[0][order][3],sizeof(values));
+-                ident_t cross=sh_var(sh,(struct pl_shader_var){.var=pl_var_vec4("cb1_cross"),.data=values});
+-                if (order==0) GLSL("s += dot("$",cross1); \n",cross);
+-                if (order==1) GLSL("s += dot("$",cross1*cross1); \n",cross);
+-                if (order==2) GLSL("s += dot("$",cross1*cross1*cross1); \n",cross);
+-            }
+-            ident_t lo=SH_FLOAT_DYN(comp->pivots[0]);
+-            ident_t hi=SH_FLOAT_DYN(comp->pivots[comp->num_pivots-1]);
+-            GLSL("color[%d]=clamp(s,"$","$"); } \n",c,lo,hi);
++        if (cb1_reshape_texture(sh, processing, comp, c, mmr_lut)) {
+             continue;
+         }
+         if (reshape_univariate_mmr(sh, comp, c))
+--- a/src/shaders/dovi_reference.c
++++ b/src/shaders/dovi_reference.c
+@@ -2,6 +2,7 @@
+ #include "shaders.h"
+ #include <libplacebo/shaders/colorspace.h>
+ #include <libplacebo/renderer.h>
++#include <math.h>
+ #include "mmr_lut.h"
+ 
+ struct reference_mmr_key {
+@@ -236,8 +237,7 @@
+ }
+ 
+ /* Raw 4:2:0 grids, without normalization, interpolation or crop recentering. */
+-static bool reference_planes(pl_shader sh, const struct pl_frame *frame,
+-                             unsigned depth, ident_t raw[3])
++bool pl_cb1_dovi_reference_frame_supported(const struct pl_frame *frame, unsigned depth)
+ {
+     if (!frame || frame->num_planes < 2 || frame->num_planes > 3 ||
+         frame->field != PL_FIELD_NONE || frame->rotation || frame->crop.x0 || frame->crop.y0)
+@@ -249,23 +249,23 @@
+     unsigned storage = frame->repr.bits.sample_depth;
+     unsigned shift = frame->repr.bits.bit_shift;
+     if (!storage) storage = depth;
+-    if ((storage != 8 && storage != 16) || shift + depth > storage ||
++    if ((storage != 8 && storage != 16) || shift>storage || depth>storage-shift ||
+         (frame->repr.bits.color_depth && frame->repr.bits.color_depth != depth))
+         return false;
+     int chroma_phase=-1;
++    bool seen[3]={0};
+     for (int p = 0; p < frame->num_planes; p++) {
+         const struct pl_plane *plane = &frame->planes[p];
+         pl_tex tex = plane->texture;
+-        if (!tex || !tex->params.sampleable || tex->params.format->type != PL_FMT_UNORM)
++        if (!tex || !tex->params.sampleable || tex->params.d ||
++            tex->params.format->type != PL_FMT_UNORM || plane->components<1 || plane->components>4)
+             return false;
+-        ident_t sampler = sh_bind(sh, tex, PL_TEX_ADDRESS_CLAMP, PL_TEX_SAMPLE_NEAREST,
+-                                  "ref_plane", NULL, NULL, NULL);
+-        if (!sampler) return false;
+         for (int lane = 0; lane < plane->components; lane++) {
+             int c = plane->component_mapping[lane];
+             if (c < 0) continue;
+             int sw = c ? width / 2 : width, shgt = c ? height / 2 : height;
+-            if (c > 2 || raw[c] || tex->params.w < sw || tex->params.h < shgt ||
++            if (c > 2 || seen[c] || lane>=tex->params.format->num_components ||
++                tex->params.w < sw || tex->params.h < shgt ||
+                 plane->shift_x != (c ? -.5f : 0) ||
+                 (plane->shift_y != 0 && (!c || plane->shift_y != -.5f)) ||
+                 tex->params.format->component_depth[lane] != storage)
+@@ -275,13 +275,36 @@
+                 if(chroma_phase>=0 && chroma_phase!=phase)return false;
+                 chroma_phase=phase;
+             }
++            seen[c]=true;
++        }
++    }
++    return seen[0] && seen[1] && seen[2];
++}
++
++static bool reference_planes(pl_shader sh, const struct pl_frame *frame,
++                             unsigned depth, ident_t raw[3], bool exact_unpack)
++{
++    if(!pl_cb1_dovi_reference_frame_supported(frame,depth))return false;
++    int width=frame->crop.x1,height=frame->crop.y1;
++    unsigned storage=frame->repr.bits.sample_depth?frame->repr.bits.sample_depth:depth;
++    unsigned shift=frame->repr.bits.bit_shift;
++    for(int p=0;p<frame->num_planes;p++){
++        const struct pl_plane *plane=&frame->planes[p];pl_tex tex=plane->texture;
++        ident_t sampler=sh_bind(sh,tex,PL_TEX_ADDRESS_CLAMP,PL_TEX_SAMPLE_NEAREST,"ref_plane",NULL,NULL,NULL);
++        if(!sampler)return false;
++        for(int lane=0;lane<plane->components;lane++){
++            int c=plane->component_mapping[lane];if(c<0)continue;
++            int sw=c?width/2:width,shgt=c?height/2:height;
+             int channel = tex->params.format->sample_order[lane];
+             raw[c] = sh_fresh(sh, "ref_raw");
+             GLSLH("int "$"(ivec2 p){p=clamp(p,ivec2(0),ivec2(%d,%d));",
+                   raw[c], sw-1, shgt-1);
+             if (plane->flipped) GLSLH("p.y=%d-p.y;", shgt-1);
+-            GLSLH("return int(round(texelFetch("$",p,0)[%d]*%u.0))>>%uu;}\n",
+-                  sampler, channel, (1u<<storage)-1, shift);
++            if(exact_unpack)
++                GLSLH("return int(texelFetch("$",p,0)[%d]*(%u.0/%u.0)+(0.5/%u.0));}\n",
++                      sampler,channel,(1u<<storage)-1,1u<<shift,1u<<shift);
++            else GLSLH("return int(round(texelFetch("$",p,0)[%d]*%u.0))>>%uu;}\n",
++                       sampler, channel, (1u<<storage)-1, shift);
+         }
+     }
+     return raw[0] && raw[1] && raw[2];
+@@ -310,7 +333,7 @@
+     if (!data || !data->residual || !image || !image->enhancement_layer ||
+         !sh_require(sh,PL_SHADER_SIG_NONE,0,0)) return false;
+     ident_t raw[3]={0};
+-    if (!reference_planes(sh,image->enhancement_layer,data->el_depth,raw)) return false;
++    if (!reference_planes(sh,image->enhancement_layer,data->el_depth,raw,false)) return false;
+     GLSL("vec4 color=vec4(0.0,0.0,0.0,1.0);\n");
+     for (int c=chroma?1:0;c<(chroma?3:1);c++) {
+         ident_t vertical=reference_el_vertical(sh,raw[c],chroma);
+@@ -337,17 +360,60 @@
+     return horizontal;
+ }
+ 
+-bool sh_dovi_reference_grid(pl_shader sh, const struct pl_cb1_dovi_reference *data,
+-                            const struct pl_frame *image, bool chroma, pl_tex vertical,
+-                            pl_shader_obj *mmr_state)
++static bool p5_fast_component(pl_shader sh, const struct pl_cb1_dovi_reference *data,
++                              int c, ident_t signal, const ident_t bounds[2])
++{
++    const struct pl_cb1_dovi_component *comp=&data->comp[c];
++    GLSL("{uvec3 s=clamp(uvec3("$"().rgb),"$","$");"
++         "vec3 v=vec3(s)/1024.0;float result=0.0;\n",signal,bounds[0],bounds[1]);
++    for(int p=0;p+1<comp->num_pivots;p++){
++        float values[22]={0};
++        double unit=ldexp(1.0,-data->denom);
++        int count=comp->method[p]?22:3;
++        if(comp->method[p]){
++            values[0]=comp->constant[p]*unit;
++            for(int o=0;o<comp->order[p];o++)for(int t=0;t<7;t++)
++                values[1+o*7+t]=comp->mmr[p][o][t]*unit;
++        }else for(int i=0;i<3;i++)values[i]=comp->poly[p][i]*unit;
++        struct pl_var var=pl_var_float("p5_coefficients");var.dim_a=count;
++        ident_t k=sh_var(sh,(struct pl_shader_var){.var=var,.data=values,.dynamic=true});
++        if(p+2==comp->num_pivots)GLSL(p?"else{\n":"{\n");
++        else GLSL("%sif(s[%d]<"$"){\n",p?"else ":"",c,
++            sh_var(sh,(struct pl_shader_var){.var=pl_var_uint("p5_pivot"),
++                .data=&(uint32_t){comp->pivots[p+1]},.dynamic=true}));
++        if(!comp->method[p]){
++            GLSL("result="$"[0]",k);
++            if(comp->order[p]>=1)GLSL("+"$"[1]*v[%d]",k,c);
++            if(comp->order[p]>=2)GLSL("+"$"[2]*v[%d]*v[%d]",k,c,c);
++            GLSL(";\n");
++        }else{
++            GLSL("float t[7]=float[7](v.x,v.y,v.z,v.x*v.y,v.x*v.z,v.y*v.z,"
++                 "floor(v.x*v.y*v.z*1048576.0)/1048576.0);result="$"[0];\n",k);
++            for(int o=0;o<comp->order[p];o++)for(int t=0;t<7;t++){
++                GLSL("result+="$"[%d]*",k,1+o*7+t);
++                if(!o)GLSL("t[%d];\n",t);
++                else if(o==1)GLSL("(floor(t[%d]*t[%d]*1048576.0)/1048576.0);\n",t,t);
++                else GLSL("(floor((floor(t[%d]*t[%d]*1048576.0)/1048576.0)*t[%d]*1048576.0)/1048576.0);\n",t,t,t);
++            }
++        }
++        GLSL("}\n");
++    }
++    GLSL("int prediction=int(clamp(floor(result*65536.0),0.0,65535.0));"
++         "color.r=float(clamp((prediction+8)>>4,0,4095));}\n");
++    return true;
++}
++
++static bool reference_grid(pl_shader sh, const struct pl_cb1_dovi_reference *data,
++                           const struct pl_frame *image, bool chroma, pl_tex vertical, bool fast,
++                           pl_shader_obj *mmr_state)
+ {
+     if (!data || !image || !sh_require(sh,PL_SHADER_SIG_NONE,0,0)) return false;
+     GLSL("vec4 color;\n");
+     ident_t raw[3]={0}, el[3]={0};
+-    if (!reference_planes(sh,image,data->bl_depth,raw)) return false;
++    if (!reference_planes(sh,image,data->bl_depth,raw,false)) return false;
+     if (data->residual) {
+         const struct pl_frame *enhancement=image->enhancement_layer;
+-        if (!reference_planes(sh,enhancement,data->el_depth,el)) return false;
++        if (!reference_planes(sh,enhancement,data->el_depth,el,false)) return false;
+         int phase[2]={-1,-1};
+         for(int f=0;f<2;f++){
+             const struct pl_frame *layer=f?enhancement:image;
+@@ -399,13 +465,115 @@
+             esig=sh_fresh(sh,"ref_el_signal");
+             GLSLH("vec4 "$"(){return vec4(float("$"(ivec2("$"))));}\n",esig,el[c],position);
+         }
+-        if (!reference_component(sh,data,c,signal,esig,bounds,mmr_lut)) return false;
++        if (fast ? !p5_fast_component(sh,data,c,signal,bounds) :
++                   !reference_component(sh,data,c,signal,esig,bounds,mmr_lut)) return false;
+         if (chroma && c==1) GLSL("float ref_cb=color.r;\n");
+     }
+     if (chroma) {
+-        if(data->contract==2)GLSL("color=vec4(float(uint(ref_cb)|(uint(color.r)<<12u)),0.0,0.0,1.0);\n");
++        if(data->contract==2 && !fast)GLSL("color=vec4(float(uint(ref_cb)|(uint(color.r)<<12u)),0.0,0.0,1.0);\n");
+         else GLSL("color=vec4(ref_cb,color.r,0.0,1.0);\n");
+     }
++    if (chroma && fast) GLSL("color.rg/=4095.0;\n");
++    return true;
++}
++
++bool sh_dovi_reference_grid(pl_shader sh, const struct pl_cb1_dovi_reference *data,
++                            const struct pl_frame *image, bool chroma, pl_tex vertical,
++                            pl_shader_obj *mmr_state)
++{
++    return reference_grid(sh,data,image,chroma,vertical,false,mmr_state);
++}
++
++bool sh_dovi_p5_fast_grid(pl_shader sh, const struct pl_cb1_dovi_reference *data,
++                         const struct pl_frame *image, bool chroma)
++{
++    if(!data || data->residual || data->bl_depth!=10 || data->output_depth!=12)return false;
++    return reference_grid(sh,data,image,chroma,NULL,true,NULL);
++}
++
++bool sh_dovi_p5_fast_output(pl_shader sh, pl_shader luma, pl_tex chroma, int w, int h)
++{
++    if(!sh_require(sh,PL_SHADER_SIG_NONE,0,0))return false;
++    ident_t y=sh_subpass(sh,luma);
++    ident_t c=sh_bind(sh,chroma,PL_TEX_ADDRESS_CLAMP,PL_TEX_SAMPLE_LINEAR,"p5_chroma",NULL,NULL,NULL);
++    ident_t position=sh_attr_vec2(sh,"p5_position",&(pl_rect2df){0,0,w,h});
++    if(!y || !c || !position)return false;
++    ident_t fetch=sh_fresh(sh,"p5_fetch");
++    GLSLH("vec2 "$"(ivec2 p){p=clamp(p,ivec2(0),ivec2(%d,%d));"
++          "return round(texelFetch("$",p,0).rg*4095.0);}\n",fetch,w/2-1,h/2-1,c);
++    /* Five taps preserve the six-tap moments through cubic order. */
++    GLSL("ivec2 p=ivec2("$");int row=p.y/2;bool odd=(p.y&1)!=0;"
++         "vec2 a="$"(ivec2(p.x/2,row+(odd?-1:-2)));"
++         "vec2 d="$"(ivec2(p.x/2,row+(odd?-2:2)));"
++         "vec2 e="$"(ivec2(p.x/2,row+(odd?2:1)));"
++         "vec2 pos=vec2(float(p.x/2)+.5,float(row)+(odd?53.0/283.0:230.0/283.0)-float(!odd)+.5)/vec2(%d.0,%d.0);"
++         "vec2 b=texture("$",pos).rg*4095.0;"
++         "vec2 uv=clamp(floor((-(odd?27.0:4.0)*a+283.0*b-(odd?4.0:27.0)*e+4.0*d)/256.0+.5),0.0,4095.0);"
++         "vec4 color=vec4("$"().r,uv,4095.0)/4095.0;\n",
++         position,fetch,fetch,fetch,w/2,h/2,c,y);
++    return true;
++}
++
++bool sh_dovi_reference_identity(const struct pl_cb1_dovi_reference *data)
++{
++    if(!data || data->contract!=2 || data->residual || data->denom>23 ||
++       (data->bl_depth!=8 && data->bl_depth!=10) ||
++       (data->output_depth!=10 && data->output_depth!=12))return false;
++    for(int c=0;c<3;c++){
++        const struct pl_cb1_dovi_component *comp=&data->comp[c];
++        if(comp->num_pivots<2 || comp->num_pivots>9 ||
++           comp->pivots[0]>comp->pivots[comp->num_pivots-1] ||
++           comp->pivots[comp->num_pivots-1]>=(1u<<data->bl_depth))return false;
++        for(int p=0;p+1<comp->num_pivots;p++)
++            if(comp->method[p]!=0 || comp->order[p]!=1 || comp->poly[p][0]!=0 ||
++               comp->poly[p][1]!=(INT64_C(1)<<data->denom))return false;
++    }
++    return true;
++}
++
++bool sh_dovi_reference_identity_output(pl_shader sh,
++    const struct pl_cb1_dovi_reference *data, const struct pl_frame *image, bool top_left)
++{
++    if(!sh_glsl(sh).subgroup_size || !sh_dovi_reference_identity(data) ||
++       !sh_require(sh,PL_SHADER_SIG_NONE,0,0))return false;
++    sh_describe(sh,"Exact identity chroma quad reuse");
++    ident_t raw[3]={0};
++    if(!reference_planes(sh,image,data->bl_depth,raw,true))return false;
++    int32_t values[4]={data->comp[1].pivots[0],data->comp[2].pivots[0],
++        data->comp[1].pivots[data->comp[1].num_pivots-1],data->comp[2].pivots[data->comp[2].num_pivots-1]};
++    ident_t bounds=sh_var(sh,(struct pl_shader_var){.var=pl_var_ivec4("ref_identity_bounds"),.data=values,.dynamic=true});
++    ident_t fetch=sh_fresh(sh,"ref_identity_chroma");
++    GLSLH("ivec2 "$"(ivec2 p){return clamp(ivec2("$"(p),"$"(p)),"$".xy,"$".zw);}\n",
++        fetch,raw[1],raw[2],bounds,bounds);
++    const int widen=data->output_depth-data->bl_depth;
++    ident_t position=sh_attr_vec2(sh,"ref_identity_position",&(pl_rect2df){0,0,image->crop.x1,image->crop.y1});
++    if(!position)return false;
++    GLSL("ivec2 p=ivec2("$"),uv=ivec2(0);\n",position);
++    /* Both row phases share seven source rows within a fragment quad. */
++    GLSL("vec2 even=vec2(0.0),odd=vec2(0.0);if((p.x&1)==0 && (p.y&1)==0){\n");
++    const int weights[2][6]={{2,-12,65,222,-25,4},{4,-25,222,65,-12,2}};
++    const int half[8]={22,94,-524,2456,2456,-524,94,22};
++    for(int i=0;i<(top_left?8:7);i++){
++        GLSL("vec2 tap%d=vec2("$"(ivec2(p.x/2,p.y/2+%d)));\n",i,fetch,i-3);
++        if(top_left){
++            if(i==3)GLSL("even=tap%d*%u.0;\n",i,1u<<widen);
++            GLSL("odd+=%d.0*tap%d;\n",half[i],i);
++        }else{
++            if(i<6)GLSL("even+=%d.0*tap%d;\n",weights[0][i],i);
++            if(i>0)GLSL("odd+=%d.0*tap%d;\n",weights[1][i-1],i);
++        }
++    }
++    if(top_left)GLSL("odd=floor((odd+vec2(%u.0))/%u.0);\n",1u<<(11-widen),1u<<(12-widen));
++    else GLSL("even=floor((even+vec2(%u.0))/%u.0);odd=floor((odd+vec2(%u.0))/%u.0);\n",
++              1u<<(7-widen),1u<<(8-widen),1u<<(7-widen),1u<<(8-widen));
++    GLSL("}ivec2 vertical=subgroupQuadSwapVertical(ivec2(odd));uv=(p.y&1)==0?ivec2(even):vertical;"
++         "ivec2 adjacent=subgroupQuadSwapHorizontal(uv);if((p.x&1)!=0)uv=adjacent;\n");
++    uint32_t y_bounds[2]={data->comp[0].pivots[0],data->comp[0].pivots[data->comp[0].num_pivots-1]};
++    ident_t yy=sh_var(sh,(struct pl_shader_var){.var=pl_var_uvec2("ref_identity_luma_bounds"),.data=y_bounds,.dynamic=true});
++    GLSL("uint y=clamp(uint("$"(p)),"$".x,"$".y)<<%du;"
++         "vec4 color=vec4(float(y),vec2(clamp(uv,ivec2(0),ivec2(%u))),%u.0)/%u.0;\n",
++        raw[0],yy,yy,data->output_depth-data->bl_depth,(1u<<data->output_depth)-1,
++        (1u<<data->output_depth)-1,(1u<<data->output_depth)-1);
+     return true;
+ }
+ 
+--- a/src/shaders/sampling.c
++++ b/src/shaders/sampling.c
+@@ -1134,6 +1134,11 @@
+         !use_linear && N == 6 && !params->cb1_fp32_lut &&
+         (ratio[pass] == 2.0f || ratio[pass] == 4.0f);
+     ident_t exact_lut = 0;
++    bool quad_reuse = params->cb1_quad_scaler && centered && !use_linear &&
++        N == 6 && (comps == 0xF || comps == 0x7) && sh_glsl(sh).subgroup_size &&
++        ratio[pass] == 2.0f && ratio[1-pass] == 1.0f &&
++        src->rect.x0 == 0 && src->rect.y0 == 0 &&
++        src->rect.x1 == src->tex->params.w && src->rect.y1 == src->tex->params.h;
+     if (exact_cache) {
+         exact_lut = sh_lut(sh, sh_lut_params(
+             .object=&obj->exact_lut, .var_type=PL_VAR_FLOAT,
+@@ -1157,6 +1162,25 @@
+     PRECISE vec4 ws;                                                            \
+     float off;                                                                  \
+     ${vecType: comps} c;                                                        \
++    @if (quad_reuse) {                                                         \
++        @if (pass == SEP_HORIZ)                                                \
++            bool odd = (int(gl_FragCoord.x) & 1) != 0;                          \
++        @else                                                                  \
++            bool odd = (int(gl_FragCoord.y) & 1) != 0;                          \
++        vec4 f0 = textureLod($src_tex, base + pt * float(0), 0.0);             \
++        vec4 f2 = textureLod($src_tex, base + pt * float(2), 0.0);             \
++        vec4 f4 = textureLod($src_tex, base + pt * float(4), 0.0);             \
++        @if (pass == SEP_HORIZ) {                                              \
++            vec4 p0 = subgroupQuadSwapHorizontal(f0);                          \
++            vec4 p2 = subgroupQuadSwapHorizontal(f2);                          \
++            vec4 p4 = subgroupQuadSwapHorizontal(f4);                          \
++        @} else {                                                              \
++            vec4 p0 = subgroupQuadSwapVertical(f0);                            \
++            vec4 p2 = subgroupQuadSwapVertical(f2);                            \
++            vec4 p4 = subgroupQuadSwapVertical(f4);                            \
++        @}                                                                     \
++        vec4 last = odd ? textureLod($src_tex, base + pt * float(5), 0.0) : p4; \
++    @}                                                                         \
+     /* Mark the accumulators as `precise` to avoid accumulating the error. */   \
+     PRECISE float wsum = 0.0;                                                   \
+     PRECISE ${vecType: comps} ca = ${vecType: comps}(0.0);                      \
+@@ -1180,7 +1204,12 @@
+         off = float(n);                                                         \
+         @if (use_linear)                                                        \
+             off += ws[n % 4u + 1u];                                             \
+-        c = textureLod($src_tex, base + pt * off, 0.0).${swizzle: comps};       \
++        @if (quad_reuse) {                                                     \
++            c = ((n & 1u) == 0u ? (n == 0u ? f0 : n == 2u ? f2 : f4) :       \
++                n == 1u ? (odd ? p2 : p0) : n == 3u ? (odd ? p4 : p2) : last).${swizzle: comps}; \
++        @} else {                                                              \
++            c = textureLod($src_tex, base + pt * off, 0.0).${swizzle: comps};   \
++        @}                                                                     \
+         @if (use_ar) {                                                          \
+             if (n == ${uint: N} / 2u - 1u || n == ${uint: N} / 2u) {            \
+                 lo = min(lo, c);                                                \
+--- a/src/shaders.h
++++ b/src/shaders.h
+@@ -249,8 +249,14 @@
+ bool sh_dovi_reference_grid(pl_shader sh, const struct pl_cb1_dovi_reference *data,
+     const struct pl_frame *image, bool chroma, pl_tex vertical,
+     pl_shader_obj *mmr_state);
++bool sh_dovi_reference_identity(const struct pl_cb1_dovi_reference *data);
++bool sh_dovi_reference_identity_output(pl_shader sh,
++    const struct pl_cb1_dovi_reference *data, const struct pl_frame *image, bool top_left);
+ bool sh_dovi_reference_chroma(pl_shader sh, pl_tex chroma, unsigned depth, bool top_left, bool paired);
+ bool sh_dovi_reference_output(pl_shader sh, pl_shader luma, pl_tex chroma, unsigned depth, int w, int h, bool paired);
++bool sh_dovi_p5_fast_grid(pl_shader sh, const struct pl_cb1_dovi_reference *data,
++                         const struct pl_frame *image, bool chroma);
++bool sh_dovi_p5_fast_output(pl_shader sh, pl_shader luma, pl_tex chroma, int w, int h);
+ 
+ // Add the NLQ-decoded enhancement-layer residual to the (already reshaped)
+ // base layer. `el_signal` names a no-arg function (typically produced by

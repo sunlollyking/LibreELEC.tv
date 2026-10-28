@@ -1,4 +1,4 @@
-/* SPDX-License-Identifier: GPL-3.0-or-later */
+/* SPDX-License-Identifier: GPL-2.0-or-later */
 #ifndef CB1_HDR10_QUANTILES_H
 #define CB1_HDR10_QUANTILES_H
 #include "cb1_hdr10_extrema.h"
@@ -14,6 +14,8 @@ struct cb1_hdr10_quantiles *cb1_hdr10_quantiles_create(pl_gpu gpu);
 /* GPU bounds and RGB must belong to the same retained picture. */
 enum cb1_ai_status cb1_hdr10_quantiles_submit_pending(struct cb1_hdr10_quantiles *ctx,pl_tex pq,
     pl_tex bounds,struct cb1_ai_identity id);
+enum cb1_ai_status cb1_hdr10_quantiles_queue_source(struct cb1_hdr10_quantiles *ctx,
+    const struct pl_frame *source,pl_tex bounds,struct cb1_ai_identity id);
 enum cb1_ai_status cb1_hdr10_quantiles_poll_bounds(struct cb1_hdr10_quantiles *ctx,
     struct cb1_ai_identity id,struct cb1_hdr10_bounds bounds,float out[7]);
 void cb1_hdr10_quantiles_destroy(struct cb1_hdr10_quantiles **ctx);

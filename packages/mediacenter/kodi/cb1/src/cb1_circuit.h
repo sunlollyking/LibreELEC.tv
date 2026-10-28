@@ -1,4 +1,4 @@
-/* SPDX-License-Identifier: GPL-3.0-or-later */
+/* SPDX-License-Identifier: GPL-2.0-or-later */
 #ifndef CB1_CIRCUIT_H
 #define CB1_CIRCUIT_H
 #ifdef __cplusplus
@@ -16,6 +16,7 @@ enum cb1_circuit {
     CB1_DV_DV_MASTER_REFERENCE = 9,
     CB1_DV_DV_ADAPTIVE_B,
     CB1_DV_DV_MASTER_IPT,
+    CB1_DV_HDR10PLUS,
     CB1_CIRCUIT_COUNT
 };
 
