@@ -980,7 +980,7 @@ https://github.com/CroqueMr/libreelec-x86-DV/releases/tag/R1.0.0-RC1
  int drm_mode_create_aspect_ratio_property(struct drm_device *dev);
 --- a/include/drm/drm_hdr10plus.h
 +++ b/include/drm/drm_hdr10plus.h
-@@ -0,0 +1,47 @@
+@@ -0,0 +1,48 @@
 +/* SPDX-License-Identifier: GPL-2.0-or-later */
 +#ifndef DRM_HDR10PLUS_H
 +#define DRM_HDR10PLUS_H
@@ -1012,7 +1012,8 @@ https://github.com/CroqueMr/libreelec-x86-DV/releases/tag/R1.0.0-RC1
 +	if ((p[7] >> 6) > 1 || (p[7] & 1) ||
 +	    (p[30] & 0x3f) || !(p[30] & 0x40))
 +		return false;
-+	if ((p[7] >> 6) == 1 && (p[10] != 0 || p[11] != 255))
++	/* V1 slot 1 is luminance; slot 2 is a percentage or unavailable. */
++	if ((p[7] >> 6) == 1 && p[11] > 100 && p[11] != 255)
 +		return false;
 +	anchors = p[18] >> 4;
 +	if (anchors > 9)

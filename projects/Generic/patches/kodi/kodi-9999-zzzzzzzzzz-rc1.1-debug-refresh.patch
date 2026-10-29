@@ -1,0 +1,310 @@
+diff -ruN A/xbmc/cores/VideoPlayer/VideoRenderers/DVBridgeGLES.cpp B/xbmc/cores/VideoPlayer/VideoRenderers/DVBridgeGLES.cpp
+--- A/xbmc/cores/VideoPlayer/VideoRenderers/DVBridgeGLES.cpp	2026-10-29 19:36:48.003492957 +0000
++++ B/xbmc/cores/VideoPlayer/VideoRenderers/DVBridgeGLES.cpp	2026-10-29 19:36:48.043706095 +0000
+@@ -883,6 +883,9 @@
+   m_prepares = m_directFrames = m_presentations = m_failedPresentations = 0;
+   m_lastSummary = m_lastReported = m_rawELImports = m_rawELHits = 0;
+   m_hdr10plusDiagnostics = {};
++  m_hdr10plusAnalyzed = m_hdr10plusGenerated = m_hdr10plusAccepted = {};
++  m_hdr10plusSubmits = 0;
++  m_hdr10plusLight = {};
+   m_firstFrame = true;
+ }
+ 
+@@ -1330,7 +1333,7 @@
+     {
+       m_firstFrame = false;
+       m_lastSummary = DVBRIDGE::DiagnosticNowMs();
+-      DVBRIDGE::DiagnosticLog(LOGINFO, "DVBridge first frame: source={}x{} output={}x{} offset={},{} enhancement={} fel={} cm4={} direct={} bl_layout={} bl_texture={}x{} el={}x{} el_layout={} el_texture={}x{} bl_chroma={} el_chroma={} bl_uv_texture={}x{} el_uv_texture={}x{}",
++      DVBRIDGE::DiagnosticLog(LOGINFO, "DVBridge first frame: source={}x{} output={}x{} offset={},{} enhancement={} fel={} cm4={} direct={} bl_layout={} bl_texture={}x{} el={}x{} el_layout={} el_texture={}x{} bl_chroma={} el_chroma={} bl_uv_texture={}x{} el_uv_texture={}x{} bl_texture_ids={},{} el_texture_ids={},{}",
+           base.width, base.height, geometry.width, geometry.height, geometry.x, geometry.y,
+           enhancement != nullptr, bool(m_pendingInfo & CDVPlaybackInfo::FEL),
+           bool(m_pendingInfo & CDVPlaybackInfo::CM4), m_direct,
+@@ -1340,7 +1343,9 @@
+           enhancement ? enhancement->planes[0].width : 0, enhancement ? enhancement->planes[0].height : 0,
+           int(base.chromaLocation), enhancement ? int(enhancement->chromaLocation) : -1,
+           base.planes[1].width,base.planes[1].height,
+-          enhancement ? enhancement->planes[1].width : 0,enhancement ? enhancement->planes[1].height : 0);
++          enhancement ? enhancement->planes[1].width : 0,enhancement ? enhancement->planes[1].height : 0,
++          base.planes[0].texture,base.planes[1].texture,
++          enhancement ? enhancement->planes[0].texture : 0,enhancement ? enhancement->planes[1].texture : 0);
+     }
+   }
+   return m_prepared;
+@@ -1379,6 +1384,8 @@
+   { Failure("renderer-unavailable"); m_asyncEligible = false; return FrameStatus::Failed; }
+   const bool asyncSetting = m_context->AsyncPreparation(base.binding.stream);
+   auto policy = selected ? *selected : preferences.Policy();
++  if (policy.mode == DVBRIDGE_MODE_HDR10PLUS && !m_hdr10plusSubmits)
++    DVBRIDGE::DiagnosticReserveProgress();
+   if (policy.mode == DVBRIDGE_MODE_MASTER_REFERENCE && !allowPacked)
+   {
+     // The next GUI pass can create its composition target. No render was attempted.
+@@ -1700,7 +1707,11 @@
+     const pl_rect2d area{static_cast<int>(margins[0]), static_cast<int>(margins[2]),
+         rgb->params.w - static_cast<int>(margins[1]), rgb->params.h - static_cast<int>(margins[3])};
+     const auto status = cb1_hdr10plus_analysis_submit(m_hdr10plusAnalysis, rgb, area, m_pendingIdentity);
+-    if (status == CB1_HDR10PLUS_ANALYSIS_PENDING) return FrameStatus::Pending;
++    if (status == CB1_HDR10PLUS_ANALYSIS_PENDING)
++    {
++      if (DVBRIDGE::DiagnosticsEnabled()) ++m_hdr10plusSubmits;
++      return FrameStatus::Pending;
++    }
+     if (status == CB1_HDR10PLUS_ANALYSIS_BUSY) return FrameStatus::Busy;
+   }
+   m_failedIdentity = m_pendingIdentity;
+@@ -1713,7 +1724,20 @@
+ {
+   cb1_hdr10plus_statistics statistics{};
+   const auto status = cb1_hdr10plus_analysis_poll(m_hdr10plusAnalysis, m_pendingIdentity, &statistics);
+-  if (status == CB1_HDR10PLUS_ANALYSIS_PENDING) return FrameStatus::Pending;
++  if (status == CB1_HDR10PLUS_ANALYSIS_PENDING)
++  {
++    ReportHDR10Plus();
++    return FrameStatus::Pending;
++  }
++  if (status == CB1_HDR10PLUS_ANALYSIS_READY && DVBRIDGE::DiagnosticsEnabled())
++  {
++    Crc32 fingerprint;
++    fingerprint.Compute(reinterpret_cast<const char*>(statistics.histogram),sizeof(statistics.histogram));
++    fingerprint.Compute(reinterpret_cast<const char*>(&statistics.average_maxrgb),sizeof(statistics.average_maxrgb));
++    fingerprint.Compute(reinterpret_cast<const char*>(statistics.maxscl),sizeof(statistics.maxscl));
++    m_hdr10plusAnalyzed.Observe({m_pendingIdentity.stream,m_pendingIdentity.picture,m_pendingIdentity.revision},fingerprint);
++    m_hdr10plusLight={statistics.average_maxrgb,statistics.maxscl[0],statistics.maxscl[1],statistics.maxscl[2]};
++  }
+   AVDynamicHDRPlus metadata{};
+   if (status != CB1_HDR10PLUS_ANALYSIS_READY || !cb1_dv_hdr10plus_metadata_for_version(&metadata,
+       &m_hdr10plusReport, m_pendingMetadata.Data(), m_pendingMetadata.Size(), &statistics,
+@@ -1725,21 +1749,37 @@
+     return FrameStatus::Failed;
+   }
+   m_hdr10plusMetadata = metadata;
+-  if (DVBRIDGE::DiagnosticsEnabled() && m_hdr10plusDiagnostics.Due(DVBRIDGE::DiagnosticNowMs()))
+-  {
+-    Crc32 histogram;
+-    histogram.Compute(reinterpret_cast<const char*>(statistics.histogram),sizeof(statistics.histogram));
+-    DVBRIDGE::DiagnosticLog(LOGINFO,
+-        "CB1 HDR10+ analysis: source={}/{}/{} pixels={} avg_maxrgb={} maxscl={},{},{} histogram={:#x} version={} coverage={} reason={}",
+-        m_pendingIdentity.stream,m_pendingIdentity.picture,m_pendingIdentity.revision,
+-        statistics.count,statistics.average_maxrgb,statistics.maxscl[0],statistics.maxscl[1],statistics.maxscl[2],
+-        uint32_t(histogram),m_hdr10plusVersion,int(m_hdr10plusReport.coverage),int(m_hdr10plusReport.reason));
+-  }
++  ReportHDR10Plus();
+   m_prepared = true;
+   PreparedAudit();
+   return FrameStatus::Ready;
+ }
+ 
++void CDVBridgeGLES::ObserveHDR10PlusSubmission(const Submission& submission) const
++{
++  if (!DVBRIDGE::DiagnosticsEnabled() || !submission.hdr10plus) return;
++  Crc32 fingerprint;
++  fingerprint.Compute(reinterpret_cast<const char*>(submission.hdr10plus->data()),submission.hdr10plus->size());
++  m_hdr10plusGenerated.Observe({submission.identity.stream,submission.identity.picture,submission.identity.revision},fingerprint);
++}
++
++void CDVBridgeGLES::ReportHDR10Plus()
++{
++  const auto now=DVBRIDGE::DiagnosticNowMs();
++  if (!DVBRIDGE::DiagnosticsEnabled() || !m_hdr10plusDiagnostics.Due(now)) return;
++  const auto& a=m_hdr10plusAnalyzed;
++  const auto& g=m_hdr10plusGenerated;
++  const auto& p=m_hdr10plusAccepted;
++  if (DVBRIDGE::DiagnosticProgressLog(LOGINFO,
++      "CB1 HDR10+ progress: submitted={} analyzed={} stats_changes={} generated={} packet_changes={} accepted={} accepted_changes={} analysis={}/{}/{} packet={}/{}/{} accepted_source={}/{}/{} stats_crc={:#x} packet_crc={:#x} accepted_crc={:#x} avg_maxrgb={} maxscl={},{},{} version={} coverage={} reason={}",
++      m_hdr10plusSubmits,a.count,a.changes,g.count,g.changes,p.count,p.changes,
++      a.identity[0],a.identity[1],a.identity[2],g.identity[0],g.identity[1],g.identity[2],
++      p.identity[0],p.identity[1],p.identity[2],a.crc,g.crc,p.crc,
++      m_hdr10plusLight[0],m_hdr10plusLight[1],m_hdr10plusLight[2],m_hdr10plusLight[3],
++      m_hdr10plusVersion,int(m_hdr10plusReport.coverage),int(m_hdr10plusReport.reason)))
++    m_hdr10plusDiagnostics.Emitted(now);
++}
++
+ const dvbridge_hdr10_policy_output* CDVBridgeGLES::HDR10Output() const
+ {
+   return m_advanced && !m_dvPolicyActive ? dvbridge_render_policy_output(m_renderer) : nullptr;
+@@ -2266,6 +2306,12 @@
+   {
+     if (submission.hdr10plusAccepted)
+     {
++      if (DVBRIDGE::DiagnosticsEnabled() && submission.hdr10plus)
++      {
++        Crc32 fingerprint;
++        fingerprint.Compute(reinterpret_cast<const char*>(submission.hdr10plus->data()),submission.hdr10plus->size());
++        m_hdr10plusAccepted.Observe({submission.identity.stream,submission.identity.picture,submission.identity.revision},fingerprint);
++      }
+       output.flags |= CDVPlaybackInfo::HDR10PLUS;
+       if (m_hdr10plusReport.coverage >= CB1_DV_HDR10PLUS_L1) output.creativeEdited |= 1u<<1;
+       if (m_hdr10plusReport.coverage == CB1_DV_HDR10PLUS_L2) output.creativeEdited |= 1u<<2;
+@@ -2290,6 +2336,7 @@
+           m_hdr10plusReport.maximum_color_pq_error,bool(submission.hdr10plus),uint32_t(packet),
+           submission.identity.stream,submission.identity.picture,submission.identity.revision);
+     }
++    ReportHDR10Plus();
+   }
+   output.stream=m_pendingIdentity.stream; output.picture=m_pendingIdentity.picture;
+   const char* pixelAlgorithm=nullptr;
+@@ -2352,6 +2399,7 @@
+ #ifdef CB1_HAS_HDR10_AI
+   if (m_aiFrame && DVBRIDGE::DiagnosticsEnabled() && m_aiSummary.Due(DVBRIDGE::DiagnosticNowMs()))
+   {
++    m_aiSummary.Emitted(DVBRIDGE::DiagnosticNowMs());
+     const auto metrics=m_context->HDR10AI().Metrics();
+     DVBRIDGE::DiagnosticLog(LOGINFO,
+         "CB1 AI summary: engine={} circuit={} bundle={} source={}/{}/{} pictures={} readback_bytes={} inferences={} analysis_submit_us={} readback_latency_us={} inference_us={} render_submit_us={}",
+diff -ruN A/xbmc/cores/VideoPlayer/VideoRenderers/DVBridgeGLES.h B/xbmc/cores/VideoPlayer/VideoRenderers/DVBridgeGLES.h
+--- A/xbmc/cores/VideoPlayer/VideoRenderers/DVBridgeGLES.h	2026-10-29 19:36:48.003729824 +0000
++++ B/xbmc/cores/VideoPlayer/VideoRenderers/DVBridgeGLES.h	2026-10-29 19:36:48.044060558 +0000
+@@ -159,6 +159,7 @@
+       if (cb1_hdr10plus_vsif(packet.data(), &*m_hdr10plusMetadata,
+           m_guiComposed || m_overlayVisible, true) == CB1_HDR10PLUS_OK)
+         submission.hdr10plus = packet;
++      ObserveHDR10PlusSubmission(submission);
+     }
+     return submission;
+   }
+@@ -215,6 +216,8 @@
+ private:
+   FrameStatus BeginHDR10Plus();
+   FrameStatus PollHDR10Plus();
++  void ObserveHDR10PlusSubmission(const Submission& submission) const;
++  void ReportHDR10Plus();
+   int m_hdr10plusVersion{-1};
+   cb1_hdr10plus_analysis* m_hdr10plusAnalysis{};
+   std::optional<AVDynamicHDRPlus> m_hdr10plusMetadata;
+@@ -222,6 +225,10 @@
+   void BeginDiagnosticStream(uint64_t stream);
+   uint64_t m_diagnosticStream{};
+   DVBRIDGE::DiagnosticInterval m_hdr10plusDiagnostics;
++  DVBRIDGE::DiagnosticFrames m_hdr10plusAnalyzed, m_hdr10plusAccepted;
++  mutable DVBRIDGE::DiagnosticFrames m_hdr10plusGenerated;
++  uint64_t m_hdr10plusSubmits{};
++  std::array<double,4> m_hdr10plusLight{};
+   struct FELPrefetch;
+   std::shared_ptr<FELPrefetch> m_felPrefetch;
+   FrameStatus TakeFELPrefetch(const std::shared_ptr<AVFrame>& frame,
+diff -ruN A/xbmc/utils/DVBridgeDiagnosticLog.h B/xbmc/utils/DVBridgeDiagnosticLog.h
+--- A/xbmc/utils/DVBridgeDiagnosticLog.h	2026-10-29 19:36:47.990355958 +0000
++++ B/xbmc/utils/DVBridgeDiagnosticLog.h	2026-10-29 19:36:48.038299318 +0000
+@@ -78,6 +78,25 @@
+   catch (...) { return false; } // Diagnostics cannot escape into a C callback or playback.
+ }
+ 
++inline void DiagnosticReserveProgress() noexcept
++{
++  if (!DiagnosticsEnabled()) return;
++  try { std::lock_guard lock(diagnosticMutex); diagnosticSession.ReserveProgress(); }
++  catch (...) {}
++}
++
++template<class... Args>
++bool DiagnosticProgressLog(int level, fmt::format_string<Args...> format, Args&&... args) noexcept
++{
++  if (!DiagnosticsEnabled()) return false;
++  try
++  {
++    std::lock_guard lock(diagnosticMutex);
++    return WriteDiagnosticLocked(DiagnosticEvent::Progress, level, format, std::forward<Args>(args)...);
++  }
++  catch (...) { return false; }
++}
++
+ template<class... Args>
+ void DiagnosticFailureLog(const char* stage, bool changed, int level,
+                           fmt::format_string<Args...> format, Args&&... args) noexcept
+diff -ruN A/xbmc/utils/DVBridgeDiagnosticState.h B/xbmc/utils/DVBridgeDiagnosticState.h
+--- A/xbmc/utils/DVBridgeDiagnosticState.h	2026-10-29 19:36:47.966524631 +0000
++++ B/xbmc/utils/DVBridgeDiagnosticState.h	2026-10-29 19:36:48.015594516 +0000
+@@ -39,7 +39,7 @@
+   bool operator==(const DiagnosticProperty&) const = default;
+ };
+ 
+-enum class DiagnosticEvent { Normal, Failure, Final, Connection };
++enum class DiagnosticEvent { Normal, Failure, Final, Connection, Progress };
+ 
+ // One active native stream, shared by every producer. Pure observation: none of
+ // these facts are consumed by output selection, retry, or GPU synchronization.
+@@ -48,6 +48,7 @@
+ {
+ public:
+   void Open() { *this = {}; }
++  void ReserveProgress() { m_reserveProgress = true; }
+   void Candidate(uint64_t now)
+   {
+     if (!m_requested && !m_stream && !m_ended)
+@@ -89,9 +90,17 @@
+     if (now < m_lastNow) now = m_lastNow;
+     m_lastNow = now;
+     while (m_size && now >= m_lines[m_head] && now - m_lines[m_head] >= 30000)
+-    { m_head = (m_head + 1) % m_lines.size(); --m_size; }
+-    if (m_size == m_lines.size()) { ++m_suppressed; return false; }
+-    m_lines[(m_head + m_size) % m_lines.size()] = now;
++    {
++      m_progress -= m_progressLines[m_head];
++      m_head = (m_head + 1) % m_lines.size(); --m_size;
++    }
++    const bool progress = event == DiagnosticEvent::Progress;
++    if (m_size == m_lines.size() || (m_reserveProgress &&
++        (progress ? m_progress >= 6 : m_size - m_progress >= 18)))
++    { ++m_suppressed; return false; }
++    const auto slot = (m_head + m_size) % m_lines.size();
++    m_lines[slot] = now; m_progressLines[slot] = progress;
++    m_progress += progress;
+     ++m_size;
+     return true;
+   }
+@@ -131,6 +140,9 @@
+   const char* FirstFailure() const { return m_failure ? m_failure : "none"; }
+ private:
+   std::array<uint64_t, 24> m_lines{};
++  std::array<bool, 24> m_progressLines{};
++  size_t m_progress{};
++  bool m_reserveProgress{};
+   size_t m_head{}, m_size{};
+   uint64_t m_lastNow{}, m_suppressed{}, m_truncated{};
+   uint64_t m_stream{}, m_picture{}, m_revision{}, m_policy{};
+@@ -139,14 +151,28 @@
+   bool m_requested{}, m_paused{}, m_presented{}, m_firstFailure{}, m_ended{}, m_waited{};
+ };
+ 
++// Count distinct frame transactions, independently of log admission.
++struct DiagnosticFrames
++{
++  std::array<uint64_t, 3> identity{};
++  uint64_t count{}, changes{};
++  uint32_t crc{};
++  void Observe(std::array<uint64_t, 3> frame, uint32_t fingerprint)
++  {
++    if (!frame[0] || !frame[1] || frame == identity) return;
++    if (count && fingerprint != crc) ++changes;
++    identity=frame; crc=fingerprint; ++count;
++  }
++};
++
+ class DiagnosticInterval
+ {
+ public:
+-  bool Due(uint64_t now)
++  bool Due(uint64_t now) const
+   {
+-    if (m_reported && (now<m_last || now-m_last<5000)) return false;
+-    m_reported=true;m_last=now;return true;
++    return !m_reported || (now>=m_last && now-m_last>=5000);
+   }
++  void Emitted(uint64_t now) { m_reported=true; m_last=now; }
+ private:
+   uint64_t m_last{};
+   bool m_reported{};
+diff -ruN A/xbmc/windowing/gbm/WinSystemGbmGLESContext.cpp B/xbmc/windowing/gbm/WinSystemGbmGLESContext.cpp
+--- A/xbmc/windowing/gbm/WinSystemGbmGLESContext.cpp	2026-10-29 19:36:48.006949623 +0000
++++ B/xbmc/windowing/gbm/WinSystemGbmGLESContext.cpp	2026-10-29 19:36:48.051241731 +0000
+@@ -1652,7 +1652,8 @@
+       DVBRIDGE::DiagnosticLog(LOGINFO, "CB1 HDR10+ configured: pixel_mapping=none dynamic=pending-analysis framebuffer_bits={} range={}",
+           GetOutputBitDepth(), UseLimitedColor() ? "limited" : "full");
+     else
+-      DVBRIDGE::DiagnosticLog(LOGINFO, "DVBridge HDR10 configured: policy=Basic target={} nits origin={} curve=libplacebo-spline dynamic=L1-or-static inverse=false creative_trims=not-applied maxcll=unknown maxfall=unknown framebuffer_bits={} range={}",
++      DVBRIDGE::DiagnosticLog(LOGINFO, "DVBridge HDR10 configured: policy={} signal_target={} nits origin={} framebuffer_bits={} range={}",
++          m_dvSelection.policy.mode == DVBRIDGE_MODE_HDR10_EXPERT ? "Expert" : "Basic",
+         session.target.hdr.max_luma, session.output.level6 ? "RPU-L6" : "RPU-source-PQ",
+         GetOutputBitDepth(), UseLimitedColor() ? "limited" : "full");
+     if (m_hdrDeepColorPrevious)
