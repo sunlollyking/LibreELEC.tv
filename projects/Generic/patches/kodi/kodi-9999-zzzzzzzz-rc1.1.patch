@@ -1,0 +1,128 @@
+From: CroqueMr
+Subject: [PATCH] libreelec-x86-DV R1.0.0 RC1.1 (changes since RC1)
+
+https://github.com/CroqueMr/libreelec-x86-DV/releases/tag/R1.0.0-RC1.1
+---
+--- a/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVOutputSelection.h
++++ b/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVOutputSelection.h
+@@ -37,12 +37,16 @@
+   }
+   if (!caps.sourceKnown || !caps.isDV || preferences.output == OutputMode::Disabled)
+     return result;
++  auto policy = preferences.Policy();
++  // Display configuration is known before the first GPU import.
++  if (preferences.output == OutputMode::HDR10 && policy.mode == DVBRIDGE_MODE_HDR10_EXPERT &&
++      !preferences.ProfileValid())
++    return {OutputRoute::Vanilla, {}, OutputReason::TVProfileRequired};
+   if (!caps.processingKnown)
+   {
+     result.reason = OutputReason::NoGPUProcessing;
+     return result;
+   }
+-  auto policy = preferences.Policy();
+   if (policy.mode == DVBRIDGE_MODE_HDR10PLUS && !caps.hdr10plus)
+   {
+     if (!caps.hdr10 || !caps.processing[DVBRIDGE_MODE_HDR10_BASIC].usable)
+--- a/xbmc/cores/VideoPlayer/VideoRenderers/DVBridgeGLES.cpp
++++ b/xbmc/cores/VideoPlayer/VideoRenderers/DVBridgeGLES.cpp
+@@ -1315,10 +1315,15 @@
+     {
+       m_firstFrame = false;
+       m_lastSummary = DVBRIDGE::DiagnosticNowMs();
+-      DVBRIDGE::DiagnosticLog(LOGINFO, "DVBridge first frame: source={}x{} output={}x{} offset={},{} enhancement={} fel={} cm4={} direct={}",
++      DVBRIDGE::DiagnosticLog(LOGINFO, "DVBridge first frame: source={}x{} output={}x{} offset={},{} enhancement={} fel={} cm4={} direct={} bl_layout={} bl_texture={}x{} el={}x{} el_layout={} el_texture={}x{} bl_chroma={} el_chroma={}",
+           base.width, base.height, geometry.width, geometry.height, geometry.x, geometry.y,
+           enhancement != nullptr, bool(m_pendingInfo & CDVPlaybackInfo::FEL),
+-          bool(m_pendingInfo & CDVPlaybackInfo::CM4), m_direct);
++          bool(m_pendingInfo & CDVPlaybackInfo::CM4), m_direct,
++          int(base.layout), base.planes[0].width, base.planes[0].height,
++          enhancement ? enhancement->width : 0, enhancement ? enhancement->height : 0,
++          enhancement ? int(enhancement->layout) : -1,
++          enhancement ? enhancement->planes[0].width : 0, enhancement ? enhancement->planes[0].height : 0,
++          int(base.chromaLocation), enhancement ? int(enhancement->chromaLocation) : -1);
+     }
+   }
+   return m_prepared;
+@@ -1488,9 +1493,10 @@
+       m_auditRequested.Record(DVBRIDGE::DiagnosticNowMs(),"requested",m_auditSerial))
+   {
+     m_auditRequestedSerial=m_auditSerial;
+-    DVBRIDGE::DiagnosticLog(LOGINFO,"DVBridge policy requested: source={}/{}/{} policy={} requested={} effective={} eligible={} fallback={} l2_trims_disabled={}",
++    DVBRIDGE::DiagnosticLog(LOGINFO,"DVBridge policy requested: source={}/{}/{} policy={} requested={} effective={} eligible={} fallback={} l2_trims_disabled={} method={} tv_peak={} tv_panel={} tv_gamut={} tv_profile_valid={}",
+         base.binding.stream,base.binding.picture,base.binding.revision,revision,
+-        int(preferences.Policy().mode),int(policy.mode),!m_fallback,m_fallback,preferences.L2TrimsDisabled(policy.mode));
++        int(preferences.Policy().mode),int(policy.mode),!m_fallback,m_fallback,preferences.L2TrimsDisabled(policy.mode),
++        preferences.method,preferences.peak,preferences.panel,preferences.gamut,preferences.ProfileValid());
+     const auto admission=DVBRIDGE::StreamTelemetry::Read().transaction;
+     DVBRIDGE::DiagnosticLog(LOGINFO,"DVBridge output admission: generation={} source_known={} gpu_known={} native_dv={} hdr10={} requested={} effective={} reason={}",
+         admission.capabilities.generation,admission.capabilities.sourceKnown,admission.capabilities.processingKnown,
+--- a/xbmc/windowing/gbm/WinSystemGbmGLESContext.cpp
++++ b/xbmc/windowing/gbm/WinSystemGbmGLESContext.cpp
+@@ -1848,6 +1848,10 @@
+ 
+ bool CWinSystemGbmGLESContext::PrepareDVOutputFrame(const VideoPicture& picture)
+ {
++  const auto deferred = [](const char* stage) {
++    DVBRIDGE::DiagnosticStage(stage);
++    return false;
++  };
+   if (DVBRIDGE::DiagnosticsEnabled())
+   {
+     const auto binding = picture.doviSourceBinding.Valid() ? picture.doviSourceBinding : picture.doviMetadata.Binding();
+@@ -1856,9 +1860,9 @@
+       DVBRIDGE::ObserveDiagnostic(binding.stream,binding.picture,binding.revision,
+           preferences.revision,"output-preparation",preferences.output != DVBRIDGE::OutputMode::Disabled,false);
+   }
+-  if (m_dvStopPending) return false;
++  if (m_dvStopPending) return deferred("output-stop-pending");
+   if (!SupportsDVOutputMode() && DVBridgeRequested(&picture))
+-    return false; // A future-mode admission is not permission to activate at 1080p.
++    return deferred("output-mode-unavailable");
+   if (m_dvRollbackFailed || !RecoverDVActivation())
+   {
+     if (m_dvRollbackFailed)
+@@ -1873,20 +1877,23 @@
+       std::lock_guard lock(m_dvCapabilityMutex);
+       if (!m_dvFatalConsumed) m_dvFatalReason = DVBRIDGE::OutputReason::RestoreFailed;
+     }
+-    return false;
++    return deferred(m_dvRollbackFailed ? "output-restore-failed" : "output-restore-pending");
+   }
+   // A stopped file's GUI transaction must be presented before new video setup.
+-  if (m_dvOrdinaryFrame && HasPendingDVOutputSurface()) return false;
++  if (m_dvOrdinaryFrame && HasPendingDVOutputSurface())
++    return deferred("output-await-previous-scanout");
+   ResetDVActivation(&picture);
+   const auto preferences = DVBRIDGE::FrameOutputSettings();
+   const auto capabilities = GetDVOutputCapabilities(&picture, preferences);
+ #ifdef CB1_HAS_HDR10_AI
+   if ((!capabilities.isHDR10 || preferences.hdr10Source==DVBRIDGE::HDR10SourceMode::Native) &&
+-      m_dvContext && !m_dvContext->StopHDR10AI()) return false;
++      m_dvContext && !m_dvContext->StopHDR10AI()) return deferred("output-await-ai-retirement");
+ #endif
+-  if (capabilities.isDV && preferences.output != DVBRIDGE::OutputMode::Disabled &&
+-      (!capabilities.processingKnown || (picture.strDVELType == "FEL" && !picture.doviEnhancement)))
+-    return false;
++  if (capabilities.isDV && preferences.output != DVBRIDGE::OutputMode::Disabled)
++  {
++    if (!capabilities.processingKnown) return deferred("output-await-source-import");
++    if (picture.strDVELType == "FEL" && !picture.doviEnhancement) return deferred("output-await-fel");
++  }
+   auto selectionCapabilities = capabilities;
+   {
+     const auto masterBinding=picture.doviSourceBinding.Valid() ?
+@@ -1943,11 +1950,13 @@
+           DVBRIDGE::OutputReason::SourceIneligible : m_dvSelection.reason;
+     return false;
+   }
+-  if (!PollRejectedDVSurface()) return false;
++  if (!PollRejectedDVSurface()) return deferred("output-await-rejected-scanout");
+   // A format match cannot carry a fixed target across original source streams.
+   if (m_dvSelection.route == DVBRIDGE::OutputRoute::HDR10 && m_hdr10Session &&
+       m_hdr10SessionStream != picture.doviMetadata.Binding().stream)
+     return ConfigureHDR10Conversion(picture);
++  if (m_dvSelection.reason == DVBRIDGE::OutputReason::TVProfileRequired)
++    DVBRIDGE::DiagnosticStage("output-tv-profile-required");
+   if (m_dvConfiguredOutput == m_dvSelection.policy.mode && !m_dvOutputRetiring &&
+       (m_dvSelection.route == DVBRIDGE::OutputRoute::Vanilla || m_dvState.Captured() || m_hdrConversion))
+     return true;
