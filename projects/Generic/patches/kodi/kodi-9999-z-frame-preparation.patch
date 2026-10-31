@@ -978,7 +978,7 @@ index a226ddc6b9..8c29863648 100644
      }
      const double remaining = std::max(0.0,
 -        cutoff - m_dvdClock.GetClock() - m_displayLatency);
-+        cutoff - playing - (cb1Async ? std::min(0.0, m_displayLatency) : m_displayLatency));
++        cutoff - playing - (cb1Async ? std::min(0.0, m_displayLatency.load()) : m_displayLatency.load()));
      const double speed = m_dvdClock.GetClockSpeed();
 -    // Charge starvation only after the native presentation cutoff.
 +    // Charge starvation only after the admitted presentation cutoff.
@@ -1189,7 +1189,7 @@ index a226ddc6b9..8c29863648 100644
      ++iter;
 +    // Future display preparation and CPU scheduling phase are not presentation lateness.
 +    double latePts = cb1Async && !isPaused ?
-+        frameOnScreen + std::min(0.0, m_displayLatency) :
++        frameOnScreen + std::min(0.0, m_displayLatency.load()) :
 +        renderPts;
 +    latePts -= completionAge.value_or(0.0);
      while (iter != m_queued.end())
