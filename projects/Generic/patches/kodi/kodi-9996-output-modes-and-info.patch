@@ -4740,7 +4740,7 @@ index b7abe611a20439b5a7b65f2ae3dff26f714a9b83..aa4663eb63e191a94d5b3bfb93bcb5e1
    double m_latencyTweak = 0.0;
 -  /// Display latency updated in PrepareNextRender in DVD clock units, includes m_latencyTweak
 +  /// Native display latency in DVD clock units, includes m_latencyTweak.
-   double m_displayLatency = 0.0;
+   std::atomic<double> m_displayLatency = 0.0;
    std::atomic_int m_videoDelay = {};
  
 @@ -217,9 +232,12 @@ protected:
