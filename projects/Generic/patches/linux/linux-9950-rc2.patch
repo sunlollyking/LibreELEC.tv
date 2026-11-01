@@ -1,0 +1,966 @@
+From: CroqueMr
+Subject: [PATCH] libreelec-x86-DV R1.0.0 RC2 (changes since RC1.1 Debug refresh)
+
+https://github.com/CroqueMr/libreelec-x86-DV/releases/tag/untagged-27906d2c4291ba113414
+---
+diff -ruN a/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c b/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c
+--- a/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c	2026-11-01 15:39:28.743128145 +0000
++++ b/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c	2026-11-01 15:39:28.963832430 +0000
+@@ -7272,6 +7272,9 @@
+ 					const struct drm_display_mode *native_mode,
+ 					bool scale_enabled)
+ {
++	/* DRM has already expanded this timing for both eyes. */
++	if ((drm_mode->flags & DRM_MODE_FLAG_3D_MASK) == DRM_MODE_FLAG_3D_FRAME_PACKING)
++		return;
+ 	if (scale_enabled || (
+ 	    native_mode->clock == drm_mode->clock &&
+ 	    native_mode->htotal == drm_mode->htotal &&
+@@ -7460,8 +7463,10 @@
+ 	struct drm_display_mode *high_mode;
+ 	int timing_diff;
+ 
++	if (!mode || (mode->flags & DRM_MODE_FLAG_3D_MASK))
++		return false;
+ 	high_mode = get_highest_refresh_rate_mode(aconnector, false);
+-	if (!high_mode || !mode)
++	if (!high_mode)
+ 		return false;
+ 
+ 	timing_diff = high_mode->vtotal - mode->vtotal;
+@@ -7781,6 +7786,44 @@
+ 	return fill_hdr10plus_info_packet(blob, &stream->vsp_infopacket);
+ }
+ 
++static void amdgpu_dm_build_hdmi_vsif(const struct drm_connector *connector,
++				    const struct drm_display_mode *mode,
++				    struct dc_info_packet *out)
++{
++	struct hdmi_vendor_infoframe frame;
++	u8 buffer[HDMI_INFOFRAME_SIZE(VENDOR)];
++	ssize_t length;
++
++	memset(out, 0, sizeof(*out));
++	if (drm_hdmi_vendor_infoframe_from_display_mode(&frame, connector, mode))
++		return;
++	length = hdmi_vendor_infoframe_pack(&frame, buffer, sizeof(buffer));
++	if (length < 0)
++		return;
++	out->hb0 = buffer[0];
++	out->hb1 = buffer[1];
++	out->hb2 = buffer[2];
++	memcpy(out->sb, buffer + 3, length - 3);
++	out->valid = true;
++}
++
++static bool amdgpu_dm_stereo_mode_supported(const struct drm_connector *connector,
++					 const struct drm_display_mode *mode)
++{
++	u32 layout = mode->flags & DRM_MODE_FLAG_3D_MASK;
++
++	if (!layout)
++		return true;
++	if (connector->connector_type != DRM_MODE_CONNECTOR_HDMIA ||
++	    !connector->display_info.is_hdmi || !connector->display_info.has_hdmi_infoframe ||
++	    (mode->flags & DRM_MODE_FLAG_INTERLACE))
++		return false;
++
++	return layout == DRM_MODE_FLAG_3D_FRAME_PACKING ||
++	       layout == DRM_MODE_FLAG_3D_TOP_AND_BOTTOM ||
++	       layout == DRM_MODE_FLAG_3D_SIDE_BY_SIDE_HALF;
++}
++
+ static struct dc_stream_state *
+ create_stream_for_sink(struct drm_connector *connector,
+ 		       const struct drm_display_mode *drm_mode,
+@@ -7810,12 +7853,14 @@
+ 
+ 	if (amdgpu_dm_hdr10_validate(dm_state))
+ 		return NULL;
++	if (!amdgpu_dm_stereo_mode_supported(connector, drm_mode))
++		return NULL;
+ 	/* Dolby Vision and stereoscopic HDMI use different VSIF payloads. */
+ 	if (dm_state->dv_standard && (drm_mode->flags & DRM_MODE_FLAG_3D_MASK))
+ 		return NULL;
+ 
+ 	drm_mode_init(&mode, drm_mode);
+-	if (mode.flags & DRM_MODE_FLAG_3D_FRAME_PACKING)
++	if ((mode.flags & DRM_MODE_FLAG_3D_MASK) == DRM_MODE_FLAG_3D_FRAME_PACKING)
+ 		drm_mode_set_crtcinfo(&mode, CRTC_STEREO_DOUBLE);
+ 	memset(&saved_mode, 0, sizeof(saved_mode));
+ 
+@@ -7955,7 +8000,6 @@
+ 			stream->view_format = VIEW_3D_FORMAT_TOP_AND_BOTTOM;
+ 			break;
+ 		case DRM_MODE_FLAG_3D_SIDE_BY_SIDE_HALF:
+-		case DRM_MODE_FLAG_3D_SIDE_BY_SIDE_FULL:
+ 			stream->timing.timing_3d_format = TIMING_3D_FORMAT_SBS_SW_PACKED;
+ 			stream->view_format = VIEW_3D_FORMAT_SIDE_BY_SIDE;
+ 			break;
+@@ -7966,7 +8010,12 @@
+ 		default:
+ 			break;
+ 		}
+-		mod_build_hf_vsif_infopacket(stream, &stream->vsp_infopacket, false, false);
++		if (mode.flags & DRM_MODE_FLAG_3D_MASK) {
++			memset(&stream->vsp_infopacket, 0, sizeof(stream->vsp_infopacket));
++			mod_build_hf_vsif_infopacket(stream, &stream->vsp_infopacket, false, false);
++		} else {
++			amdgpu_dm_build_hdmi_vsif(connector, &mode, &stream->vsp_infopacket);
++		}
+ 		stream->timing.timing_3d_format = saved_3d;
+ 		stream->view_format = saved_view;
+ 		fill_hf_vsif_allm(stream);
+@@ -12401,6 +12450,8 @@
+ 	new_mode = &new_crtc_state->mode;
+ 
+ 	if (old_mode->clock       == new_mode->clock &&
++	    (old_mode->flags & DRM_MODE_FLAG_3D_MASK) ==
++	    (new_mode->flags & DRM_MODE_FLAG_3D_MASK) &&
+ 	    old_mode->hdisplay    == new_mode->hdisplay &&
+ 	    old_mode->vdisplay    == new_mode->vdisplay &&
+ 	    old_mode->htotal      == new_mode->htotal &&
+diff -ruN a/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_dv.c b/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_dv.c
+--- a/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_dv.c	2026-11-01 15:39:28.755643008 +0000
++++ b/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm_dv.c	2026-11-01 15:39:28.965914053 +0000
+@@ -26,6 +26,8 @@
+ 	/* Explicit families, not a >= comparison that enables unknown hardware. */
+ 	switch (version) {
+ 	case DCE_VERSION_11_22: /* Vega M only, not Polaris DCE11.2. */
++	case DCN_VERSION_4_01:
++	case DCN_VERSION_4_2: case DCN_VERSION_4_2B:
+ 	case DCN_VERSION_1_0: case DCN_VERSION_1_01:
+ 	case DCN_VERSION_2_0: case DCN_VERSION_2_01: case DCN_VERSION_2_1:
+ 	case DCN_VERSION_3_0: case DCN_VERSION_3_01:
+@@ -44,11 +46,19 @@
+ {
+ 	struct amdgpu_device *adev = drm_to_adev(connector->base.dev);
+ 
+-	if (!adev->dm.dc ||
+-	    !dv_display_supported(adev->dm.dc->ctx->dce_version) ||
+-	    connector->base.connector_type != DRM_MODE_CONNECTOR_HDMIA ||
+-	    !connector->dc_link ||
+-	    connector->dc_link->connector_signal != SIGNAL_TYPE_HDMI_TYPE_A)
++	const bool family = adev->dm.dc &&
++		dv_display_supported(adev->dm.dc->ctx->dce_version);
++	const bool hdmi = connector->base.connector_type == DRM_MODE_CONNECTOR_HDMIA &&
++		connector->dc_link &&
++		connector->dc_link->connector_signal == SIGNAL_TYPE_HDMI_TYPE_A;
++
++	/* Attachment runs once per connector, including rejected families. */
++	drm_info(connector->base.dev,
++		 "DVBridge: AMD capability connector=%u dce=0x%x family_supported=%u native_hdmi=%u dv_parameter=%u\n",
++		 connector->base.base.id,
++		 adev->dm.dc ? adev->dm.dc->ctx->dce_version : 0,
++		 family, hdmi, dv_standard);
++	if (!family || !hdmi)
+ 		return;
+ 
+ 	if (dv_standard) {
+@@ -333,6 +343,20 @@
+ {
+ 	const struct dm_plane_state *dm = to_dm_plane_state(p);
+ 	const struct dc_plane_state *dc = dm->dc_state;
++	const struct dc *display = dc && dc->ctx ? dc->ctx->dc : NULL;
++	const struct dc_cm2_func_luts *mcm;
++
++	if (!display || display->debug.always_scale)
++		return false;
++	if (display->config.use_spl && !display->debug.disable_spl &&
++	    (display->debug.force_sharpness == SHARPNESS_ZERO ||
++	     (display->debug.force_sharpness == SHARPNESS_CUSTOM &&
++	      (display->debug.force_sharpness_level || dc->adaptive_sharpness_en))))
++		return false;
++	mcm = &dc->mcm_luts;
++	/* The VIDMEM union contains a GPU address, not a kernel LUT pointer. */
++	if (mcm->lut3d_data.lut3d_src != DC_CM2_TRANSFER_FUNC_SOURCE_SYSMEM)
++		return false;
+ 
+ 	return p->plane->type != DRM_PLANE_TYPE_CURSOR && p->fb &&
+ 		(p->fb->format->format == DRM_FORMAT_XRGB8888 ||
+@@ -350,7 +374,13 @@
+ 		!dm->degamma_lut && !dm->ctm && !dm->shaper_lut && !dm->lut3d &&
+ 		!dm->blend_lut && dv_identity_tf(dm->degamma_tf) &&
+ 		dv_identity_tf(dm->shaper_tf) && dv_identity_tf(dm->blend_tf) &&
+-		dm->hdr_mult == AMDGPU_HDR_MULT_DEFAULT && dc &&
++		dm->hdr_mult == AMDGPU_HDR_MULT_DEFAULT &&
++		!dc->mcm_lut1d_enable &&
++		dc->mcm_shaper_3dlut_setting == DC_CM2_SHAPER_3DLUT_SETTING_BYPASS_ALL &&
++		(!mcm->shaper || mcm->shaper->type == TF_TYPE_BYPASS) &&
++		(!mcm->lut1d_func || mcm->lut1d_func->type == TF_TYPE_BYPASS) &&
++		(!mcm->lut3d_data.lut3d_func || !mcm->lut3d_data.lut3d_func->state.bits.initialized) &&
++		!mcm->lut3d_data.mpc_3dlut_enable && !mcm->lut3d_data.rmcm_3dlut_enable &&
+ 		dc->visible && !dc->horizontal_mirror && dc->rotation == ROTATION_ANGLE_0 &&
+ 		!dc->per_pixel_alpha && !dc->global_alpha &&
+ 		dc->gamma_correction.is_identity &&
+@@ -379,7 +409,11 @@
+ 
+ 		if (!cs->active || !stream || !stream->dv_standard)
+ 			continue;
+-		if (dm->freesync_config.state == VRR_STATE_ACTIVE_FIXED ||
++		if (!stream->ctx || !stream->ctx->dc ||
++		    stream->ctx->dc->debug.visual_confirm != VISUAL_CONFIRM_DISABLE ||
++		    (stream->func_shaper && stream->func_shaper->type != TF_TYPE_BYPASS) ||
++		    (stream->lut3d_func && stream->lut3d_func->state.bits.initialized) ||
++		    dm->freesync_config.state == VRR_STATE_ACTIVE_FIXED ||
+ 		    dm->freesync_config.state == VRR_STATE_ACTIVE_VARIABLE ||
+ 		    cs->ctm || cs->gamma_lut || cs->degamma_lut || cs->vrr_enabled ||
+ 		    cs->async_flip || !dv_identity_tf(dm->regamma_tf) ||
+diff -ruN a/drivers/gpu/drm/amd/display/dc/core/dc_resource.c b/drivers/gpu/drm/amd/display/dc/core/dc_resource.c
+--- a/drivers/gpu/drm/amd/display/dc/core/dc_resource.c	2026-11-01 15:39:28.769920732 +0000
++++ b/drivers/gpu/drm/amd/display/dc/core/dc_resource.c	2026-11-01 15:39:28.966369305 +0000
+@@ -3724,6 +3724,12 @@
+ 	if (cur_stream->dv_standard != new_stream->dv_standard)
+ 		return true;
+ 
++	if (cur_stream->vsp_infopacket.valid != new_stream->vsp_infopacket.valid ||
++	    (cur_stream->vsp_infopacket.valid &&
++	     memcmp(&cur_stream->vsp_infopacket, &new_stream->vsp_infopacket,
++		    sizeof(cur_stream->vsp_infopacket))))
++		return true;
++
+ 	/* If output color space is changed, need to reprogram info frames */
+ 	if (cur_stream->output_color_space != new_stream->output_color_space)
+ 		return true;
+diff -ruN a/drivers/gpu/drm/amd/display/dc/dce/dce_ipp.c b/drivers/gpu/drm/amd/display/dc/dce/dce_ipp.c
+--- a/drivers/gpu/drm/amd/display/dc/dce/dce_ipp.c	2026-11-01 15:39:28.783061349 +0000
++++ b/drivers/gpu/drm/amd/display/dc/dce/dce_ipp.c	2026-11-01 15:39:28.966775874 +0000
+@@ -136,11 +136,30 @@
+ }
+ 
+ 
++void dce_ipp_reset_dv(struct input_pixel_processor *ipp)
++{
++	TO_DCE_IPP(ipp)->dv_csc_saved = false;
++}
++
+ static void dce_ipp_program_prescale(struct input_pixel_processor *ipp,
+ 				     struct ipp_prescale_params *params)
+ {
+ 	struct dce_ipp *ipp_dce = TO_DCE_IPP(ipp);
+ 
++	if (ipp->ctx->dce_version == DCE_VERSION_11_22 && REG(INPUT_CSC_CONTROL)) {
++		if (params->mode == IPP_PRESCALE_MODE_BYPASS_LUT) {
++			if (!ipp_dce->dv_csc_saved) {
++				REG_GET(INPUT_CSC_CONTROL, INPUT_CSC_GRPH_MODE,
++					&ipp_dce->dv_csc_mode);
++				ipp_dce->dv_csc_saved = true;
++			}
++			REG_UPDATE(INPUT_CSC_CONTROL, INPUT_CSC_GRPH_MODE, 0);
++		} else if (ipp_dce->dv_csc_saved) {
++			REG_UPDATE(INPUT_CSC_CONTROL, INPUT_CSC_GRPH_MODE, ipp_dce->dv_csc_mode);
++			ipp_dce->dv_csc_saved = false;
++		}
++	}
++
+ 	/* set to bypass mode first before change */
+ 	REG_UPDATE(PRESCALE_GRPH_CONTROL,
+ 		   GRPH_PRESCALE_BYPASS, 1);
+@@ -287,6 +306,7 @@
+ 	ipp_dce->regs = regs;
+ 	ipp_dce->ipp_shift = ipp_shift;
+ 	ipp_dce->ipp_mask = ipp_mask;
++	dce_ipp_reset_dv(&ipp_dce->base);
+ }
+ 
+ #if defined(CONFIG_DRM_AMD_DC_SI)
+diff -ruN a/drivers/gpu/drm/amd/display/dc/dce/dce_ipp.h b/drivers/gpu/drm/amd/display/dc/dce/dce_ipp.h
+--- a/drivers/gpu/drm/amd/display/dc/dce/dce_ipp.h	2026-11-01 15:39:28.794272681 +0000
++++ b/drivers/gpu/drm/amd/display/dc/dce/dce_ipp.h	2026-11-01 15:39:28.966926801 +0000
+@@ -229,10 +229,12 @@
+ 
+ struct dce_ipp_shift {
+ 	IPP_REG_FIELD_LIST(uint8_t);
++	uint8_t INPUT_CSC_GRPH_MODE;
+ };
+ 
+ struct dce_ipp_mask {
+ 	IPP_REG_FIELD_LIST(uint32_t);
++	uint32_t INPUT_CSC_GRPH_MODE;
+ };
+ 
+ struct dce_ipp_registers {
+@@ -257,6 +259,7 @@
+ 	uint32_t DC_LUT_RW_INDEX;
+ 	uint32_t DC_LUT_SEQ_COLOR;
+ 	uint32_t DEGAMMA_CONTROL;
++	uint32_t INPUT_CSC_CONTROL;
+ };
+ 
+ struct dce_ipp {
+@@ -264,8 +267,12 @@
+ 	const struct dce_ipp_registers *regs;
+ 	const struct dce_ipp_shift *ipp_shift;
+ 	const struct dce_ipp_mask *ipp_mask;
++	uint32_t dv_csc_mode;
++	bool dv_csc_saved;
+ };
+ 
++void dce_ipp_reset_dv(struct input_pixel_processor *ipp);
++
+ void dce_ipp_construct(struct dce_ipp *ipp_dce,
+ 	struct dc_context *ctx,
+ 	int inst,
+diff -ruN a/drivers/gpu/drm/amd/display/dc/hwss/dce110/dce110_hwseq.c b/drivers/gpu/drm/amd/display/dc/hwss/dce110/dce110_hwseq.c
+--- a/drivers/gpu/drm/amd/display/dc/hwss/dce110/dce110_hwseq.c	2026-11-01 15:39:28.806606604 +0000
++++ b/drivers/gpu/drm/amd/display/dc/hwss/dce110/dce110_hwseq.c	2026-11-01 15:39:28.967150643 +0000
+@@ -43,6 +43,7 @@
+ #include "mem_input.h"
+ #include "opp.h"
+ #include "ipp.h"
++#include "dce/dce_ipp.h"
+ #include "transform.h"
+ #include "stream_encoder.h"
+ #include "link_encoder.h"
+@@ -3031,6 +3032,8 @@
+ 
+ 	bp = dc->ctx->dc_bios;
+ 	for (i = 0; i < dc->res_pool->pipe_count; i++) {
++		if (dc->ctx->dce_version == DCE_VERSION_11_22 && dc->res_pool->ipps[i])
++			dce_ipp_reset_dv(dc->res_pool->ipps[i]);
+ 		xfm = dc->res_pool->transforms[i];
+ 		xfm->funcs->transform_reset(xfm);
+ 
+@@ -3190,7 +3193,8 @@
+ 				plane_state->rotation);
+ 
+ 	/* Moved programming gamma from dc to hwss */
+-	if (pipe_ctx->plane_state->update_flags.bits.full_update ||
++	if (dc->ctx->dce_version == DCE_VERSION_11_22 ||
++			pipe_ctx->plane_state->update_flags.bits.full_update ||
+ 			pipe_ctx->plane_state->update_flags.bits.in_transfer_func_change ||
+ 			pipe_ctx->plane_state->update_flags.bits.gamma_change)
+ 		hws->funcs.set_input_transfer_func(dc, pipe_ctx, pipe_ctx->plane_state);
+diff -ruN a/drivers/gpu/drm/amd/display/dc/resource/dce112/dce112_resource.c b/drivers/gpu/drm/amd/display/dc/resource/dce112/dce112_resource.c
+--- a/drivers/gpu/drm/amd/display/dc/resource/dce112/dce112_resource.c	2026-11-01 15:39:28.818677566 +0000
++++ b/drivers/gpu/drm/amd/display/dc/resource/dce112/dce112_resource.c	2026-11-01 15:39:28.967356887 +0000
+@@ -184,7 +184,8 @@
+ 
+ #define ipp_regs(id)\
+ [id] = {\
+-		IPP_DCE110_REG_LIST_DCE_BASE(id)\
++		IPP_DCE110_REG_LIST_DCE_BASE(id),\
++		SRI(INPUT_CSC_CONTROL, DCP, id)\
+ }
+ 
+ static const struct dce_ipp_registers ipp_regs[] = {
+@@ -197,11 +198,13 @@
+ };
+ 
+ static const struct dce_ipp_shift ipp_shift = {
+-		IPP_DCE100_MASK_SH_LIST_DCE_COMMON_BASE(__SHIFT)
++		IPP_DCE100_MASK_SH_LIST_DCE_COMMON_BASE(__SHIFT),
++		IPP_SF(INPUT_CSC_CONTROL, INPUT_CSC_GRPH_MODE, __SHIFT)
+ };
+ 
+ static const struct dce_ipp_mask ipp_mask = {
+-		IPP_DCE100_MASK_SH_LIST_DCE_COMMON_BASE(_MASK)
++		IPP_DCE100_MASK_SH_LIST_DCE_COMMON_BASE(_MASK),
++		IPP_SF(INPUT_CSC_CONTROL, INPUT_CSC_GRPH_MODE, _MASK)
+ };
+ 
+ #define transform_regs(id)\
+diff -ruN a/drivers/gpu/drm/drm_edid.c b/drivers/gpu/drm/drm_edid.c
+--- a/drivers/gpu/drm/drm_edid.c	2026-11-01 15:39:28.832132095 +0000
++++ b/drivers/gpu/drm/drm_edid.c	2026-11-01 15:39:28.967585331 +0000
+@@ -2519,6 +2519,21 @@
+ }
+ EXPORT_SYMBOL(drm_edid_raw);
+ 
++/**
++ * drm_edid_size - Size of the owned EDID buffer, including EEODB extensions.
++ * @drm_edid: drm_edid container
++ *
++ * This is an allocation size, not a validation result. It does not extend the
++ * container's lifetime; drm_edid_raw() may still reject the buffer.
++ *
++ * Return: Owned buffer size, or zero for NULL.
++ */
++size_t drm_edid_size(const struct drm_edid *drm_edid)
++{
++	return drm_edid ? drm_edid->size : 0;
++}
++EXPORT_SYMBOL(drm_edid_size);
++
+ /* Allocate struct drm_edid container *without* duplicating the edid data */
+ static const struct drm_edid *_drm_edid_alloc(const void *edid, size_t size)
+ {
+@@ -7358,7 +7373,14 @@
+  * If the sink lists the VIC in CTA VDB, assume it's fine, regardless of HDMI
+  * version.
+  */
+-static u8 vic_for_avi_infoframe(const struct drm_connector *connector, u8 vic)
++/**
++ * drm_hdmi_avi_infoframe_vic - Apply the sink's native AVI VIC policy.
++ * @connector: connector with published display information
++ * @vic: matching CTA VIC
++ *
++ * Return: VIC admissible in AVI, or zero when it cannot be signalled there.
++ */
++u8 drm_hdmi_avi_infoframe_vic(const struct drm_connector *connector, u8 vic)
+ {
+ 	if (!is_hdmi2_sink(connector) && vic > 64 &&
+ 	    !cta_vdb_has_vic(connector, vic))
+@@ -7366,6 +7388,7 @@
+ 
+ 	return vic;
+ }
++EXPORT_SYMBOL(drm_hdmi_avi_infoframe_vic);
+ 
+ /**
+  * drm_hdmi_avi_infoframe_from_display_mode() - fill an HDMI AVI infoframe with
+@@ -7436,7 +7459,7 @@
+ 		picture_aspect = HDMI_PICTURE_ASPECT_NONE;
+ 	}
+ 
+-	frame->video_code = vic_for_avi_infoframe(connector, vic);
++	frame->video_code = drm_hdmi_avi_infoframe_vic(connector, vic);
+ 	frame->picture_aspect = picture_aspect;
+ 	frame->active_aspect = HDMI_ACTIVE_ASPECT_PICTURE;
+ 	frame->scan_mode = HDMI_SCAN_MODE_UNDERSCAN;
+diff -ruN a/drivers/gpu/drm/i915/display/intel_atomic.c b/drivers/gpu/drm/i915/display/intel_atomic.c
+--- a/drivers/gpu/drm/i915/display/intel_atomic.c	2026-11-01 15:39:28.844624664 +0000
++++ b/drivers/gpu/drm/i915/display/intel_atomic.c	2026-11-01 15:39:28.967858322 +0000
+@@ -118,7 +118,8 @@
+ 	}
+ 	if (to_intel_connector(connector)->dv_hdr10_property &&
+ 	    property == to_intel_connector(connector)->dv_hdr10_property) {
+-		if (val > 1 || connector->connector_type != DRM_MODE_CONNECTOR_HDMIA)
++		if (val > 1 || (connector->connector_type != DRM_MODE_CONNECTOR_HDMIA &&
++			       connector->connector_type != DRM_MODE_CONNECTOR_DisplayPort))
+ 			return -EINVAL;
+ 		intel_conn_state->dv_hdr10_deep_color = val;
+ 		return 0;
+diff -ruN a/drivers/gpu/drm/i915/display/intel_color.c b/drivers/gpu/drm/i915/display/intel_color.c
+--- a/drivers/gpu/drm/i915/display/intel_color.c	2026-11-01 15:39:28.856693999 +0000
++++ b/drivers/gpu/drm/i915/display/intel_color.c	2026-11-01 15:39:28.967993284 +0000
+@@ -31,6 +31,7 @@
+ #include "intel_display_types.h"
+ #include "intel_display_utils.h"
+ #include "intel_dsb.h"
++#include "intel_hdmi.h"
+ #include "intel_vrr.h"
+ #include "skl_universal_plane.h"
+ #include "skl_universal_plane_regs.h"
+@@ -190,6 +191,36 @@
+ 	memset(csc, 0, sizeof(*csc));
+ }
+ 
++/* BT.2020 NCL, full RGB to limited Cr/Y/Cb; native ILK coefficient format. */
++static const struct intel_csc_matrix ilk_csc_matrix_rgb_to_ycbcr2020 = {
++	.coeff = {
++		0x1e10, 0x9cf0, 0xb488,
++		0x2e70, 0x0950, 0x3688,
++		0xbfb0, 0x9a20, 0x1e10,
++	},
++	.postoff = { 0x0800, 0x0100, 0x0800 },
++};
++
++static const struct intel_csc_matrix *
++intel_csc_rgb_to_ycbcr(const struct intel_crtc_state *crtc_state)
++{
++	const struct hdmi_avi_infoframe *avi = &crtc_state->infoframes.avi.avi;
++	const struct drm_dp_vsc_sdp *vsc = &crtc_state->infoframes.vsc;
++
++	if ((crtc_state->infoframes.enable & intel_hdmi_infoframe_enable(HDMI_INFOFRAME_TYPE_AVI)) &&
++	    avi->colorspace != HDMI_COLORSPACE_RGB &&
++	    avi->colorimetry == HDMI_COLORIMETRY_EXTENDED &&
++	    avi->extended_colorimetry == HDMI_EXTENDED_COLORIMETRY_BT2020)
++		return &ilk_csc_matrix_rgb_to_ycbcr2020;
++	if ((crtc_state->infoframes.enable & intel_hdmi_infoframe_enable(DP_SDP_VSC)) &&
++	    (vsc->pixelformat == DP_PIXELFORMAT_YUV444 ||
++	     vsc->pixelformat == DP_PIXELFORMAT_YUV422 ||
++	     vsc->pixelformat == DP_PIXELFORMAT_YUV420) &&
++	    vsc->colorimetry == DP_COLORIMETRY_BT2020_YCC)
++		return &ilk_csc_matrix_rgb_to_ycbcr2020;
++	return &ilk_csc_matrix_rgb_to_ycbcr;
++}
++
+ static bool lut_is_legacy(const struct drm_property_blob *lut)
+ {
+ 	return lut && drm_color_lut_size(lut) == LEGACY_LUT_LENGTH;
+@@ -536,7 +567,7 @@
+ 	} else if (crtc_state->output_format != INTEL_OUTPUT_FORMAT_RGB) {
+ 		drm_WARN_ON(display->drm, !crtc_state->csc_enable);
+ 
+-		ilk_csc_copy(display, &crtc_state->csc, &ilk_csc_matrix_rgb_to_ycbcr);
++		ilk_csc_copy(display, &crtc_state->csc, intel_csc_rgb_to_ycbcr(crtc_state));
+ 	} else if (limited_color_range) {
+ 		drm_WARN_ON(display->drm, !crtc_state->csc_enable);
+ 
+@@ -582,7 +613,7 @@
+ 	if (crtc_state->output_format != INTEL_OUTPUT_FORMAT_RGB) {
+ 		drm_WARN_ON(display->drm, (crtc_state->csc_mode & ICL_OUTPUT_CSC_ENABLE) == 0);
+ 
+-		ilk_csc_copy(display, &crtc_state->output_csc, &ilk_csc_matrix_rgb_to_ycbcr);
++		ilk_csc_copy(display, &crtc_state->output_csc, intel_csc_rgb_to_ycbcr(crtc_state));
+ 	} else if (crtc_state->limited_color_range) {
+ 		drm_WARN_ON(display->drm, (crtc_state->csc_mode & ICL_OUTPUT_CSC_ENABLE) == 0);
+ 
+diff -ruN a/drivers/gpu/drm/i915/display/intel_connector.c b/drivers/gpu/drm/i915/display/intel_connector.c
+--- a/drivers/gpu/drm/i915/display/intel_connector.c	2026-11-01 15:39:28.870319415 +0000
++++ b/drivers/gpu/drm/i915/display/intel_connector.c	2026-11-01 15:39:28.968147071 +0000
+@@ -38,6 +38,16 @@
+ #include "intel_hdcp.h"
+ #include "intel_panel.h"
+ 
++void intel_attach_hdr10_deep_color_property(struct drm_connector *connector)
++{
++	struct intel_connector *intel_connector = to_intel_connector(connector);
++
++	intel_connector->dv_hdr10_property = drm_property_create_bool(connector->dev,
++		DRM_MODE_PROP_ATOMIC, "DVBRIDGE_HDR10_DEEP_COLOR");
++	if (intel_connector->dv_hdr10_property)
++		drm_object_attach_property(&connector->base, intel_connector->dv_hdr10_property, 0);
++}
++
+ static void intel_connector_modeset_retry_work_fn(struct work_struct *work)
+ {
+ 	struct intel_connector *connector = container_of(work, typeof(*connector),
+diff -ruN a/drivers/gpu/drm/i915/display/intel_connector.h b/drivers/gpu/drm/i915/display/intel_connector.h
+--- a/drivers/gpu/drm/i915/display/intel_connector.h	2026-11-01 15:39:28.883774764 +0000
++++ b/drivers/gpu/drm/i915/display/intel_connector.h	2026-11-01 15:39:28.968189061 +0000
+@@ -27,6 +27,7 @@
+ 				 const struct drm_edid *drm_edid);
+ int intel_ddc_get_modes(struct drm_connector *c, struct i2c_adapter *ddc);
+ void intel_attach_force_audio_property(struct drm_connector *connector);
++void intel_attach_hdr10_deep_color_property(struct drm_connector *connector);
+ void intel_attach_broadcast_rgb_property(struct drm_connector *connector);
+ void intel_attach_aspect_ratio_property(struct drm_connector *connector);
+ void intel_attach_hdmi_colorspace_property(struct drm_connector *connector);
+diff -ruN a/drivers/gpu/drm/i915/display/intel_display.c b/drivers/gpu/drm/i915/display/intel_display.c
+--- a/drivers/gpu/drm/i915/display/intel_display.c	2026-11-01 15:39:28.895889643 +0000
++++ b/drivers/gpu/drm/i915/display/intel_display.c	2026-11-01 15:39:28.968387958 +0000
+@@ -61,6 +61,7 @@
+ #include "intel_cdclk.h"
+ #include "intel_clock_gating.h"
+ #include "intel_color.h"
++#include "intel_color_regs.h"
+ #include "intel_crt.h"
+ #include "intel_crtc.h"
+ #include "intel_crtc_state_dump.h"
+@@ -4312,7 +4313,11 @@
+ 	/* Refuse color processing/compositing, do not silently bypass a user's LUT. */
+ 	/* Reason bits: color, dither, VRR, DSC, scaler, plane mask. */
+ 	reasons = (!!(s->hw.ctm || s->hw.degamma_lut || s->hw.gamma_lut ||
+-		       s->pre_csc_lut || s->post_csc_lut || s->gamma_enable || s->csc_enable)) |
++		       s->pre_csc_lut || s->post_csc_lut ||
++		       (DISPLAY_VER(to_intel_display(crtc)) >= 11 ?
++			(s->csc_mode & (ICL_CSC_ENABLE | ICL_OUTPUT_CSC_ENABLE)) ||
++			(s->gamma_mode & (PRE_CSC_GAMMA_ENABLE | POST_CSC_GAMMA_ENABLE)) :
++			s->gamma_enable || s->csc_enable))) |
+ 		 (!!s->dither << 1) | (!!s->vrr.enable << 2) |
+ 		 (!!s->dsc.compression_enable << 3) | (!!s->scaler_state.scaler_users << 4) |
+ 		 ((s->uapi.plane_mask != drm_plane_mask(primary)) << 5);
+@@ -4336,7 +4341,8 @@
+ 		return intel_dv_lab_scanout_reject(crtc, "primary-layout", reasons);
+ 	ip = to_intel_plane_state(p);
+ 	/* Reason bits: color processing, scaler, forced black, linked plane. */
+-	reasons = (!!(ip->hw.ctm || ip->hw.degamma_lut || ip->hw.gamma_lut || ip->hw.lut_3d)) |
++	reasons = (!!(p->color_pipeline || ip->hw.ctm || ip->hw.degamma_lut ||
++		       ip->hw.gamma_lut || ip->hw.lut_3d)) |
+ 		 ((ip->scaler_id >= 0) << 1) | (!!ip->force_black << 2) | (!!ip->planar_linked_plane << 3);
+ 	if (reasons)
+ 		return intel_dv_lab_scanout_reject(crtc, "plane-processing", reasons);
+@@ -5888,7 +5894,10 @@
+ 	struct intel_crtc *crtc = to_intel_crtc(new_crtc_state->uapi.crtc);
+ 
+ 	/* Never transition the private vendor mode through the HDR-only fastset. */
+-	if (intel_dv_lab_active(old_crtc_state) != intel_dv_lab_active(new_crtc_state)) {
++	if (intel_dv_lab_active(old_crtc_state) != intel_dv_lab_active(new_crtc_state) ||
++	    ((intel_hdmi_uses_gmp_hdr(old_crtc_state) || intel_hdmi_uses_gmp_hdr(new_crtc_state)) &&
++	     memcmp(&old_crtc_state->infoframes.drm, &new_crtc_state->infoframes.drm,
++		    sizeof(new_crtc_state->infoframes.drm)))) {
+ 		new_crtc_state->uapi.mode_changed = true;
+ 		new_crtc_state->update_lrr = false;
+ 		new_crtc_state->update_m_n = false;
+diff -ruN a/drivers/gpu/drm/i915/display/intel_display_types.h b/drivers/gpu/drm/i915/display/intel_display_types.h
+--- a/drivers/gpu/drm/i915/display/intel_display_types.h	2026-11-01 15:39:28.906925303 +0000
++++ b/drivers/gpu/drm/i915/display/intel_display_types.h	2026-11-01 15:39:28.968682173 +0000
+@@ -38,6 +38,7 @@
+ #include <drm/drm_colorop.h>
+ #include <drm/drm_crtc.h>
+ #include <drm/drm_encoder.h>
++#include <drm/drm_dvbridge_edid.h>
+ #include <drm/drm_framebuffer.h>
+ #include <drm/drm_panel.h>
+ #include <drm/drm_rect.h>
+@@ -549,6 +550,8 @@
+ 
+ 	/* Cached EDID for detect. */
+ 	const struct drm_edid *detect_edid;
++	/* Detect/force and atomic readers share connection_mutex. */
++	struct dvbridge_sink_caps dv_sink_caps;
+ 
+ 	/* Number of times hotplug detection was tried after an HPD interrupt */
+ 	int hotplug_retries;
+diff -ruN a/drivers/gpu/drm/i915/display/intel_dp.c b/drivers/gpu/drm/i915/display/intel_dp.c
+--- a/drivers/gpu/drm/i915/display/intel_dp.c	2026-11-01 15:39:28.919207460 +0000
++++ b/drivers/gpu/drm/i915/display/intel_dp.c	2026-11-01 15:39:28.968935914 +0000
+@@ -3170,7 +3170,8 @@
+ 		vsc->colorimetry = DP_COLORIMETRY_BT2020_CYCC;
+ 		break;
+ 	case DRM_MODE_COLORIMETRY_BT2020_RGB:
+-		vsc->colorimetry = DP_COLORIMETRY_BT2020_RGB;
++		vsc->colorimetry = crtc_state->output_format == INTEL_OUTPUT_FORMAT_RGB ?
++			DP_COLORIMETRY_BT2020_RGB : DP_COLORIMETRY_BT2020_YCC;
+ 		break;
+ 	case DRM_MODE_COLORIMETRY_BT2020_YCC:
+ 		vsc->colorimetry = DP_COLORIMETRY_BT2020_YCC;
+@@ -3655,6 +3656,25 @@
+ 	return 0;
+ }
+ 
++static bool intel_dp_hdr10_deep_requested(struct intel_encoder *encoder,
++					const struct drm_connector_state *state)
++{
++	const struct intel_digital_connector_state *conn = to_intel_digital_connector_state(state);
++	struct intel_dp *dp = enc_to_intel_dp(encoder);
++	const struct hdr_output_metadata *hdr;
++
++	if (intel_dp_is_edp(dp) || !intel_dp_has_gamut_metadata_dip(encoder) ||
++	    !dp->colorimetry_support || conn->dv_lab_standard ||
++	    state->max_requested_bpc < 10 ||
++	    (state->colorspace != DRM_MODE_COLORIMETRY_BT2020_RGB &&
++	     state->colorspace != DRM_MODE_COLORIMETRY_BT2020_YCC) ||
++	    !state->hdr_output_metadata || state->hdr_output_metadata->length < sizeof(*hdr))
++		return false;
++	hdr = state->hdr_output_metadata->data;
++	return hdr->metadata_type == 0 && hdr->hdmi_metadata_type1.metadata_type == 0 &&
++		hdr->hdmi_metadata_type1.eotf == HDMI_EOTF_SMPTE_ST2084;
++}
++
+ int
+ intel_dp_compute_config(struct intel_encoder *encoder,
+ 			struct intel_crtc_state *pipe_config,
+@@ -3691,10 +3711,16 @@
+ 	 * that fails assume the user might know something we don't.
+ 	 */
+ 	ret = intel_dp_compute_formats(encoder, pipe_config, conn_state, true);
+-	if (ret)
++	if (to_intel_digital_connector_state(conn_state)->dv_hdr10_deep_color &&
++	    !intel_dp_hdr10_deep_requested(encoder, conn_state))
++		return -EINVAL;
++	if (ret && !to_intel_digital_connector_state(conn_state)->dv_hdr10_deep_color)
+ 		ret = intel_dp_compute_formats(encoder, pipe_config, conn_state, false);
+ 	if (ret)
+ 		return ret;
++	if (to_intel_digital_connector_state(conn_state)->dv_hdr10_deep_color &&
++	    pipe_config->pipe_bpp < 30)
++		return -EINVAL;
+ 
+ 	ret = intel_pfit_compute_config(pipe_config, conn_state);
+ 	if (ret)
+@@ -7212,8 +7238,11 @@
+ 		intel_attach_dp_colorspace_property(&connector->base);
+ 	}
+ 
+-	if (intel_dp_has_gamut_metadata_dip(&dp_to_dig_port(intel_dp)->base))
++	if (intel_dp_has_gamut_metadata_dip(&dp_to_dig_port(intel_dp)->base)) {
+ 		drm_connector_attach_hdr_output_metadata_property(&connector->base);
++		if (DISPLAY_VER(display) >= 9 && !intel_dp_is_edp(intel_dp))
++			intel_attach_hdr10_deep_color_property(&connector->base);
++	}
+ 
+ 	if (HAS_VRR(display))
+ 		drm_connector_attach_vrr_capable_property(&connector->base);
+diff -ruN a/drivers/gpu/drm/i915/display/intel_hdmi.c b/drivers/gpu/drm/i915/display/intel_hdmi.c
+--- a/drivers/gpu/drm/i915/display/intel_hdmi.c	2026-11-01 15:39:28.931503889 +0000
++++ b/drivers/gpu/drm/i915/display/intel_hdmi.c	2026-11-01 15:39:28.969248674 +0000
+@@ -148,6 +148,26 @@
+ 	}
+ }
+ 
++static bool intel_hdmi_has_gmp_hdr(struct intel_display *display)
++{
++	return DISPLAY_VER(display) == 9 &&
++		(display->platform.skylake || display->platform.kabylake);
++}
++
++bool intel_hdmi_uses_gmp_hdr(const struct intel_crtc_state *crtc_state)
++{
++	return intel_hdmi_has_gmp_hdr(to_intel_display(crtc_state)) &&
++		crtc_state->has_hdmi_sink && crtc_state->cpu_transcoder != TRANSCODER_EDP;
++}
++
++static unsigned int intel_hdmi_dip_type(const struct intel_crtc_state *crtc_state,
++				       unsigned int type)
++{
++	if (type == HDMI_INFOFRAME_TYPE_DRM && intel_hdmi_uses_gmp_hdr(crtc_state))
++		return HDMI_PACKET_TYPE_GAMUT_METADATA;
++	return type;
++}
++
+ static u32 hsw_infoframe_enable(unsigned int type)
+ {
+ 	switch (type) {
+@@ -530,6 +550,7 @@
+ 	int i;
+ 	u32 val = intel_de_read(display, ctl_reg);
+ 
++	type = intel_hdmi_dip_type(crtc_state, type);
+ 	data_size = hsw_dip_data_size(display, type);
+ 
+ 	drm_WARN_ON(display->drm, len > data_size);
+@@ -570,6 +591,9 @@
+ 	u32 *data = frame;
+ 	int i;
+ 
++	type = intel_hdmi_dip_type(crtc_state, type);
++	memset(frame, 0, len);
++	len = min_t(ssize_t, len, hsw_dip_data_size(display, type));
+ 	for (i = 0; i < len; i += 4)
+ 		*data++ = intel_de_read(display,
+ 					hsw_dip_data_reg(display, cpu_transcoder, type, i >> 2));
+@@ -625,16 +649,30 @@
+ 	struct intel_display *display = to_intel_display(encoder);
+ 	struct intel_digital_port *dig_port = enc_to_dig_port(encoder);
+ 	u32 val, ret = 0;
++	bool gmp_hdr = false;
+ 	int i;
+ 
+ 	val = dig_port->infoframes_enabled(encoder, crtc_state);
++	if (intel_hdmi_uses_gmp_hdr(crtc_state) && (val & VIDEO_DIP_ENABLE_GMP_HSW)) {
++		u32 header = intel_de_read(display, hsw_dip_data_reg(display,
++			crtc_state->cpu_transcoder, HDMI_PACKET_TYPE_GAMUT_METADATA, 0));
++
++		gmp_hdr = (header & 0xffffff) == 0x1a0187;
++	}
+ 
+ 	/* map from hardware bits to dip idx */
+ 	for (i = 0; i < ARRAY_SIZE(infoframe_type_to_idx); i++) {
+ 		unsigned int type = infoframe_type_to_idx[i];
+ 
+ 		if (HAS_DDI(display)) {
+-			if (val & hsw_infoframe_enable(type))
++			unsigned int physical = intel_hdmi_dip_type(crtc_state, type);
++
++			/* Preserve a foreign GMP's occupancy so native comparison clears it. */
++			if (intel_hdmi_uses_gmp_hdr(crtc_state) &&
++			    ((type == HDMI_PACKET_TYPE_GAMUT_METADATA && gmp_hdr) ||
++			     (type == HDMI_INFOFRAME_TYPE_DRM && !gmp_hdr)))
++				continue;
++			if (val & hsw_infoframe_enable(physical))
+ 				ret |= BIT(i);
+ 		} else {
+ 			if (val & g4x_infoframe_enable(type))
+@@ -668,7 +706,7 @@
+ 				  const union hdmi_infoframe *frame)
+ {
+ 	struct intel_digital_port *dig_port = enc_to_dig_port(encoder);
+-	u8 buffer[VIDEO_DIP_DATA_SIZE];
++	u8 buffer[VIDEO_DIP_DATA_SIZE] = {};
+ 	ssize_t len;
+ 
+ 	if ((crtc_state->infoframes.enable &
+@@ -771,13 +809,22 @@
+ 	}
+ 
+ 	drm_hdmi_avi_infoframe_content_type(frame, conn_state);
+-	if (conn_state->hdr10plus_metadata)
+-		frame->video_code = drm_match_cea_mode(adjusted_mode);
++	if (conn_state->hdr10plus_metadata) {
++		frame->video_code = drm_hdmi_avi_infoframe_vic(&connector->base,
++							   drm_match_cea_mode(adjusted_mode));
++		if (!frame->video_code && connector->base.display_info.has_hdmi_infoframe) {
++			struct hdmi_vendor_infoframe legacy;
++
++			/* HDR10+ owns VSIF; a required HDMI-VIC cannot share it. */
++			ret = drm_hdmi_vendor_infoframe_from_display_mode(&legacy,
++							&connector->base, adjusted_mode);
++			if (ret || legacy.vic)
++				return false;
++		}
++	}
+ 
+ 	if (to_intel_digital_connector_state(conn_state)->dv_lab_standard) {
+-		const struct drm_property_blob *edid = conn_state->connector->edid_blob_ptr;
+-		struct dvbridge_sink_caps caps = dvbridge_parse_edid(
+-			edid ? edid->data : NULL, edid ? edid->length : 0);
++		struct dvbridge_sink_caps caps = connector->dv_sink_caps;
+ 
+ 		/* RGB is a byte tunnel here, not an RGB color-managed picture. */
+ 		frame->video_code = intel_dv_lab_avi_vic(drm_match_cea_mode(adjusted_mode));
+@@ -857,9 +904,8 @@
+ 	if (to_intel_digital_connector_state(conn_state)->dv_lab_standard) {
+ 		struct hdmi_dolby_vendor_infoframe *dv =
+ 			&crtc_state->infoframes.hdmi.vendor.dolby;
+-		const struct drm_property_blob *edid = conn_state->connector->edid_blob_ptr;
+-		struct dvbridge_sink_caps caps = dvbridge_parse_edid(
+-			edid ? edid->data : NULL, edid ? edid->length : 0);
++		struct dvbridge_sink_caps caps =
++			to_intel_connector(conn_state->connector)->dv_sink_caps;
+ 		unsigned int vic = drm_match_cea_mode(&crtc_state->hw.adjusted_mode);
+ 
+ 		/* AVI carries the CTA timing. Reserve the vendor slot for Dolby;
+@@ -903,7 +949,7 @@
+ 	struct hdmi_drm_infoframe *frame = &crtc_state->infoframes.drm.drm;
+ 	int ret;
+ 
+-	if (DISPLAY_VER(display) < 10)
++	if (DISPLAY_VER(display) < 10 && !intel_hdmi_has_gmp_hdr(display))
+ 		return true;
+ 
+ 	if (!crtc_state->has_infoframe)
+@@ -911,6 +957,8 @@
+ 
+ 	if (!conn_state->hdr_output_metadata)
+ 		return true;
++	if (DISPLAY_VER(display) == 9 && !intel_hdmi_uses_gmp_hdr(crtc_state))
++		return false;
+ 
+ 	crtc_state->infoframes.enable |=
+ 		intel_hdmi_infoframe_enable(HDMI_INFOFRAME_TYPE_DRM);
+@@ -1337,6 +1385,10 @@
+ 					    crtc_state->cpu_transcoder);
+ 	u32 val = intel_de_read(display, reg);
+ 
++	/* Changed GMP HDR packets use a full modeset; unchanged ones need no write. */
++	if (intel_hdmi_uses_gmp_hdr(crtc_state))
++		return;
++
+ 	if ((crtc_state->infoframes.enable &
+ 		intel_hdmi_infoframe_enable(HDMI_INFOFRAME_TYPE_DRM)) == 0 &&
+ 			(val & VIDEO_DIP_ENABLE_DRM_GLK) == 0)
+@@ -2406,8 +2458,8 @@
+ 	const struct hdr_output_metadata *hdr;
+ 
+ 	/* Display10 carries ten-bit content through its native twelve-bit link. */
+-	if (DISPLAY_VER(display) < 10 ||
+-	    (DISPLAY_VER(display) == 10 && state->max_requested_bpc < 12) ||
++	if ((DISPLAY_VER(display) < 10 && !intel_hdmi_has_gmp_hdr(display)) ||
++	    (DISPLAY_VER(display) <= 10 && state->max_requested_bpc < 12) ||
+ 	    (!to_intel_digital_connector_state(state)->dv_hdr10_deep_color &&
+ 	     !state->hdr10plus_metadata) ||
+ 	    to_intel_digital_connector_state(state)->dv_lab_standard ||
+@@ -2585,9 +2637,7 @@
+ 		intel_hdmi_limited_color_range(pipe_config, conn_state);
+ 
+ 	if (to_intel_digital_connector_state(conn_state)->dv_lab_standard) {
+-		const struct drm_property_blob *edid = connector->base.edid_blob_ptr;
+-		struct dvbridge_sink_caps caps = dvbridge_parse_edid(
+-			edid ? edid->data : NULL, edid ? edid->length : 0);
++		struct dvbridge_sink_caps caps = connector->dv_sink_caps;
+ 		struct intel_dv_lab_link link = {
+ 			.requested = true,
+ 			.lab_enabled = display->params.enable_dv_lab &&
+@@ -2706,6 +2756,7 @@
+ 
+ 	drm_edid_free(connector->detect_edid);
+ 	connector->detect_edid = NULL;
++	connector->dv_sink_caps = (struct dvbridge_sink_caps){};
+ }
+ 
+ static void
+@@ -2771,6 +2822,7 @@
+ 	struct ref_tracker *wakeref;
+ 	const struct drm_edid *drm_edid;
+ 	bool connected = false;
++	int ret;
+ 
+ 	wakeref = intel_display_power_get(display, POWER_DOMAIN_GMBUS);
+ 
+@@ -2785,11 +2837,15 @@
+ 	}
+ 
+ 	/* Below we depend on display info having been updated */
+-	drm_edid_connector_update(&connector->base, drm_edid);
++	ret = drm_edid_connector_update(&connector->base, drm_edid);
+ 
+ 	connector->detect_edid = drm_edid;
++	connector->dv_sink_caps = (struct dvbridge_sink_caps){};
+ 
+ 	if (drm_edid_is_digital(drm_edid)) {
++		if (!ret)
++			connector->dv_sink_caps = dvbridge_parse_edid(
++				(const u8 *)drm_edid_raw(drm_edid), drm_edid_size(drm_edid));
+ 		intel_hdmi_dp_dual_mode_detect(&connector->base);
+ 
+ 		connected = true;
+@@ -2816,8 +2872,10 @@
+ 	drm_dbg_kms(display->drm, "[CONNECTOR:%d:%s]\n",
+ 		    connector->base.base.id, connector->base.name);
+ 
+-	if (!intel_display_device_enabled(display))
++	if (!intel_display_device_enabled(display)) {
++		connector->dv_sink_caps = (struct dvbridge_sink_caps){};
+ 		return connector_status_disconnected;
++	}
+ 
+ 	if (!intel_display_driver_check_access(display))
+ 		return connector->base.status;
+@@ -2836,8 +2894,10 @@
+ out:
+ 	intel_display_power_put(display, POWER_DOMAIN_GMBUS, wakeref);
+ 
+-	if (status != connector_status_connected)
++	if (status != connector_status_connected) {
++		connector->dv_sink_caps = (struct dvbridge_sink_caps){};
+ 		cec_notifier_phys_addr_invalidate(intel_hdmi->cec_notifier);
++	}
+ 
+ 	return status;
+ }
+@@ -2850,6 +2910,8 @@
+ 
+ 	drm_dbg_kms(display->drm, "[CONNECTOR:%d:%s]\n",
+ 		    connector->base.base.id, connector->base.name);
++	if (connector->base.status != connector_status_connected)
++		connector->dv_sink_caps = (struct dvbridge_sink_caps){};
+ 
+ 	if (!intel_display_driver_check_access(display))
+ 		return;
+@@ -2939,12 +3001,9 @@
+ 			drm_object_attach_property(&_connector->base, connector->dv_lab_property, 0);
+ 	}
+ 
+-	if (DISPLAY_VER(display) >= 10) {
++	if (DISPLAY_VER(display) >= 10 || intel_hdmi_has_gmp_hdr(display)) {
+ 		ratelimit_state_init(&connector->dv_log_limit, 30 * HZ, 1);
+-		connector->dv_hdr10_property = drm_property_create_bool(display->drm,
+-			DRM_MODE_PROP_ATOMIC, "DVBRIDGE_HDR10_DEEP_COLOR");
+-		if (connector->dv_hdr10_property)
+-			drm_object_attach_property(&_connector->base, connector->dv_hdr10_property, 0);
++		intel_attach_hdr10_deep_color_property(_connector);
+ 	}
+ 
+ 	intel_attach_force_audio_property(&connector->base);
+@@ -2954,7 +3013,7 @@
+ 	intel_attach_hdmi_colorspace_property(&connector->base);
+ 	drm_connector_attach_content_type_property(&connector->base);
+ 
+-	if (DISPLAY_VER(display) >= 10)
++	if (DISPLAY_VER(display) >= 10 || intel_hdmi_has_gmp_hdr(display))
+ 		drm_connector_attach_hdr_output_metadata_property(&connector->base);
+ 	if (DISPLAY_VER(display) >= 10)
+ 		drm_connector_attach_hdr10plus_metadata_property(&connector->base);
+diff -ruN a/drivers/gpu/drm/i915/display/intel_hdmi.h b/drivers/gpu/drm/i915/display/intel_hdmi.h
+--- a/drivers/gpu/drm/i915/display/intel_hdmi.h	2026-11-01 15:39:28.943660754 +0000
++++ b/drivers/gpu/drm/i915/display/intel_hdmi.h	2026-11-01 15:39:28.969432047 +0000
+@@ -44,6 +44,7 @@
+ u32 intel_hdmi_infoframes_enabled(struct intel_encoder *encoder,
+ 				  const struct intel_crtc_state *crtc_state);
+ u32 intel_hdmi_infoframe_enable(unsigned int type);
++bool intel_hdmi_uses_gmp_hdr(const struct intel_crtc_state *crtc_state);
+ void intel_hdmi_read_gcp_infoframe(struct intel_encoder *encoder,
+ 				   struct intel_crtc_state *crtc_state);
+ void intel_hdmi_fastset_infoframes(struct intel_encoder *encoder,
+diff -ruN a/include/drm/drm_edid.h b/include/drm/drm_edid.h
+--- a/include/drm/drm_edid.h	2026-11-01 15:39:28.956495830 +0000
++++ b/include/drm/drm_edid.h	2026-11-01 15:39:28.969478697 +0000
+@@ -365,6 +365,7 @@
+ drm_hdmi_avi_infoframe_from_display_mode(struct hdmi_avi_infoframe *frame,
+ 					 const struct drm_connector *connector,
+ 					 const struct drm_display_mode *mode);
++u8 drm_hdmi_avi_infoframe_vic(const struct drm_connector *connector, u8 vic);
+ int
+ drm_hdmi_vendor_infoframe_from_display_mode(struct hdmi_vendor_infoframe *frame,
+ 					    const struct drm_connector *connector,
+@@ -469,6 +470,7 @@
+ void drm_edid_free(const struct drm_edid *drm_edid);
+ bool drm_edid_valid(const struct drm_edid *drm_edid);
+ const struct edid *drm_edid_raw(const struct drm_edid *drm_edid);
++size_t drm_edid_size(const struct drm_edid *drm_edid);
+ const struct drm_edid *drm_edid_read(struct drm_connector *connector);
+ const struct drm_edid *drm_edid_read_ddc(struct drm_connector *connector,
+ 					 struct i2c_adapter *adapter);
