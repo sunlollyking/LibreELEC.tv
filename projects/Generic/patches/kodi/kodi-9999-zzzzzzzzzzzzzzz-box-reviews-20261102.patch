@@ -1,0 +1,338 @@
+From 865d13bf98a265b89325570ca0990b312179b039 Mon Sep 17 00:00:00 2001
+From: Chris <meischris39@hotmail.com>
+Date: Mon, 2 Nov 2026 19:21:45 +0000
+Subject: [PATCH] Box: review fixes from 2 November
+
+Shader previews keep the source bound when a look-up texture reloads;
+bezels only scan 32-bit artwork and the bezel shortcut needs a game;
+the slideshow only stops its own moving-photo clip, and XMP container
+items are read in element form too.
+---
+ .../RetroPlayer/rendering/RenderBezel.cpp     | 10 ++++++++
+ .../VideoRenderers/RPWinRenderer.cpp          |  3 +++
+ xbmc/cores/RetroPlayer/shaders/IShader.h      |  8 +++++++
+ .../RetroPlayer/shaders/ShaderPreset.cpp      |  3 +++
+ .../RetroPlayer/shaders/gl/ShaderLutGL.cpp    |  6 +++++
+ .../shaders/gles/ShaderLutGLES.cpp            |  6 +++++
+ .../RetroPlayer/shaders/windows/ShaderDX.cpp  | 10 ++++++++
+ .../RetroPlayer/shaders/windows/ShaderDX.h    |  1 +
+ xbmc/guilib/TextureBase.h                     |  2 ++
+ xbmc/interfaces/builtins/PlayerBuiltins.cpp   |  4 ++++
+ xbmc/pictures/GUIWindowSlideShow.cpp          | 24 ++++++++++---------
+ xbmc/pictures/GUIWindowSlideShow.h            |  2 ++
+ xbmc/pictures/PictureXmp.cpp                  | 11 ++++++++-
+ xbmc/pictures/test/TestMotionPhoto.cpp        | 18 ++++++++++++++
+ 14 files changed, 96 insertions(+), 12 deletions(-)
+
+diff --git a/xbmc/cores/RetroPlayer/rendering/RenderBezel.cpp b/xbmc/cores/RetroPlayer/rendering/RenderBezel.cpp
+index fe35d0521d..2a1c8b0c95 100644
+--- a/xbmc/cores/RetroPlayer/rendering/RenderBezel.cpp
++++ b/xbmc/cores/RetroPlayer/rendering/RenderBezel.cpp
+@@ -76,6 +76,16 @@ std::unique_ptr<CRenderBezel> CRenderBezel::Load(const std::string& url,
+     return {};
+   }
+ 
++  // The window is found from the alpha of 32-bit pixels, and an image resource's packed
++  // artwork can have fewer channels
++  const KD_TEX_FMT format = texture->GetTextureFormat();
++  if ((format != KD_TEX_FMT_SDR_RGBA8 && format != KD_TEX_FMT_SDR_BGRA8) ||
++      texture->GetSwizzle() != KD_TEX_SWIZ_RGBA)
++  {
++    CLog::Log(LOGINFO, "RetroPlayer[RENDER]: Bezel isn't in 32-bit RGBA, not showing it");
++    return {};
++  }
++
+   CRect window;
+   if (!FindWindow(texture->GetPixels(), texture->GetWidth(), texture->GetHeight(),
+                   texture->GetPitch(), window))
+diff --git a/xbmc/cores/RetroPlayer/rendering/VideoRenderers/RPWinRenderer.cpp b/xbmc/cores/RetroPlayer/rendering/VideoRenderers/RPWinRenderer.cpp
+index 9832ed76b2..e7c0744ad5 100644
+--- a/xbmc/cores/RetroPlayer/rendering/VideoRenderers/RPWinRenderer.cpp
++++ b/xbmc/cores/RetroPlayer/rendering/VideoRenderers/RPWinRenderer.cpp
+@@ -395,4 +395,7 @@ void CRPWinRenderer::Render(CD3DTexture& target, uint8_t alpha)
+                            m_context.UseLimitedColor() ? 1 : 0, alpha);
+     }
+   }
++
++  // What's drawn next, such as a bezel over the game, expects blending
++  renderingDx->SetAlphaBlendEnable(true);
+ }
+diff --git a/xbmc/cores/RetroPlayer/shaders/IShader.h b/xbmc/cores/RetroPlayer/shaders/IShader.h
+index 267819bb2f..3daa4c6a1f 100644
+--- a/xbmc/cores/RetroPlayer/shaders/IShader.h
++++ b/xbmc/cores/RetroPlayer/shaders/IShader.h
+@@ -90,5 +90,13 @@ public:
+    * Should usually only be called when the viewport/window size changes.
+    */
+   virtual void UpdateMVP() = 0;
++
++  /*!
++   * \brief Drops the references the shader keeps to the textures it last rendered with
++   *
++   * Called when the preset releases its textures, so they're freed while the compiled shader
++   * is kept.
++   */
++  virtual void ReleaseTextureReferences() {}
+ };
+ } // namespace KODI::SHADER
+diff --git a/xbmc/cores/RetroPlayer/shaders/ShaderPreset.cpp b/xbmc/cores/RetroPlayer/shaders/ShaderPreset.cpp
+index 4e07ab9c93..4c6e10e153 100644
+--- a/xbmc/cores/RetroPlayer/shaders/ShaderPreset.cpp
++++ b/xbmc/cores/RetroPlayer/shaders/ShaderPreset.cpp
+@@ -262,6 +262,9 @@ void CShaderPreset::DisposeShaders()
+ 
+ void CShaderPreset::ReleaseTextures()
+ {
++  for (const auto& shader : m_pShaders)
++    shader->ReleaseTextureReferences();
++
+   DisposeShaderTextures();
+   for (const auto& lut : m_luts)
+     lut->ReleaseTexture();
+diff --git a/xbmc/cores/RetroPlayer/shaders/gl/ShaderLutGL.cpp b/xbmc/cores/RetroPlayer/shaders/gl/ShaderLutGL.cpp
+index b5fefff9b2..a8feac760c 100644
+--- a/xbmc/cores/RetroPlayer/shaders/gl/ShaderLutGL.cpp
++++ b/xbmc/cores/RetroPlayer/shaders/gl/ShaderLutGL.cpp
+@@ -43,8 +43,14 @@ CTexture* CShaderLutGL::GetTexture()
+ {
+   if (m_released)
+   {
++    // Loading binds the LUT on the active unit, where the caller may have bound its source
++    GLint boundTexture = 0;
++    glGetIntegerv(GL_TEXTURE_BINDING_2D, &boundTexture);
++
+     m_texture = CreateLUTTexture(m_lut);
+     m_released = false;
++
++    glBindTexture(GL_TEXTURE_2D, static_cast<GLuint>(boundTexture));
+   }
+ 
+   return m_texture.get();
+diff --git a/xbmc/cores/RetroPlayer/shaders/gles/ShaderLutGLES.cpp b/xbmc/cores/RetroPlayer/shaders/gles/ShaderLutGLES.cpp
+index 298a9efbff..7e75dcc3d9 100644
+--- a/xbmc/cores/RetroPlayer/shaders/gles/ShaderLutGLES.cpp
++++ b/xbmc/cores/RetroPlayer/shaders/gles/ShaderLutGLES.cpp
+@@ -43,8 +43,14 @@ CTexture* CShaderLutGLES::GetTexture()
+ {
+   if (m_released)
+   {
++    // Loading binds the LUT on the active unit, where the caller may have bound its source
++    GLint boundTexture = 0;
++    glGetIntegerv(GL_TEXTURE_BINDING_2D, &boundTexture);
++
+     m_texture = CreateLUTTexture(m_lut);
+     m_released = false;
++
++    glBindTexture(GL_TEXTURE_2D, static_cast<GLuint>(boundTexture));
+   }
+ 
+   return m_texture.get();
+diff --git a/xbmc/cores/RetroPlayer/shaders/windows/ShaderDX.cpp b/xbmc/cores/RetroPlayer/shaders/windows/ShaderDX.cpp
+index 21ce8368bf..c41e0d987a 100644
+--- a/xbmc/cores/RetroPlayer/shaders/windows/ShaderDX.cpp
++++ b/xbmc/cores/RetroPlayer/shaders/windows/ShaderDX.cpp
+@@ -253,6 +253,16 @@ CShaderDX::cbInput CShaderDX::GetInputData(uint64_t frameCount) const
+   return input;
+ }
+ 
++void CShaderDX::ReleaseTextureReferences()
++{
++  // The effect holds a reference to each resource it was given
++  ID3D11ShaderResourceView* noTexture = nullptr;
++  m_effect.SetResources("decal", &noTexture, 1);
++
++  for (const std::shared_ptr<IShaderLut>& lut : m_luts)
++    m_effect.SetTexture(lut->GetID().c_str(), nullptr);
++}
++
+ void CShaderDX::SetShaderParameters(const CD3DTexture& sourceTexture)
+ {
+   m_effect.SetTechnique("TEQ");
+diff --git a/xbmc/cores/RetroPlayer/shaders/windows/ShaderDX.h b/xbmc/cores/RetroPlayer/shaders/windows/ShaderDX.h
+index 5403c42b83..070ec61638 100644
+--- a/xbmc/cores/RetroPlayer/shaders/windows/ShaderDX.h
++++ b/xbmc/cores/RetroPlayer/shaders/windows/ShaderDX.h
+@@ -46,6 +46,7 @@ public:
+                          const std::vector<std::unique_ptr<IShader>>& pShaders,
+                          uint64_t frameCount) override;
+   void UpdateMVP() override;
++  void ReleaseTextureReferences() override;
+ 
+   /*!
+    * \brief Construct the vertex buffer that will be used to render the shader
+diff --git a/xbmc/guilib/TextureBase.h b/xbmc/guilib/TextureBase.h
+index 08a8e81567..97fe7455fa 100644
+--- a/xbmc/guilib/TextureBase.h
++++ b/xbmc/guilib/TextureBase.h
+@@ -71,6 +71,8 @@ public:
+   uint32_t GetOriginalHeight() const { return m_originalHeight; }
+   /*! \brief return the texture swizzle */
+   KD_TEX_SWIZ GetSwizzle() const { return m_textureSwizzle; }
++  /*! \brief return the texture format */
++  KD_TEX_FMT GetTextureFormat() const { return m_textureFormat; }
+ 
+   // allocates staging texture space.
+   void Allocate(uint32_t width, uint32_t height, XB_FMT format);
+diff --git a/xbmc/interfaces/builtins/PlayerBuiltins.cpp b/xbmc/interfaces/builtins/PlayerBuiltins.cpp
+index db730a2a80..909359c3aa 100644
+--- a/xbmc/interfaces/builtins/PlayerBuiltins.cpp
++++ b/xbmc/interfaces/builtins/PlayerBuiltins.cpp
+@@ -426,6 +426,10 @@ static int PlayerControl(const std::vector<std::string>& params)
+   }
+   else if (paramlow == "bezel")
+   {
++    // The current game settings are only filled in once a game is opened
++    if (!appPlayer->IsPlayingGame())
++      return 0;
++
+     CGameSettings& gameSettings = CMediaSettings::GetInstance().GetCurrentGameSettings();
+     gameSettings.SetBezelEnabled(!gameSettings.BezelEnabled());
+ 
+diff --git a/xbmc/pictures/GUIWindowSlideShow.cpp b/xbmc/pictures/GUIWindowSlideShow.cpp
+index 52a152d368..25db49b737 100644
+--- a/xbmc/pictures/GUIWindowSlideShow.cpp
++++ b/xbmc/pictures/GUIWindowSlideShow.cpp
+@@ -259,11 +259,7 @@ bool CGUIWindowSlideShow::IsPlaying() const
+ 
+ void CGUIWindowSlideShow::Reset()
+ {
+-  if (m_bPlayingMotion)
+-  {
+-    const auto appPlayer = CServiceBroker::GetAppComponents().GetComponent<CApplicationPlayer>();
+-    appPlayer->ClosePlayer();
+-  }
++  CloseMotionClip();
+   m_bSlideShow = false;
+   m_bShuffled = false;
+   m_bPause = false;
+@@ -321,11 +317,8 @@ void CGUIWindowSlideShow::OnDeinitWindow(int nextWindowID)
+   if (m_bPlayingMotion)
+   {
+     // The clip is part of the photo, so it ends with the slideshow
+-    const auto appPlayer = CServiceBroker::GetAppComponents().GetComponent<CApplicationPlayer>();
+-    appPlayer->ClosePlayer();
+-    m_bPlayingMotion = false;
+-    m_bPlayingVideo = false;
+-    m_iVideoSlide = -1;
++    CloseMotionClip();
++    EndMotion();
+   }
+ 
+   if (nextWindowID != WINDOW_FULLSCREEN_VIDEO &&
+@@ -1057,7 +1050,7 @@ bool CGUIWindowSlideShow::OnAction(const CAction &action)
+       // A running slideshow shows moving photos as stills
+       if (m_bPlayingMotion)
+       {
+-        CServiceBroker::GetAppComponents().GetComponent<CApplicationPlayer>()->ClosePlayer();
++        CloseMotionClip();
+         EndMotion();
+       }
+       m_bSlideShow = true;
+@@ -1402,6 +1395,7 @@ bool CGUIWindowSlideShow::PlayMotion()
+             m_slides.at(m_iCurrentSlide)->GetPath());
+   m_bPlayingVideo = true;
+   m_bPlayingMotion = true;
++  m_motionClip = clip;
+   m_iVideoSlide = m_iCurrentSlide;
+   // The clip is part of the photo, so it mustn't switch the display mode like a film
+   const bool startWindowed = CMediaSettings::GetInstance().DoesMediaStartWindowed();
+@@ -1416,11 +1410,19 @@ bool CGUIWindowSlideShow::PlayMotion()
+ void CGUIWindowSlideShow::EndMotion()
+ {
+   m_bPlayingMotion = false;
++  m_motionClip.clear();
+   m_bPlayingVideo = false;
+   m_iVideoSlide = -1;
+   MarkDirtyRegion();
+ }
+ 
++void CGUIWindowSlideShow::CloseMotionClip()
++{
++  // Another video can take over the player without the clip being stopped first
++  if (m_bPlayingMotion && g_application.CurrentFile() == m_motionClip)
++    CServiceBroker::GetAppComponents().GetComponent<CApplicationPlayer>()->ClosePlayer();
++}
++
+ bool CGUIWindowSlideShow::IsShowingVideo() const
+ {
+   // A video's thumbnail, or a moving photo, stays on screen until the clip has a picture to show
+diff --git a/xbmc/pictures/GUIWindowSlideShow.h b/xbmc/pictures/GUIWindowSlideShow.h
+index 93129db681..fbfb602c03 100644
+--- a/xbmc/pictures/GUIWindowSlideShow.h
++++ b/xbmc/pictures/GUIWindowSlideShow.h
+@@ -141,6 +141,7 @@ private:
+   bool PlayVideo();
+   bool PlayMotion();
+   void EndMotion();
++  void CloseMotionClip();
+   bool IsShowingVideo() const;
+   std::string GetMotionClip(const CFileItem& item) const;
+   void SetHdrOutput(bool hdr);
+@@ -177,6 +178,7 @@ private:
+   bool m_bPlayingVideo;
+   int m_iVideoSlide = -1;
+   bool m_bPlayingMotion = false;
++  std::string m_motionClip;
+   int m_iMotionSlide = -1;
+   mutable CCriticalSection m_motionClipsSection;
+   std::map<std::string, std::string, std::less<>> m_motionClips; // picture path -> clip path
+diff --git a/xbmc/pictures/PictureXmp.cpp b/xbmc/pictures/PictureXmp.cpp
+index ce9f97418b..55aa8208c2 100644
+--- a/xbmc/pictures/PictureXmp.cpp
++++ b/xbmc/pictures/PictureXmp.cpp
+@@ -89,13 +89,22 @@ std::vector<ContainerItem> GetContainerItems(std::string_view xmp)
+   std::vector<ContainerItem> items;
+ 
+   constexpr std::string_view itemTag = "<Container:Item";
++  constexpr std::string_view itemEndTag = "</Container:Item>";
+   for (size_t start = xmp.find(itemTag); start != std::string_view::npos;
+        start = xmp.find(itemTag, start + itemTag.size()))
+   {
+-    const size_t end = xmp.find('>', start);
++    size_t end = xmp.find('>', start);
+     if (end == std::string_view::npos)
+       break;
+ 
++    // An item's fields are attributes of its tag, or child elements once an editor such as
++    // ExifTool has rewritten the XMP
++    if (xmp[end - 1] != '/')
++    {
++      if (const size_t close = xmp.find(itemEndTag, end); close != std::string_view::npos)
++        end = close;
++    }
++
+     const std::string_view item = xmp.substr(start, end - start);
+     items.push_back({std::string(GetValue(item, "Item:Semantic")),
+                      ToNumber(GetValue(item, "Item:Length")),
+diff --git a/xbmc/pictures/test/TestMotionPhoto.cpp b/xbmc/pictures/test/TestMotionPhoto.cpp
+index 1f96916853..0cbfbd2a0e 100644
+--- a/xbmc/pictures/test/TestMotionPhoto.cpp
++++ b/xbmc/pictures/test/TestMotionPhoto.cpp
+@@ -102,6 +102,24 @@ TEST(TestMotionPhoto, MotionPhoto)
+   }
+ }
+ 
++TEST(TestMotionPhoto, MotionPhotoWithItemElements)
++{
++  // As ExifTool writes the directory back after an edit
++  const std::string xmp =
++      "<rdf:Description><GCamera:MotionPhoto>1</GCamera:MotionPhoto><Container:Directory>"
++      "<rdf:Seq><rdf:li rdf:parseType=\"Resource\"><Container:Item rdf:parseType=\"Resource\">"
++      "<Item:Length>5</Item:Length><Item:Mime>image/jpeg</Item:Mime>"
++      "<Item:Semantic>Primary</Item:Semantic></Container:Item></rdf:li>"
++      "<rdf:li rdf:parseType=\"Resource\"><Container:Item rdf:parseType=\"Resource\">"
++      "<Item:Length>" +
++      std::to_string(CLIP.size()) +
++      "</Item:Length><Item:Mime>video/mp4</Item:Mime>"
++      "<Item:Semantic>MotionPhoto</Item:Semantic></Container:Item></rdf:li></rdf:Seq>"
++      "</Container:Directory></rdf:Description>";
++  EXPECT_EQ(Extract(MakeJpeg(xmp, CLIP)), CLIP);
++  PICTURE::ClearMotionPhotoClips();
++}
++
+ TEST(TestMotionPhoto, MicroVideo)
+ {
+   const std::string xmp =
+-- 
+2.53.0
+
