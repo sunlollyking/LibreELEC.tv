@@ -1,0 +1,113 @@
+From 360b21e298e59e32ac32e8e4b20031cbca84a2e6 Mon Sep 17 00:00:00 2001
+From: Chris <meischris39@hotmail.com>
+Date: Sat, 31 Oct 2026 16:23:11 +0000
+Subject: [PATCH 1/2] [guilib] Build a container's letter offsets when a letter
+ action needs them
+
+---
+ xbmc/guilib/GUIBaseContainer.cpp | 15 ++++++++++-----
+ 1 file changed, 10 insertions(+), 5 deletions(-)
+
+diff --git a/xbmc/guilib/GUIBaseContainer.cpp b/xbmc/guilib/GUIBaseContainer.cpp
+index 654ed396cd..b4abd6f55d 100644
+--- a/xbmc/guilib/GUIBaseContainer.cpp
++++ b/xbmc/guilib/GUIBaseContainer.cpp
+@@ -561,7 +561,6 @@ bool CGUIBaseContainer::OnMessage(CGUIMessage& message)
+         for (int i = 0; i < items->Size(); i++)
+           m_items.push_back(items->Get(i));
+         UpdateLayout(true); // true to refresh all items
+-        UpdateScrollByLetter();
+         SelectItem(message.GetParam1());
+         return true;
+       }
+@@ -684,6 +683,7 @@ void CGUIBaseContainer::OnRight()
+ 
+ void CGUIBaseContainer::OnNextLetter()
+ {
++  UpdateScrollByLetter();
+   const int offset = CorrectOffset(GetOffset(), GetCursor());
+   // Binary search for first letter offset greater than current position
+   auto it =
+@@ -694,6 +694,7 @@ void CGUIBaseContainer::OnNextLetter()
+ 
+ void CGUIBaseContainer::OnPrevLetter()
+ {
++  UpdateScrollByLetter();
+   const int offset = CorrectOffset(GetOffset(), GetCursor());
+   if (m_letterOffsets.empty())
+     return;
+@@ -706,6 +707,7 @@ void CGUIBaseContainer::OnPrevLetter()
+ 
+ void CGUIBaseContainer::OnJumpLetter(const std::string& letter, bool skip /*=false*/)
+ {
++  UpdateScrollByLetter();
+   if (m_matchTimer.GetElapsedMilliseconds() < letter_match_timeout)
+     m_match += letter;
+   else
+@@ -749,7 +751,11 @@ void CGUIBaseContainer::OnJumpSMS(int letter)
+   static const char letterMap[8][6] = { "ABC2", "DEF3", "GHI4", "JKL5", "MNO6", "PQRS7", "TUV8", "WXYZ9" };
+ 
+   // only 2..9 supported
+-  if (letter < 2 || letter > 9 || m_letterOffsets.empty())
++  if (letter < 2 || letter > 9)
++    return;
++
++  UpdateScrollByLetter();
++  if (m_letterOffsets.empty())
+     return;
+ 
+   const std::string letters = letterMap[letter - 2];
+@@ -1210,9 +1216,6 @@ void CGUIBaseContainer::UpdateListProvider(bool forceRefresh /* = false */)
+         SelectItem(m_items.size()-1);
+       SetInvalid();
+     }
+-    // always update the scroll by letter, as the list provider may have altered labels
+-    // while not actually changing the list items.
+-    UpdateScrollByLetter();
+   }
+ }
+ 
+@@ -1249,6 +1252,8 @@ void CGUIBaseContainer::CalculateLayout()
+   m_scroller.SetValue(GetOffset() * m_layout->Size(m_orientation));
+ }
+ 
++// Only the letter actions read the offsets, and a list provider can change its labels at any
++// time, so they are built for each action
+ void CGUIBaseContainer::UpdateScrollByLetter()
+ {
+   m_letterOffsets.clear();
+-- 
+2.53.0
+
+
+From c215faa69ba83269793d9b7da388e627c26a77aa Mon Sep 17 00:00:00 2001
+From: Chris <meischris39@hotmail.com>
+Date: Mon, 2 Nov 2026 16:52:50 +0000
+Subject: [PATCH 2/2] [guilib] Stop a video control redrawing the screen when
+ nothing plays
+
+Since a3d2a97305 a video control marks itself dirty every frame unless
+video has its own plane, and with nothing playing it has none, so a skin
+that keeps one visible on an idle screen redraws that screen every
+frame. Only do it while something is playing, as the check before that
+change did.
+---
+ xbmc/guilib/GUIVideoControl.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/xbmc/guilib/GUIVideoControl.cpp b/xbmc/guilib/GUIVideoControl.cpp
+index 2e92b599d5..5e7b363312 100644
+--- a/xbmc/guilib/GUIVideoControl.cpp
++++ b/xbmc/guilib/GUIVideoControl.cpp
+@@ -38,7 +38,7 @@ void CGUIVideoControl::Process(unsigned int currentTime, CDirtyRegionList &dirty
+   const auto appPlayer = components.GetComponent<CApplicationPlayer>();
+   // Only fire for single-plane renderers where video draws via the GUI walk.
+   // See CGUIWindowFullScreen::Process for full rationale.
+-  if (!appPlayer->IsRenderingVideoLayer())
++  if (appPlayer->IsPlaying() && !appPlayer->IsRenderingVideoLayer())
+     MarkDirtyRegion();
+ 
+   CGUIControl::Process(currentTime, dirtyregions);
+-- 
+2.53.0
+
