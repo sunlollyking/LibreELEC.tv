@@ -1,0 +1,198 @@
+diff -ruN a/src/include/libplacebo/renderer.h b/src/include/libplacebo/renderer.h
+--- a/src/include/libplacebo/renderer.h	2026-11-02 10:24:09.110418985 +0000
++++ b/src/include/libplacebo/renderer.h	2026-11-02 10:24:13.444090235 +0000
+@@ -373,9 +373,10 @@
+     // Default off. Requires matched renderer headers and library.
+ #define PL_CB1_CHROMA_FILTER_API 1
+     bool cb1_fast_chroma;
+-    // Explicit nearest sampling of the reconstruction EL only; default false.
+-#define PL_CB1_FEL_FILTER_API 1
+-    bool cb1_fel_nearest;
++    // Explicit filter of the reconstruction EL only; default zero.
++#define PL_CB1_FEL_FILTER_API 2
++    // EL-only filter: 0 existing sampler, 1 GPU bilinear, 2 reference GPU.
++    unsigned cb1_fel_filter;
+     // Borrowed opt-in CB1 processing contract. Requires a matched library.
+     const struct pl_cb1_dovi_processing *cb1_processing;
+     // Per-picture integer reference. Null preserves existing composition.
+diff -ruN a/src/renderer.c b/src/renderer.c
+--- a/src/renderer.c	2026-11-02 10:24:09.110707062 +0000
++++ b/src/renderer.c	2026-11-02 10:24:13.444659179 +0000
+@@ -1622,11 +1622,67 @@
+ static int frame_ref(const struct pl_frame *frame);
+ 
+ #ifdef PL_HAVE_DOVI
++// Reuse the reference EL filters without changing BL reconstruction.
++static bool prepare_reference_el(struct pass_state *pass, const struct pl_frame *el,
++                                 struct pl_frame *out)
++{
++    pl_renderer rr = pass->rr;
++    const pl_rect2df bl = pass->image.crop;
++    unsigned depth = el->repr.bits.color_depth;
++    if (bl.x0 || bl.y0 || !pl_cb1_dovi_reference_frame_supported(el, depth))
++        return false;
++    *out = *el;
++    int w = el->crop.x1, h = el->crop.y1;
++    if (w == bl.x1 && h == bl.y1)
++        return true;
++    if (w * 2 != bl.x1 || h * 2 != bl.y1 || w % 2 || h % 2)
++        return false;
++
++    out->num_planes = 2;
++    out->crop = (pl_rect2df) {0, 0, w * 2, h * 2};
++    out->repr.bits = (struct pl_bit_encoding) {.sample_depth=depth, .color_depth=depth};
++    for (int c = 0; c < 2; c++) {
++        pl_fmt fmt = pl_find_fmt(rr->gpu, PL_FMT_FLOAT, c ? 2 : 1, 32, 32,
++                                 PL_FMT_CAP_RENDERABLE | PL_FMT_CAP_SAMPLEABLE | PL_FMT_CAP_LINEAR);
++        if (!fmt) return false;
++        pl_tex vertical = get_fbo(pass, c ? w/2 : w, c ? h : h*2, fmt, c ? 2 : 1, PL_DEBUG_TAG);
++        pl_shader sh = pl_dispatch_begin(rr->dp);
++        bool ok = vertical && sh_dovi_fel_vertical(sh, el, depth, c) &&
++            pl_dispatch_finish(rr->dp, pl_dispatch_params(.shader=&sh, .target=vertical));
++        pl_dispatch_abort(rr->dp, &sh);
++        if (!ok) return false;
++        pl_tex horizontal = get_fbo(pass, c ? w : w*2, c ? h : h*2, fmt, c ? 2 : 1, PL_DEBUG_TAG);
++        sh = pl_dispatch_begin(rr->dp);
++        ok = horizontal && sh_dovi_fel_horizontal(sh, vertical, depth, c) &&
++            pl_dispatch_finish(rr->dp, pl_dispatch_params(.shader=&sh, .target=horizontal));
++        pl_dispatch_abort(rr->dp, &sh);
++        if (!ok) return false;
++        const struct pl_plane *source = &el->planes[0];
++        for (int p = 0; p < el->num_planes; p++)
++            if (el->planes[p].component_mapping[0] == c)
++                source = &el->planes[p];
++        out->planes[c] = (struct pl_plane) {
++            .texture=horizontal, .components=c ? 2 : 1,
++            .component_mapping={c, c ? 2 : -1, -1, -1},
++            .shift_x=source->shift_x, .shift_y=source->shift_y,
++        };
++    }
++    return true;
++}
++
+ // Build a sub-shader that samples the enhancement layer planes and returns
+ // the (color-repr-normalized) EL signal.
+ static pl_shader sample_el(struct pass_state *pass, const struct pl_frame *el)
+ {
+     pl_renderer rr = pass->rr;
++    struct pl_frame prepared;
++    if (pass->params->cb1_fel_filter == 2) {
++        if (!prepare_reference_el(pass, el, &prepared)) {
++            PL_ERR(rr, "Reference FEL filter: unsupported EL layout or enlargement");
++            return NULL;
++        }
++        el = &prepared;
++    }
+     pl_shader sh = pl_dispatch_begin_ex(rr->dp, true);
+     if (!sh_require(sh, PL_SHADER_SIG_NONE, 0, 0))
+         return NULL;
+@@ -1652,17 +1708,22 @@
+     }
+ 
+     float layer_x = 0, layer_y = 0;
+-    if (el_ref->params.w < ref_tex->params.w || el_ref->params.h < ref_tex->params.h) {
++    const bool reference_el = pass->params->cb1_fel_filter == 2;
++    float bl_w = reference_el ? bl_crop.x1 : ref_tex->params.w;
++    float bl_h = reference_el ? bl_crop.y1 : ref_tex->params.h;
++    float el_w = reference_el ? el->crop.x1 : el_ref->params.w;
++    float el_h = reference_el ? el->crop.y1 : el_ref->params.h;
++    if (el_w < bl_w || el_h < bl_h) {
+         float lx, ly;
+         pl_chroma_location_offset(PL_CHROMA_LEFT, &lx, &ly);
+-        if (el_ref->params.w < ref_tex->params.w)
++        if (el_w < bl_w)
+             layer_x = lx;
+-        if (el_ref->params.h < ref_tex->params.h)
++        if (el_h < bl_h)
+             layer_y = ly;
+     }
+ 
+-    float lrx = (float) el_ref->params.w / ref_tex->params.w,
+-          lry = (float) el_ref->params.h / ref_tex->params.h;
++    float lrx = el_w / bl_w,
++          lry = el_h / bl_h;
+     float rlx = lrx >= 1 ? roundf(lrx) : 1.0 / roundf(1.0 / lrx),
+           rly = lry >= 1 ? roundf(lry) : 1.0 / roundf(1.0 / lry);
+ 
+@@ -1709,13 +1770,13 @@
+         pl_shader plane_sh = pl_dispatch_begin_ex(rr->dp, true);
+         enum sampler_usage usage = detect_plane_type(plane, &el->repr) == PLANE_CHROMA ?
+                                    SAMPLER_CHROMA : SAMPLER_PLANE;
+-        if (pass->params->cb1_fel_nearest) {
++        if (pass->params->cb1_fel_filter) {
+             if (plane->flipped) {
+                 src.rect.y0 = plane->texture->params.h - src.rect.y0;
+                 src.rect.y1 = plane->texture->params.h - src.rect.y1;
+             }
+             if (usage != SAMPLER_PLANE || skip_inactive_rows(pass, plane_sh, src.new_h, true))
+-                pl_shader_sample_nearest(plane_sh, &src);
++                pl_shader_sample_bilinear(plane_sh, &src);
+         } else {
+             dispatch_sampler(pass, plane_sh, &rr->samplers_el[i], usage,
+                              NULL, &src);
+@@ -2273,6 +2334,10 @@
+         if (compose_el) {
+             el_sh = sample_el(pass, image->enhancement_layer);
+             if (!el_sh) {
++                if (params->cb1_fel_filter == 2) {
++                    PL_ERR(rr, "Reference FEL filtering failed; refusing BL-only reconstruction");
++                    return false;
++                }
+                 PL_ERR(rr, "Failed sampling enhancement layer; "
+                            "falling back to base-layer-only rendering");
+                 rr->errors |= PL_RENDER_ERR_SAMPLING;
+diff -ruN a/src/shaders/dovi_reference.c b/src/shaders/dovi_reference.c
+--- a/src/shaders/dovi_reference.c	2026-11-02 10:24:09.111603984 +0000
++++ b/src/shaders/dovi_reference.c	2026-11-02 10:24:13.445239480 +0000
+@@ -330,10 +330,15 @@
+ bool sh_dovi_reference_el_vertical(pl_shader sh, const struct pl_cb1_dovi_reference *data,
+                                    const struct pl_frame *image, bool chroma)
+ {
+-    if (!data || !data->residual || !image || !image->enhancement_layer ||
+-        !sh_require(sh,PL_SHADER_SIG_NONE,0,0)) return false;
++    return data && data->residual && image && image->enhancement_layer &&
++        sh_dovi_fel_vertical(sh,image->enhancement_layer,data->el_depth,chroma);
++}
++
++bool sh_dovi_fel_vertical(pl_shader sh,const struct pl_frame *el,unsigned depth,bool chroma)
++{
++    if (!el || !sh_require(sh,PL_SHADER_SIG_NONE,0,0)) return false;
+     ident_t raw[3]={0};
+-    if (!reference_planes(sh,image->enhancement_layer,data->el_depth,raw,false)) return false;
++    if (!reference_planes(sh,el,depth,raw,false)) return false;
+     GLSL("vec4 color=vec4(0.0,0.0,0.0,1.0);\n");
+     for (int c=chroma?1:0;c<(chroma?3:1);c++) {
+         ident_t vertical=reference_el_vertical(sh,raw[c],chroma);
+@@ -360,6 +365,20 @@
+     return horizontal;
+ }
+ 
++bool sh_dovi_fel_horizontal(pl_shader sh,pl_tex vertical,unsigned depth,bool chroma)
++{
++    if (!vertical || (depth!=8 && depth!=10) || !sh_require(sh,PL_SHADER_SIG_NONE,0,0)) return false;
++    ident_t sampler=sh_bind(sh,vertical,PL_TEX_ADDRESS_CLAMP,PL_TEX_SAMPLE_NEAREST,
++        "fel_vertical",NULL,NULL,NULL);
++    if (!sampler) return false;
++    GLSL("vec4 color=vec4(0.0,0.0,0.0,1.0);\n");
++    for(int c=0;c<(chroma?2:1);c++){
++        ident_t sample=reference_el_horizontal(sh,vertical,sampler,c,false);
++        GLSL("color[%d]=float("$"(ivec2(gl_FragCoord.xy)))/%u.0;\n",c,sample,(1u<<depth)-1);
++    }
++    return true;
++}
++
+ static bool p5_fast_component(pl_shader sh, const struct pl_cb1_dovi_reference *data,
+                               int c, ident_t signal, const ident_t bounds[2])
+ {
+diff -ruN a/src/shaders.h b/src/shaders.h
+--- a/src/shaders.h	2026-11-02 10:24:09.111891149 +0000
++++ b/src/shaders.h	2026-11-02 10:24:13.445503048 +0000
+@@ -246,6 +246,8 @@
+ struct pl_frame;
+ bool sh_dovi_reference_el_vertical(pl_shader sh, const struct pl_cb1_dovi_reference *data,
+     const struct pl_frame *image, bool chroma);
++bool sh_dovi_fel_vertical(pl_shader sh,const struct pl_frame *el,unsigned depth,bool chroma);
++bool sh_dovi_fel_horizontal(pl_shader sh,pl_tex vertical,unsigned depth,bool chroma);
+ bool sh_dovi_reference_grid(pl_shader sh, const struct pl_cb1_dovi_reference *data,
+     const struct pl_frame *image, bool chroma, pl_tex vertical,
+     pl_shader_obj *mmr_state);
