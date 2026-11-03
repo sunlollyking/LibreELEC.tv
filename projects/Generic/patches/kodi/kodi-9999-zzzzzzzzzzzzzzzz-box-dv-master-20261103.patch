@@ -1,0 +1,26 @@
+--- a/xbmc/cores/VideoPlayer/DVDDemuxers/DVDDemuxBluray3D.h	2026-11-03 16:42:16.952195479 +0000
++++ b/xbmc/cores/VideoPlayer/DVDDemuxers/DVDDemuxBluray3D.h	2026-11-03 16:42:17.148171610 +0000
+@@ -68,7 +68,7 @@
+   void SetProgram(int progId) override;
+   std::string GetFileName() override;
+   std::string GetStreamCodecName(int64_t demuxerId, int iStreamId) override;
+-  void EnableStream(int64_t demuxerId, int id, bool enable) override;
++  bool EnableStream(int64_t demuxerId, int id, bool enable) override;
+   void OpenStream(int64_t demuxerId, int id) override;
+   void SetVideoResolution(unsigned int width, unsigned int height) override;
+ 
+--- a/xbmc/cores/VideoPlayer/DVDDemuxers/DVDDemuxBluray3D.cpp	2026-11-03 16:42:16.952099205 +0000
++++ b/xbmc/cores/VideoPlayer/DVDDemuxers/DVDDemuxBluray3D.cpp	2026-11-03 16:42:17.148400504 +0000
+@@ -698,10 +698,9 @@
+   return m_base ? m_base->GetStreamCodecName(iStreamId) : std::string{};
+ }
+ 
+-void CDVDDemuxBluray3D::EnableStream(int64_t demuxerId, int id, bool enable)
++bool CDVDDemuxBluray3D::EnableStream(int64_t demuxerId, int id, bool enable)
+ {
+-  if (m_base)
+-    m_base->EnableStream(demuxerId, id, enable);
++  return m_base && m_base->EnableStream(demuxerId, id, enable);
+ }
+ 
+ void CDVDDemuxBluray3D::OpenStream(int64_t demuxerId, int id)
