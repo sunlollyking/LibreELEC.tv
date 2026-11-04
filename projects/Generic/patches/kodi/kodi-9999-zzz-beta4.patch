@@ -5246,11 +5246,10 @@ index 729d007..3973367 100644
  {
    EGLint numMatched{0};
  
-@@ -295,8 +296,11 @@ bool CEGLContextUtils::ChooseConfig(EGLint renderableType, EGLint visualId, bool
+@@ -295,8 +296,10 @@ bool CEGLContextUtils::ChooseConfig(EGLint renderableType, EGLint visualId, bool
                 {EGL_RENDERABLE_TYPE, renderableType}});
  
    EGLConfig* currentConfig(hdr ? &m_eglHDRConfig : &m_eglConfig);
-+  const EGLConfig previousConfig = *currentConfig;
 +  if (floating && !CEGLUtils::HasExtension(m_eglDisplay, "EGL_EXT_pixel_format_float"))
 +    return false;
  
@@ -5268,14 +5267,6 @@ index 729d007..3973367 100644
          Destroy();
      }
      else
-@@ -342,6 +346,7 @@ bool CEGLContextUtils::ChooseConfig(EGLint renderableType, EGLint visualId, bool
- 
-   if (visualId != 0 && visualId != id)
-   {
-+    *currentConfig = previousConfig;
-     CLog::Log(LOGDEBUG, "failed to find EGL config with EGL_NATIVE_VISUAL_ID={}", visualId);
-     return false;
-   }
 diff --git a/xbmc/utils/EGLUtils.h b/xbmc/utils/EGLUtils.h
 index c211693..3bc472f 100644
 --- a/xbmc/utils/EGLUtils.h

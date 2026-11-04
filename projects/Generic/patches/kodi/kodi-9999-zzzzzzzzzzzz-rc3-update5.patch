@@ -1,0 +1,261 @@
+diff --git a/xbmc/cores/AudioEngine/Sinks/AESinkALSA.cpp b/xbmc/cores/AudioEngine/Sinks/AESinkALSA.cpp
+--- a/xbmc/cores/AudioEngine/Sinks/AESinkALSA.cpp
++++ b/xbmc/cores/AudioEngine/Sinks/AESinkALSA.cpp
+@@ -204,6 +204,13 @@
+ 
+       info = ALSAchmapToAEChannelMap(actualMap);
+ 
++      // HDMI may report unnamed channels while ELD is being refreshed.
++      if (channels == 2 && actualMap->channels == 2 && !info.IsLayoutValid() &&
++          format.m_channelLayout.Count() == 2 &&
++          format.m_channelLayout.HasChannel(AE_CH_FL) &&
++          format.m_channelLayout.HasChannel(AE_CH_FR))
++        info = GetChannelLayoutLegacy(format, channels, channels);
++
+       /* "fake" a compatible map if it is more suitable for AE */
+       if (!info.ContainsChannels(format.m_channelLayout))
+       {
+diff --git a/xbmc/cores/VideoPlayer/DVDCodecs/Video/VAAPI.cpp b/xbmc/cores/VideoPlayer/DVDCodecs/Video/VAAPI.cpp
+--- a/xbmc/cores/VideoPlayer/DVDCodecs/Video/VAAPI.cpp
++++ b/xbmc/cores/VideoPlayer/DVDCodecs/Video/VAAPI.cpp
+@@ -1098,10 +1098,19 @@
+ 
+ #ifdef CB1_HAS_HDR10_AI
+   if (state == VAAPI_OPEN &&
+-      m_hdr10AIBuffers != static_cast<ICallbackHWAccel*>(avctx->opaque)->GetHDR10AIBufferCount())
++      m_hdr10AIBuffers < static_cast<ICallbackHWAccel*>(avctx->opaque)->GetHDR10AIBufferCount())
+   {
+-    static_cast<ICallbackHWAccel*>(avctx->opaque)->PrepareHDR10AIReopen();
+-    return CDVDVideoCodec::VC_REOPEN;
++    // Finish output reads before Reopen destroys the codec-owned VA context.
++    Reset();
++    {
++      std::unique_lock lock(m_DecoderSection);
++      state = m_DisplayState;
++    }
++    if (state == VAAPI_OPEN)
++    {
++      static_cast<ICallbackHWAccel*>(avctx->opaque)->PrepareHDR10AIReopen();
++      return CDVDVideoCodec::VC_REOPEN;
++    }
+   }
+ #endif
+   if (state == VAAPI_LOST)
+diff --git a/xbmc/cores/VideoPlayer/DVDDemuxers/DVDDemuxFFmpeg.cpp b/xbmc/cores/VideoPlayer/DVDDemuxers/DVDDemuxFFmpeg.cpp
+--- a/xbmc/cores/VideoPlayer/DVDDemuxers/DVDDemuxFFmpeg.cpp
++++ b/xbmc/cores/VideoPlayer/DVDDemuxers/DVDDemuxFFmpeg.cpp
+@@ -2502,6 +2502,11 @@
+   {
+     /* was new stream */
+     stream->uniqueId = streamIdx;
++#ifdef HAVE_DVBRIDGE
++    // The joined BL can be admitted after Kodi's initial stream inventory.
++    if (m_blurayDovi && streamIdx == m_blurayBase)
++      stream->source = STREAM_SOURCE_NONE;
++#endif
+   }
+   else
+   {
+diff --git a/xbmc/cores/VideoPlayer/VideoPlayerVideo.cpp b/xbmc/cores/VideoPlayer/VideoPlayerVideo.cpp
+--- a/xbmc/cores/VideoPlayer/VideoPlayerVideo.cpp
++++ b/xbmc/cores/VideoPlayer/VideoPlayerVideo.cpp
+@@ -1131,6 +1131,9 @@
+   int buffer = m_renderManager.WaitForBuffer(m_bAbortOutput, maxWaitTime);
+   if (buffer < 0)
+   {
++    if (m_bAbortOutput)
++      return OUTPUT_ABORT;
++
+     // The render buffer pool can fill up in trick-play FF, with more new pictures decoded than
+     // are taken out at the display rate.
+     // Drop the picture to let the renderer naturally drain the pool and make room for next iteration.
+diff --git a/xbmc/cores/VideoPlayer/VideoRenderers/DVBridgeGLES.cpp b/xbmc/cores/VideoPlayer/VideoRenderers/DVBridgeGLES.cpp
+--- a/xbmc/cores/VideoPlayer/VideoRenderers/DVBridgeGLES.cpp
++++ b/xbmc/cores/VideoPlayer/VideoRenderers/DVBridgeGLES.cpp
+@@ -650,7 +650,8 @@
+   ClearNextHDR10AI();
+   if (preferences.hdr10Source == DVBRIDGE::HDR10SourceMode::Native)
+     return StopHDR10AI() ? Decision::Native : Decision::Wait;
+-  if (m_state->aiStopping && !StopHDR10AI()) return Decision::Wait;
++  const bool retiring = m_state->aiStopping;
++  if (retiring && !StopHDR10AI()) return Decision::Wait;
+   if (queue.empty() || !result) return Decision::Ignore;
+   // Retire completed RGB leases even while anticipation is incomplete.
+   if (Poll() == DVBRIDGE_DV_FAILED)
+@@ -671,8 +672,8 @@
+   {
+     cb1_hdr10plus_dovi_result description{};
+     const bool direct=metadata && cb1_hdr10plus_dovi_describe(&description,metadata.get(),nullptr)==CB1_HDR10PLUS_DOVI_OK;
+-    // The existing stop fence retires prior analysis/leases before changing strategy.
+-    if(direct && !StopHDR10AI())return Decision::Wait;
++    // A stop completed at entry already retired prior analysis/leases.
++    if(direct && !retiring && !StopHDR10AI())return Decision::Wait;
+     const auto status = direct ? (m_state->gl && !Quarantined() ?
+         HDR10AI().Begin(m_state->gl->gpu,bundle,preferences,head.binding,head.pts,now,true,true) :
+         HDR10AI().RecordStatus("metadata-context",CB1_AI_INCOMPATIBLE)) :
+diff --git a/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/RendererVAAPIGLES.cpp b/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/RendererVAAPIGLES.cpp
+--- a/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/RendererVAAPIGLES.cpp
++++ b/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/RendererVAAPIGLES.cpp
+@@ -333,14 +333,12 @@
+   const auto index = queue.front();
+   const auto binding = head->doviSourceBinding;
+   const auto preferences = DVBRIDGE::FrameOutputSettings(head->hdrType == StreamHdrType::HDR_TYPE_HDR10PLUS);
+-  // A mode switch can reuse the decoded pool without another Configure().
+-  m_aiOutputPending |=
+-      (preferences.hdr10Source != DVBRIDGE::HDR10SourceMode::Native) != m_dvRequested;
+   if (preferences.hdr10Source == DVBRIDGE::HDR10SourceMode::Native)
+   {
+     // Preserve the original locked/native stop and readiness path.
+     const bool ready = window->PrepareHDR10AIQueue(*head,layers,end,paused,presentationDeadline);
+     m_aiLookahead = window->HDR10AILookaheadActive();
++    m_aiOutputPending |= m_aiLookahead != m_dvRequested;
+     if (ready && m_aiOutputPending)
+     {
+       if (!ConfigureVideoOutput(*head)) return {false, {}, {}};
+@@ -360,6 +358,8 @@
+             settings.revision != preferences.revision || !settings.SameValues(preferences))
+           return false;
+         m_aiLookahead = outcome.lookahead;
++        // Automatic fallback can change the resolved route without a mode switch.
++        m_aiOutputPending |= m_aiLookahead != m_dvRequested;
+         if (outcome.ready && m_aiOutputPending)
+         {
+           if (!ConfigureVideoOutput(*current)) return false;
+diff --git a/xbmc/cores/VideoPlayer/VideoRenderers/LinuxRendererGLES.cpp b/xbmc/cores/VideoPlayer/VideoRenderers/LinuxRendererGLES.cpp
+--- a/xbmc/cores/VideoPlayer/VideoRenderers/LinuxRendererGLES.cpp
++++ b/xbmc/cores/VideoPlayer/VideoRenderers/LinuxRendererGLES.cpp
+@@ -296,6 +296,8 @@
+     CLog::Log(LOGWARNING, "LinuxRendererGLES::Configure: HDR passthrough active but GUI "
+                           "compositing not supported by windowing system");
+ 
++  // AI priming may have compiled the ordinary shader before HDR was selected.
++  m_reloadShaders = true;
+   m_bConfigured = true;
+   return true;
+ }
+diff --git a/xbmc/cores/VideoPlayer/VideoRenderers/RenderManager.cpp b/xbmc/cores/VideoPlayer/VideoRenderers/RenderManager.cpp
+--- a/xbmc/cores/VideoPlayer/VideoRenderers/RenderManager.cpp
++++ b/xbmc/cores/VideoPlayer/VideoRenderers/RenderManager.cpp
+@@ -762,11 +762,19 @@
+       m_overlays.Flush();
+       m_debugRenderer.Flush();
+ #ifdef CB1_HAS_HDR10_AI
+-      ResetHDR10AIQueue();
++      // Reset display timing even when its decoded pictures survive.
++      if (m_clockSync.m_cb1Phase)
++      {
++        m_clockSync.Reset();
++        m_dvdClock.SetVsyncAdjust(0);
++      }
+ #endif
+ 
+       if (!m_pRenderer->Flush(saveBuffers))
+       {
++#ifdef CB1_HAS_HDR10_AI
++        ResetHDR10AIQueue();
++#endif
+         for (auto& slot : m_Queue) slot.sourceSideData.reset();
+         m_queued.clear();
+         m_discard.clear();
+diff --git a/xbmc/windowing/gbm/WinSystemGbmGLESContext.cpp b/xbmc/windowing/gbm/WinSystemGbmGLESContext.cpp
+--- a/xbmc/windowing/gbm/WinSystemGbmGLESContext.cpp
++++ b/xbmc/windowing/gbm/WinSystemGbmGLESContext.cpp
+@@ -811,6 +811,38 @@
+ 
+ bool CWinSystemGbmGLESContext::BeginGuiComposite(bool guiWillRender)
+ {
++#ifdef HAVE_DVBRIDGE
++  if (guiWillRender && (m_dvContext || m_dvState.Captured() || m_hdrConversion))
++  {
++    // AI priming can run before DV output or GUI compositing is active.
++    // Restore Kodi's logical GUI state before either drawing path.
++    CRect viewport;
++    CRenderSystemGLES::GetViewPort(viewport);
++    GLint before[4]{}, framebuffer{};
++    const auto now = DVBRIDGE::DiagnosticNowMs();
++    const bool report = DVBRIDGE::DiagnosticsEnabled() && m_dvGuiDiagnostic.Due(now);
++    if (report)
++    {
++      // Bound GL queries even when the common diagnostic budget is exhausted.
++      m_dvGuiDiagnostic.Emitted(now);
++      glGetIntegerv(GL_VIEWPORT, before);
++      glGetIntegerv(GL_FRAMEBUFFER_BINDING, &framebuffer);
++    }
++    CRenderSystemGLES::SetViewPort(viewport);
++    const auto& context = GetGfxContext();
++    CRenderSystemGLES::SetScissors(context.StereoCorrection(context.GetScissors()));
++    if (report)
++    {
++      GLint after[4]{};
++      glGetIntegerv(GL_VIEWPORT, after);
++      DVBRIDGE::DiagnosticLog(LOGINFO,
++          "CB1 GUI viewport: before={},{},{},{} after={},{},{},{} framebuffer={} fbo={}x{} window={}x{} dv={} hdr_conversion={}",
++          before[0], before[1], before[2], before[3], after[0], after[1], after[2], after[3],
++          framebuffer, m_guiFboWidth, m_guiFboHeight, m_nWidth, m_nHeight,
++          m_dvState.Captured(), m_hdrConversion);
++    }
++  }
++#endif
+   if (!m_guiCompositing)
+     return false;
+ 
+@@ -881,37 +913,6 @@
+   if (!m_guiFbo.BeginRender())
+     return false;
+ 
+-#ifdef HAVE_DVBRIDGE
+-  if (m_dvState.Captured() || m_hdrConversion)
+-  {
+-    // Restore Kodi's GUI viewport and clip after offscreen video or AI passes.
+-    CRect viewport;
+-    CRenderSystemGLES::GetViewPort(viewport);
+-    GLint before[4]{}, framebuffer{};
+-    const auto now = DVBRIDGE::DiagnosticNowMs();
+-    const bool report = DVBRIDGE::DiagnosticsEnabled() && m_dvGuiDiagnostic.Due(now);
+-    if (report)
+-    {
+-      // Bound GL queries even when the common diagnostic budget is exhausted.
+-      m_dvGuiDiagnostic.Emitted(now);
+-      glGetIntegerv(GL_VIEWPORT, before);
+-      glGetIntegerv(GL_FRAMEBUFFER_BINDING, &framebuffer);
+-    }
+-    CRenderSystemGLES::SetViewPort(viewport);
+-    const auto& context = GetGfxContext();
+-    CRenderSystemGLES::SetScissors(context.StereoCorrection(context.GetScissors()));
+-    if (report)
+-    {
+-      GLint after[4]{};
+-      glGetIntegerv(GL_VIEWPORT, after);
+-      DVBRIDGE::DiagnosticLog(LOGINFO,
+-          "CB1 GUI viewport: before={},{},{},{} after={},{},{},{} framebuffer={} fbo={}x{} window={}x{} dv={} hdr_conversion={}",
+-          before[0], before[1], before[2], before[3], after[0], after[1], after[2], after[3],
+-          framebuffer, m_guiFboWidth, m_guiFboHeight, m_nWidth, m_nHeight,
+-          m_dvState.Captured(), m_hdrConversion);
+-    }
+-  }
+-#endif
+ 
+   // Clear only when the FBO holds stale content; idle frames are already clean.
+   if (!m_guiFboClean)
+@@ -1547,6 +1548,8 @@
+   cb1_ai_result prediction{};
+   if (m_dvContext->Initialize(false))
+   {
++    // Kodi's display-reset delay is not time spent waiting for an AI prediction.
++    paused |= picture.hdrType == StreamHdrType::HDR_TYPE_HDR10 && m_dispReset;
+     decision = m_dvContext->PrepareHDR10AIQueue(queue, preferences,
+         CB1_L1L3_BUNDLE_DIR, DVBRIDGE::DiagnosticNowMs(), end, &prediction, paused,
+         presentationDeadline);
+@@ -2266,7 +2269,12 @@
+       m_previousSourceStream == layer.binding.stream &&
+       DVBRIDGE::ContinuousPresentationPicture(layer.pts, m_previousSourcePts) &&
+       m_dvSelection.reason == DVBRIDGE::OutputReason::None;
++#ifdef CB1_HAS_HDR10_AI
++  const auto preferences = DVBRIDGE::FrameOutputSettings(
++      !metadata.Data() && m_dvContext && m_dvContext->HDR10AI().HDR10Plus());
++#else
+   const auto preferences = DVBRIDGE::FrameOutputSettings();
++#endif
+   m_masterFramePeriodNs=m_continuousFrameEligible && preferences.allowMasterFallback &&
+       m_dvSelection.policy.mode==DVBRIDGE_MODE_MASTER_REFERENCE ?
+       DVBRIDGE::MasterFramePeriodNs(CServiceBroker::GetDataCacheCore().GetVideoFps()) : 0;
