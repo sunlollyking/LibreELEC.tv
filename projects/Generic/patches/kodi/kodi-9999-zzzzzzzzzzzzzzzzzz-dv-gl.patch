@@ -1857,7 +1857,7 @@ index 0000000000..6cd08b7a6f
 +#endif
 +} // namespace KODI::WINDOWING::GBM
 diff --git a/xbmc/windowing/gbm/WinSystemGbmGLContext.cpp b/xbmc/windowing/gbm/WinSystemGbmGLContext.cpp
-index 4eb5eac280..36631fc309 100644
+index 4eb5eac280..82a80a4ea7 100644
 --- a/xbmc/windowing/gbm/WinSystemGbmGLContext.cpp
 +++ b/xbmc/windowing/gbm/WinSystemGbmGLContext.cpp
 @@ -7,6 +7,14 @@
@@ -3150,8 +3150,8 @@ index 4eb5eac280..36631fc309 100644
 +    {
 +      if (auto* renderer = context->Attach())
 +      {
-+        const bool common = pl_opengl_has_ext(context->GL(), "GL_EXT_float_blend") &&
-+            pl_opengl_has_ext(context->GL(), "GL_OES_texture_float_linear");
++        // Desktop OpenGL has float blending and linear float filtering in core.
++        const bool common = true;
 +        caps.processingKnown = true;
 +        for (unsigned mode = 1; mode < caps.processing.size(); ++mode)
 +        {
