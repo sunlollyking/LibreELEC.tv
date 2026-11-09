@@ -220,7 +220,7 @@ index 19e54726c1..867c6f832c 100644
    add_subdirectory("${DVBRIDGE_SOURCE_DIR}" "${CMAKE_CURRENT_BINARY_DIR}/dvbridge-core")
    file(READ "${DVBRIDGE_SOURCE_DIR}/pack_gles300.vert" DVBRIDGE_VERTEX_SOURCE)
 diff --git a/xbmc/cores/VideoPlayer/VideoRenderers/DVBridgeGLES.cpp b/xbmc/cores/VideoPlayer/VideoRenderers/DVBridgeGLES.cpp
-index 34aadc0375..15277648bb 100644
+index 34aadc0375..5f38da9c38 100644
 --- a/xbmc/cores/VideoPlayer/VideoRenderers/DVBridgeGLES.cpp
 +++ b/xbmc/cores/VideoPlayer/VideoRenderers/DVBridgeGLES.cpp
 @@ -1,6 +1,10 @@
@@ -302,6 +302,36 @@ index 34aadc0375..15277648bb 100644
    m_renderer = m_context->Attach();
    m_packer = dvbridge_gl_packer_create(DVBRIDGE_VERTEX, DVBRIDGE_FRAGMENT);
    return m_renderer && m_packer && RebindOutputSurface(hdr10);
+@@ -1200,12 +1221,28 @@ bool CDVBridgeGLES::RebindOutputSurface(bool hdr10)
+   glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &draw);
+   glGetIntegerv(GL_READ_FRAMEBUFFER_BINDING, &read);
+   glBindFramebuffer(GL_FRAMEBUFFER, 0);
++#if defined(HAS_GL)
++  // Core profiles dropped GL_RED_BITS and call the default colour buffer GL_BACK_LEFT.
++  glGetFramebufferAttachmentParameteriv(GL_FRAMEBUFFER, GL_BACK_LEFT,
++      GL_FRAMEBUFFER_ATTACHMENT_RED_SIZE, &red);
++  glGetFramebufferAttachmentParameteriv(GL_FRAMEBUFFER, GL_BACK_LEFT,
++      GL_FRAMEBUFFER_ATTACHMENT_GREEN_SIZE, &green);
++  glGetFramebufferAttachmentParameteriv(GL_FRAMEBUFFER, GL_BACK_LEFT,
++      GL_FRAMEBUFFER_ATTACHMENT_BLUE_SIZE, &blue);
++  glGetFramebufferAttachmentParameteriv(GL_FRAMEBUFFER, GL_BACK_LEFT,
++      GL_FRAMEBUFFER_ATTACHMENT_COLOR_ENCODING, &encoding);
++  // Mesa gives desktop default framebuffers sRGB formats; writes stay linear until
++  // GL_FRAMEBUFFER_SRGB is enabled.
++  if (encoding == GL_SRGB && !glIsEnabled(GL_FRAMEBUFFER_SRGB))
++    encoding = GL_LINEAR;
++#else
+   glGetIntegerv(GL_RED_BITS, &red);
+   glGetIntegerv(GL_GREEN_BITS, &green);
+   glGetIntegerv(GL_BLUE_BITS, &blue);
+-  glGetIntegerv(GL_SAMPLES, &samples);
+   glGetFramebufferAttachmentParameteriv(GL_FRAMEBUFFER, GL_BACK,
+       GL_FRAMEBUFFER_ATTACHMENT_COLOR_ENCODING, &encoding);
++#endif
++  glGetIntegerv(GL_SAMPLES, &samples);
+   pl_tex candidate{};
+   if (glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE &&
+       ((hdr10 && red >= 10 && green >= 10 && blue >= 10) ||
 diff --git a/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/RendererVAAPIGL.cpp b/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/RendererVAAPIGL.cpp
 index 15d23a738a..5ca3af705e 100644
 --- a/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/RendererVAAPIGL.cpp
