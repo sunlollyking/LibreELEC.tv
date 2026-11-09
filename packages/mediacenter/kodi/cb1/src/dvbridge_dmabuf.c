@@ -2,8 +2,16 @@
 /* Import validated VAAPI DMA-BUF planes without copying decoded video to the CPU. */
 #include "dvbridge_dmabuf.h"
 #include <EGL/eglext.h>
+#if defined(DVBRIDGE_DESKTOP_GL)
+#include "dvbridge_gl_api.h"
+#else
 #include <GLES3/gl3.h>
+#endif
+#if defined(DVBRIDGE_DESKTOP_GL)
+#include "dvbridge_gl_api.h"
+#else
 #include <GLES2/gl2ext.h>
+#endif
 #include <libavutil/hwcontext.h>
 #include <libavutil/hwcontext_drm.h>
 #include <libdrm/drm_fourcc.h>
