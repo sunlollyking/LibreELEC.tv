@@ -1,0 +1,2876 @@
+diff -ruN a/addons/resource.language.en_gb/resources/strings.po b/addons/resource.language.en_gb/resources/strings.po
+--- a/addons/resource.language.en_gb/resources/strings.po
++++ b/addons/resource.language.en_gb/resources/strings.po
+@@ -27317,7 +27317,7 @@
+ 
+ #: system/settings/settings.xml
+ msgctxt "#40811"
+-msgid "Dolby Vision output"
++msgid "Dolby Vision playback"
+ msgstr ""
+ 
+ #: system/settings/settings.xml
+@@ -27332,12 +27332,12 @@
+ 
+ #: system/settings/settings.xml
+ msgctxt "#40814"
+-msgid "Dolby Vision Disabled (native Kodi)"
++msgid "Kodi default"
+ msgstr ""
+ 
+ #: system/settings/settings.xml
+ msgctxt "#40815"
+-msgid "Choose Dolby Vision Master Reference, Dolby Vision Reference, Adaptive HDR Mapping, HDR10 conversion or standard Kodi playback. Changes apply at a video frame boundary."
++msgid "Choose playback for Dolby Vision sources: Reference, Master Reference, Adaptive HDR Mapping, HDR10 Rendering, HDR10 Rendering Reference, HDR10+ Rendering or Kodi default. Kodi default bypasses CB1 processing. Changes apply at a video frame boundary."
+ msgstr ""
+ 
+ #: system/settings/settings.xml
+@@ -27365,11 +27365,11 @@
+ msgstr ""
+ 
+ msgctxt "#40821"
+-msgid "Basic uses source metadata. Expert requires a TV profile. HDR10+ sends picture statistics and representable trims to a compatible display."
++msgid "HDR10 Rendering uses source metadata. HDR10 Rendering Reference maps to the configured display peak, black level and gamut. HDR10+ sends picture statistics and representable trims to a compatible display."
+ msgstr ""
+ 
+ msgctxt "#40922"
+-msgid "HDR10+ conversion"
++msgid "HDR10+ Rendering"
+ msgstr ""
+ 
+ msgctxt "#40923"
+@@ -27385,11 +27385,11 @@
+ msgstr ""
+ 
+ msgctxt "#40822"
+-msgid "HDR10 Reference Basic"
++msgid "HDR10 Rendering"
+ msgstr ""
+ 
+ msgctxt "#40823"
+-msgid "HDR10 Reference Expert"
++msgid "HDR10 Rendering Reference"
+ msgstr ""
+ 
+ msgctxt "#40829"
+@@ -27397,7 +27397,7 @@
+ msgstr ""
+ 
+ msgctxt "#40830"
+-msgid "Enter a known TV peak, 1 to 10000 nits. This is a processing reference, not measured TV light. Disable TV dynamic tone mapping for HDR10 Expert."
++msgid "Enter a known TV peak, 1 to 10000 nits. This is a processing reference, not measured TV light. HDR10 Rendering Reference has its own display calibration settings."
+ msgstr ""
+ 
+ msgctxt "#40831"
+@@ -27526,11 +27526,11 @@
+ msgstr ""
+ 
+ msgctxt "#40866"
+-msgid "HDR10 Native"
++msgid "Kodi default"
+ msgstr ""
+ 
+ msgctxt "#40867"
+-msgid "Dolby Vision Reference (AI)"
++msgid "Dolby Vision Rendering"
+ msgstr ""
+ 
+ msgctxt "#40868"
+@@ -27538,7 +27538,7 @@
+ msgstr ""
+ 
+ msgctxt "#40870"
+-msgid "Convert HDR10 to Dolby Vision with AI. Adaptive requires a TV profile. HDR10+ metadata-guided mode keeps source pixels; missing statistics use AI estimates."
++msgid "Remember playback for HDR10 sources: Dolby Vision Rendering with AI, Adaptive HDR Mapping with AI or Kodi default. Kodi default bypasses CB1 processing. Adaptive requires a TV profile. Automatic fallback does not change this choice."
+ msgstr ""
+ 
+ msgctxt "#40875"
+@@ -27622,15 +27622,15 @@
+ msgstr ""
+ 
+ msgctxt "#41013"
+-msgid "Remember the HDR10+ playback mode. Automatic fallback does not change this choice."
++msgid "Remember playback for HDR10+ sources: Dolby Vision Rendering or Kodi default. Kodi default bypasses CB1 processing. Automatic fallback does not change this choice."
+ msgstr ""
+ 
+ msgctxt "#41014"
+-msgid "HDR10+ native"
++msgid "Kodi default"
+ msgstr ""
+ 
+ msgctxt "#40970"
+-msgid "HDR10+ to Dolby Vision (metadata-guided)"
++msgid "Dolby Vision Rendering"
+ msgstr ""
+ 
+ msgctxt "#40940"
+@@ -27784,3 +27784,67 @@
+ msgctxt "#40994"
+ msgid "Append while L1 peak fits the TV peak plus this margin. Requires TV peak brightness. Sources without L2 always qualify."
+ msgstr ""
++
++msgctxt "#41030"
++msgid "HDR10 Rendering Reference peak brightness (nits)"
++msgstr ""
++
++msgctxt "#41031"
++msgid "Enter the measured peak manually: 50 to 10000 nits, in 0.1-nit steps. Zero means not configured. Disable additional tone mapping on the display when comparing this player-led mapping."
++msgstr ""
++
++msgctxt "#41032"
++msgid "HDR10 Rendering Reference display black level"
++msgstr ""
++
++msgctxt "#41033"
++msgid "Estimated display black floor. Custom overrides the estimate without changing peak brightness or gamut."
++msgstr ""
++
++msgctxt "#41034"
++msgid "OLED (0 nits)"
++msgstr ""
++
++msgctxt "#41035"
++msgid "LCD / Mini-LED (0.005 nits)"
++msgstr ""
++
++msgctxt "#41036"
++msgid "Projector (0.05 nits)"
++msgstr ""
++
++msgctxt "#41037"
++msgid "Custom"
++msgstr ""
++
++msgctxt "#41038"
++msgid "HDR10 Rendering Reference custom black level (nits)"
++msgstr ""
++
++msgctxt "#41039"
++msgid "0 to 0.5 nit, in 0.0001-nit steps. This value is remembered independently of the selected black-level preset."
++msgstr ""
++
++msgctxt "#41040"
++msgid "HDR10 Rendering Reference target color gamut"
++msgstr ""
++
++msgctxt "#41041"
++msgid "Nominal rendering volume. HDMI output remains BT.2020 PQ. Selecting BT.2020 does not imply that the display covers the entire gamut."
++msgstr ""
++
++msgctxt "#41100"
++msgid "Optimized GUI rendering"
++msgstr ""
++
++msgctxt "#41101"
++msgid "Reduce GUI compositing work during Dolby Vision playback on supported GPUs. Movie pixels and metadata are unchanged; very small GUI differences are possible. Off retains the existing rendering path."
++msgstr ""
++
++msgctxt "#41120"
++msgid "Use encoded frame as Dolby Vision active area"
++msgstr ""
++
++msgctxt "#41121"
++msgid "Ignore Level 5 margins only for files already cropped without matching metadata. Kodi zoom and placement still apply. Off preserves the authored active area; no automatic aspect-ratio correction is performed."
++msgstr ""
+diff -ruN a/system/settings/settings.xml b/system/settings/settings.xml
+--- a/system/settings/settings.xml
++++ b/system/settings/settings.xml
+@@ -18,9 +18,13 @@
+           </options></constraints>
+           <control type="list" format="string"><usedetails>true</usedetails></control>
+         </setting>
++        <setting id="dvbridge.playback" type="action" label="40811" help="40815">
++          <requirement>HAVE_DVBRIDGE</requirement><level>0</level>
++          <control type="button" format="action" />
++        </setting>
+         <setting id="dvbridge.outputmode" type="integer" label="40811" help="40815">
+           <requirement>HAVE_DVBRIDGE</requirement>
+-          <level>0</level>
++          <level>0</level><visible>false</visible>
+           <default>0</default>
+           <constraints>
+             <options>
+@@ -35,13 +39,40 @@
+         </setting>
+         <setting id="dvbridge.hdr10method" type="integer" label="40820" help="40821">
+           <requirement>HAVE_DVBRIDGE</requirement>
+-          <level>2</level><default>0</default>
+-          <dependencies><dependency type="visible" setting="dvbridge.outputmode" operator="is">1</dependency></dependencies>
++          <level>2</level><default>0</default><visible>false</visible>
+           <constraints><options>
+             <option label="40822">0</option><option label="40823">1</option><option label="40922">2</option>
+           </options></constraints>
+           <control type="list" format="string"><usedetails>true</usedetails></control>
+         </setting>
++        <setting id="dvbridge.expertpeak" type="number" label="41030" help="41031">
++          <requirement>HAVE_DVBRIDGE</requirement><level>0</level><default>0</default>
++          <dependencies><dependency type="visible"><and><condition setting="dvbridge.outputmode" operator="is">1</condition><condition setting="dvbridge.hdr10method" operator="is">1</condition></and></dependency></dependencies>
++          <constraints><minimum>0</minimum><maximum>10000</maximum><step>0.1</step></constraints>
++          <control type="edit" format="string" />
++        </setting>
++        <setting id="dvbridge.expertblack" type="integer" label="41032" help="41033">
++          <requirement>HAVE_DVBRIDGE</requirement><level>0</level><default>0</default>
++          <dependencies><dependency type="visible"><and><condition setting="dvbridge.outputmode" operator="is">1</condition><condition setting="dvbridge.hdr10method" operator="is">1</condition></and></dependency></dependencies>
++          <constraints><options><option label="41034">0</option><option label="41035">1</option><option label="41036">2</option><option label="41037">3</option></options></constraints>
++          <control type="list" format="string" />
++        </setting>
++        <setting id="dvbridge.expertblackcustom" type="number" label="41038" help="41039">
++          <requirement>HAVE_DVBRIDGE</requirement><level>0</level><default>0</default>
++          <dependencies><dependency type="visible"><and><condition setting="dvbridge.outputmode" operator="is">1</condition><condition setting="dvbridge.hdr10method" operator="is">1</condition><condition setting="dvbridge.expertblack" operator="is">3</condition></and></dependency></dependencies>
++          <constraints><minimum>0</minimum><maximum>0.5</maximum><step>0.0001</step></constraints>
++          <control type="edit" format="string" />
++        </setting>
++        <setting id="dvbridge.expertblackcustomset" type="boolean">
++          <requirement>HAVE_DVBRIDGE</requirement><level>3</level><default>false</default><visible>false</visible>
++          <control type="toggle" />
++        </setting>
++        <setting id="dvbridge.expertgamut" type="integer" label="41040" help="41041">
++          <requirement>HAVE_DVBRIDGE</requirement><level>0</level><default>2</default>
++          <dependencies><dependency type="visible"><and><condition setting="dvbridge.outputmode" operator="is">1</condition><condition setting="dvbridge.hdr10method" operator="is">1</condition></and></dependency></dependencies>
++          <constraints><options><option label="40839">2</option><option label="40840">3</option><option label="40838">1</option></options></constraints>
++          <control type="list" format="string" />
++        </setting>
+         <setting id="dvbridge.tvpeak" type="number" label="40829" help="40830">
+           <requirement>HAVE_DVBRIDGE</requirement>
+           <level>0</level><default>0</default>
+@@ -49,7 +80,6 @@
+             <and><or><condition setting="dvbridge.outputmode" operator="is">0</condition><condition setting="dvbridge.outputmode" operator="is">4</condition></or><or><condition setting="dvbridge.cmv40" operator="is">4</condition><and><condition setting="dvbridge.cmv40" operator="is">3</condition><condition setting="dvbridge.cmv40trigger" operator="is">0</condition></and></or></and>
+             <condition setting="dvbridge.outputmode" operator="is">3</condition>
+             <condition setting="dvbridge.outputmode" operator="is">5</condition>
+-            <and><condition setting="dvbridge.outputmode" operator="is">1</condition><condition setting="dvbridge.hdr10method" operator="is">1</condition></and>
+             <condition setting="dvbridge.hdr10source" operator="is">2</condition>
+           </or></dependency></dependencies>
+           <constraints><minimum>0</minimum><maximum>10000</maximum><step>1</step></constraints>
+@@ -68,7 +98,6 @@
+           <dependencies><dependency type="visible"><or>
+             <condition setting="dvbridge.outputmode" operator="is">3</condition>
+             <condition setting="dvbridge.outputmode" operator="is">5</condition>
+-            <and><condition setting="dvbridge.outputmode" operator="is">1</condition><condition setting="dvbridge.hdr10method" operator="is">1</condition></and>
+             <condition setting="dvbridge.hdr10source" operator="is">2</condition>
+           </or></dependency></dependencies>
+           <constraints><options><option label="40833">0</option><option label="40838">1</option><option label="40839">2</option><option label="40840">3</option></options></constraints>
+@@ -85,7 +114,6 @@
+           <dependencies><dependency type="visible"><or>
+             <condition setting="dvbridge.outputmode" operator="is">3</condition>
+             <condition setting="dvbridge.outputmode" operator="is">5</condition>
+-            <and><condition setting="dvbridge.outputmode" operator="is">1</condition><condition setting="dvbridge.hdr10method" operator="is">1</condition></and>
+             <condition setting="dvbridge.hdr10source" operator="is">2</condition>
+           </or></dependency></dependencies>
+           <control type="button" format="action" />
+@@ -98,6 +126,10 @@
+           <requirement>HAVE_DVBRIDGE</requirement><level>3</level><default>true</default>
+           <control type="toggle" />
+         </setting>
++        <setting id="dvbridge.optimizedgui" type="boolean" label="41100" help="41101">
++          <requirement>HAVE_DVBRIDGE</requirement><level>2</level><default>false</default>
++          <control type="toggle" />
++        </setting>
+         <setting id="dvbridge.masteroutput" type="integer" label="40916" help="40917">
+           <requirement>HAVE_DVBRIDGE</requirement><level>3</level><default>0</default>
+           <dependencies><dependency type="visible" setting="dvbridge.outputmode" operator="is">4</dependency></dependencies>
+@@ -109,6 +141,10 @@
+           <dependencies><dependency type="visible" setting="dvbridge.outputmode" operator="is">4</dependency></dependencies>
+           <control type="toggle" />
+         </setting>
++        <setting id="dvbridge.encodedactivearea" type="boolean" label="41120" help="41121">
++          <requirement>HAVE_DVBRIDGE</requirement><level>3</level><default>false</default>
++          <control type="toggle" />
++        </setting>
+         <setting id="dvbridge.disablel2" type="boolean" label="40925" help="40926">
+           <requirement>HAVE_DVBRIDGE</requirement><level>3</level><default>false</default>
+           <dependencies><dependency type="visible"><or>
+diff -ruN a/system/shaders/GLES/2.0/gles_gui_composite.frag b/system/shaders/GLES/2.0/gles_gui_composite.frag
+--- a/system/shaders/GLES/2.0/gles_gui_composite.frag
++++ b/system/shaders/GLES/2.0/gles_gui_composite.frag
+@@ -16,6 +16,7 @@
+ uniform float u_ootfGamma;      // HLG: OOTF gamma (1.2 for BT.2100 1000-nit ref)
+                                 // PQ: 0.0 (use LUT path instead)
+ uniform bool u_inputPQ;         // CB1 subtitle layer already contains BT.2020 PQ.
++uniform highp vec2 u_outputRange; // CB1 final HDR target: exact bit-depth scale and black code.
+ 
+ // BT.709 -> BT.2020 color space conversion matrix (applied in linear light)
+ const mat3 bt709_to_bt2020 = mat3(
+@@ -36,7 +37,7 @@
+ 
+   if (u_inputPQ)
+   {
+-    gl_FragColor = gui;
++    gl_FragColor = vec4(gui.rgb * u_outputRange.x + gui.a * u_outputRange.y, gui.a);
+     return;
+   }
+ 
+@@ -93,5 +94,5 @@
+ #endif
+ 
+   // The FBO holds coverage; squaring compensates for PQ/HLG blending and keeps opaque GUI opaque.
+-  gl_FragColor = vec4(result, gui.a * gui.a);
++  gl_FragColor = vec4(result * u_outputRange.x + u_outputRange.y, gui.a * gui.a);
+ }
+diff -ruN a/xbmc/application/Application.cpp b/xbmc/application/Application.cpp
+--- a/xbmc/application/Application.cpp
++++ b/xbmc/application/Application.cpp
+@@ -918,6 +918,11 @@
+     return;
+ 
+   // render gui layer
++  // Subtitle/input invalidations can arrive in player FrameMove after the first dirty check.
++  if (m_skipGuiRender && !appPlayer->IsRenderingVideoLayer() &&
++      (!CServiceBroker::GetWinSystem()->CanReuseGuiComposite() ||
++       CServiceBroker::GetGUI()->GetWindowManager().HasDirtyRegions()))
++    m_skipGuiRender = false;
+   const bool guiWillRender = appPower->GetRenderGUI() && !m_skipGuiRender;
+   bool compositing = CServiceBroker::GetWinSystem()->BeginGuiComposite(guiWillRender);
+ 
+@@ -1419,7 +1424,8 @@
+     // Dirty-driven skip: on paths with a persistent framebuffer (D2P plane or
+     // HDR GUI compositing FBO), skip Render when no controls dirtied themselves
+     // this frame. The persistence keeps the previous OSD on screen for free.
+-    if (!m_skipGuiRender && appPlayer->IsRenderingVideoLayer() &&
++    if (!m_skipGuiRender && (appPlayer->IsRenderingVideoLayer() ||
++        CServiceBroker::GetWinSystem()->CanReuseGuiComposite()) &&
+         !CServiceBroker::GetGUI()->GetWindowManager().HasDirtyRegions())
+       m_skipGuiRender = true;
+     CServiceBroker::GetGUI()->GetWindowManager().FrameMove();
+diff -ruN a/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVDVideoCodecFFmpeg.cpp b/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVDVideoCodecFFmpeg.cpp
+--- a/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVDVideoCodecFFmpeg.cpp
++++ b/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVDVideoCodecFFmpeg.cpp
+@@ -48,6 +48,9 @@
+ {
+ #include "dvbridge_fel.h"
+ #include <libavutil/hwcontext.h>
++#ifdef HAVE_LIBVA
++#include <libavutil/hwcontext_vaapi.h>
++#endif
+ }
+ #endif
+ 
+@@ -584,6 +587,7 @@
+ #ifdef HAVE_DVBRIDGE
+   m_dvPending.clear();
+   m_dvFel.reset();
++  m_dvLayerEpoch = 0;
+   m_dvFailed = false;
+   m_dvNativeOutput = false;
+ #endif
+@@ -695,6 +699,18 @@
+   if (!packet.pData)
+     return true;
+ 
++#ifdef HAVE_DVBRIDGE
++  const auto& layer = packet.doviLayerTimes;
++  if (m_dvFel && layer.valid && m_dvLayerEpoch && layer.epoch != m_dvLayerEpoch)
++  {
++    if (layer.epoch < m_dvLayerEpoch)
++    {
++      m_dvFailed = true;
++      return true;
++    }
++    Reset(); // Both native decoders and pending pictures share this boundary.
++  }
++#endif
+   if (m_eof)
+   {
+     Reset();
+@@ -740,12 +756,24 @@
+     }
+   }
+ 
+-  int ret = avcodec_send_packet(m_pCodecContext, avpkt);
++  int ret;
++#ifdef HAVE_DVBRIDGE
++  if (m_dvFel && layer.valid && layer.basePts == AV_NOPTS_VALUE)
++    ret = 0; // An explicit terminal EL unit is not a BL access unit.
++  else
++#endif
++    ret = avcodec_send_packet(m_pCodecContext, avpkt);
+ #ifdef HAVE_DVBRIDGE
+   // Submit once, only after BL accepted the packet (Kodi retries EAGAIN).
+   if (ret == 0 && m_dvFel)
+   {
+-    if (!dvbridge_fel_submit(m_dvFel.get(), avpkt))
++    if (packet.doviLayerTimes.valid) m_dvLayerEpoch = packet.doviLayerTimes.epoch;
++    const auto& timing = packet.doviLayerTimes;
++    const dvbridge_fel_source source{timing.basePts, timing.enhancementPts,
++        {timing.clockNum, timing.clockDen}, timing.epoch, timing.presentable};
++    const bool submitted = timing.valid ? dvbridge_fel_submit_source(m_dvFel.get(), avpkt, &source) :
++                                         dvbridge_fel_submit(m_dvFel.get(), avpkt);
++    if (!submitted)
+       m_dvFailed = true;
+     else
+       ReportDVStartup(2, "fel-input-accepted");
+@@ -758,6 +786,10 @@
+   av_buffer_unref(&avpkt->buf);
+   av_free(avpkt);
+ 
++#ifdef HAVE_DVBRIDGE
++  if (m_dvFel && layer.valid && layer.basePts == AV_NOPTS_VALUE)
++    return true;
++#endif
+   // try again
+   if (ret == AVERROR(EAGAIN))
+   {
+@@ -802,74 +834,102 @@
+ #ifdef HAVE_DVBRIDGE
+   if (m_dvFel)
+   {
+-    if (m_dvFailed || dvbridge_fel_failed(m_dvFel.get()))
+-      return VC_ERROR;
+-    auto emit = [&]() -> VCReturn
++    for (;;)
+     {
+-      if (m_dvPending.empty())
+-        return VC_NONE;
+-      auto& base = m_dvPending.front();
+-      if (base->doviSourcePts == AV_NOPTS_VALUE)
+-        return VC_ERROR;
+-      AVFrame* enhancement = nullptr;
+-      int result = dvbridge_fel_take(m_dvFel.get(), base->doviSourcePts,
+-                                     &enhancement);
+-      if (result == 2)
++      auto emit = [&]() -> VCReturn
+       {
+-        m_dvPending.pop_front();
++        while (!m_dvPending.empty())
++        {
++          auto& base = m_dvPending.front();
++          if (base->doviSourcePts == AV_NOPTS_VALUE)
++            return VC_FATAL;
++          AVFrame* enhancement = nullptr;
++          int result = dvbridge_fel_take(m_dvFel.get(), base->doviSourcePts,
++                                         &enhancement);
++          if (result == 2)
++          {
++            m_dvPending.pop_front();
++            continue;
++          }
++          if (result < 0)
++          {
++            CLog::Log(LOGERROR, "DV FEL: cannot pair {} pending base pictures; stopping without substitution",
++                      m_dvPending.size());
++            return VC_FATAL;
++          }
++          if (!result)
++            return VC_NONE;
++          if (m_dvLayerEpoch && (!base->doviMetadata.Data() ||
++              !(base->doviMetadata.Binding() == base->doviSourceBinding)))
++          {
++            av_frame_free(&enhancement);
++            return VC_FATAL;
++          }
++          ReportDVStartup(4, "el-decoded");
++#ifdef HAVE_LIBVA
++          if (base->iFlags & DVP_FLAG_DROPPED)
++          {
++            // Preroll bypasses the renderer's normal EL completion check. Consume
++            // its decode report before retiring the image, as Kodi does for BL.
++            const auto* frames = enhancement->hw_frames_ctx ?
++                reinterpret_cast<const AVHWFramesContext*>(enhancement->hw_frames_ctx->data) : nullptr;
++            const auto* device = frames ?
++                reinterpret_cast<const AVVAAPIDeviceContext*>(frames->device_ctx->hwctx) : nullptr;
++            if (!device || vaSyncSurface(device->display,
++                static_cast<VASurfaceID>(reinterpret_cast<uintptr_t>(enhancement->data[3]))) != VA_STATUS_SUCCESS)
++            {
++              CLog::Log(LOGERROR, "DV FEL: discarded picture decode did not complete at {}",
++                        base->doviSourcePts);
++              av_frame_free(&enhancement);
++              return VC_FATAL;
++            }
++          }
++#endif
++          base->doviEnhancement = {enhancement, [](AVFrame* f) { av_frame_free(&f); }};
++          // The pairing owner consumed the exact EL from this stream/reset epoch.
++          base->doviEnhancementBinding = base->doviMetadata.Binding();
++          pVideoPicture->CopyRef(*base);
++          m_dvPending.pop_front();
++          ReportDVStartup(8, "fel-paired");
++          return VC_PICTURE;
++        }
++        return VC_NONE;
++      };
++      VCReturn paired = emit();
++      if (paired != VC_NONE)
++        return paired;
++      if (m_dvFailed || dvbridge_fel_failed(m_dvFel.get()))
++        return VC_FATAL;
++      if (m_codecControlFlags & DVD_CODEC_CTRL_POLL)
+         return VC_BUFFER;
++      if (m_dvPending.size() >= DVEnhancementPendingPictures)
++        return VC_FATAL;
++      auto base = std::make_shared<VideoPicture>();
++      base->Reset();
++      VCReturn result = GetBasePicture(base.get());
++      if (m_pCodecContext->hw_frames_ctx)
++      {
++        auto* frames = reinterpret_cast<AVHWFramesContext*>(m_pCodecContext->hw_frames_ctx->data);
++        if (!dvbridge_fel_device(m_dvFel.get(), frames->device_ref))
++          return VC_FATAL;
+       }
+-      if (result < 0)
++      if (result == VC_PICTURE)
+       {
+-        if (dvbridge_fel_exhausted(m_dvFel.get()))
+-        {
+-          CLog::Log(LOGWARNING, "DV FEL: enhancement EOF with {} unpaired base pictures; "
+-                               "ending video without substituting enhancement frames",
+-                    m_dvPending.size());
+-          m_dvPending.clear();
+-          return VC_EOF;
+-        }
+-        return VC_ERROR;
++        ReportDVStartup(1, "base-decoded");
++        m_dvPending.push_back(std::move(base));
+       }
+-      if (!result)
+-        return VC_NONE;
+-      ReportDVStartup(4, "el-decoded");
+-      base->doviEnhancement = {enhancement, [](AVFrame* f) { av_frame_free(&f); }};
+-      // The pairing owner consumed the exact EL from this stream/reset epoch.
+-      base->doviEnhancementBinding = base->doviMetadata.Binding();
+-      pVideoPicture->CopyRef(*base);
+-      m_dvPending.pop_front();
+-      ReportDVStartup(8, "fel-paired");
+-      return VC_PICTURE;
+-    };
+-    VCReturn paired = emit();
+-    if (paired != VC_NONE)
+-      return paired;
+-    if (m_dvPending.size() >= DVEnhancementPendingPictures)
+-      return VC_ERROR;
+-    auto base = std::make_shared<VideoPicture>();
+-    base->Reset();
+-    VCReturn result = GetBasePicture(base.get());
+-    if (m_pCodecContext->hw_frames_ctx)
+-    {
+-      auto* frames = reinterpret_cast<AVHWFramesContext*>(m_pCodecContext->hw_frames_ctx->data);
+-      if (!dvbridge_fel_device(m_dvFel.get(), frames->device_ref))
+-        return VC_ERROR;
++      if (result == VC_EOF || (m_codecControlFlags & DVD_CODEC_CTRL_DRAIN))
++        if (!dvbridge_fel_drain(m_dvFel.get()))
++          return VC_FATAL;
++      paired = emit();
++      if (paired != VC_NONE)
++        return paired;
++      if (result == VC_EOF && !m_dvPending.empty())
++        return VC_FATAL;
++      if (result == VC_PICTURE && (m_codecControlFlags & DVD_CODEC_CTRL_DRAIN))
++        continue; // Retire internal preroll until a real picture or native EOF.
++      return result == VC_PICTURE ? VC_BUFFER : result;
+     }
+-    if (result == VC_PICTURE)
+-    {
+-      ReportDVStartup(1, "base-decoded");
+-      m_dvPending.push_back(std::move(base));
+-    }
+-    if (result == VC_EOF || (m_codecControlFlags & DVD_CODEC_CTRL_DRAIN))
+-      if (!dvbridge_fel_drain(m_dvFel.get()))
+-        return VC_ERROR;
+-    paired = emit();
+-    if (paired != VC_NONE)
+-      return paired;
+-    if (result == VC_EOF && !m_dvPending.empty())
+-      return VC_ERROR;
+-    return result == VC_PICTURE ? VC_BUFFER : result;
+   }
+ #endif
+   const auto result = GetBasePicture(pVideoPicture);
+@@ -1203,6 +1263,7 @@
+   m_dvPending.clear();
+   dvbridge_fel_reset(m_dvFel.get());
+   m_dvFailed = false;
++  m_dvLayerEpoch = 0;
+ #endif
+   m_started = false;
+   m_startedInput = false;
+@@ -1553,6 +1614,9 @@
+     sourceInfo.minLuma = av_q2d(sourceMastering.min_luminance);
+   }
+   pVideoPicture->doviSourcePts = m_pFrame->best_effort_timestamp;
++#ifdef HAVE_DVBRIDGE
++  if (m_dvLayerEpoch) pVideoPicture->doviSourcePts = m_pFrame->pts;
++#endif
+   if (pVideoPicture->hdrType == StreamHdrType::HDR_TYPE_DOLBYVISION)
+   {
+     sd = av_frame_get_side_data(m_pFrame, AV_FRAME_DATA_DOVI_METADATA);
+@@ -1597,6 +1661,17 @@
+     }
+   }
+ 
++#ifdef HAVE_DVBRIDGE
++  if (m_dvLayerEpoch)
++  {
++    const auto* raw = av_frame_get_side_data(m_pFrame, AV_FRAME_DATA_DOVI_RPU_BUFFER);
++    if (m_pFrame->pts == AV_NOPTS_VALUE || m_pFrame->decode_error_flags ||
++        (m_pFrame->flags & AV_FRAME_FLAG_CORRUPT) || !raw || !raw->data || raw->size < 5 ||
++        raw->data[0] != 25 || (raw->data[1] >> 2) != 2)
++      pVideoPicture->doviMetadata.Reset();
++  }
++#endif
++
+   if (pVideoPicture->hdrType == StreamHdrType::HDR_TYPE_HDR10 ||
+       pVideoPicture->hdrType == StreamHdrType::HDR_TYPE_DOLBYVISION)
+   {
+@@ -1958,7 +2033,12 @@
+ 
+ void CDVDVideoCodecFFmpeg::SetCodecControl(int flags)
+ {
++#ifdef HAVE_DVBRIDGE
++  if (m_dvFel && (flags & DVD_CODEC_CTRL_POLL))
++    flags &= ~DVD_CODEC_CTRL_DRAIN;
++#endif
+   m_codecControlFlags = flags;
++  flags &= ~DVD_CODEC_CTRL_POLL;
+ #ifdef HAVE_DVBRIDGE
+   // Keep the native drop request on the picture, not either layer's decoder.
+   if (m_dvFel)
+diff -ruN a/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVDVideoCodecFFmpeg.h b/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVDVideoCodecFFmpeg.h
+--- a/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVDVideoCodecFFmpeg.h
++++ b/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVDVideoCodecFFmpeg.h
+@@ -75,6 +75,7 @@
+   std::shared_ptr<dvbridge_fel> m_dvFel;
+   std::deque<std::shared_ptr<VideoPicture>> m_dvPending;
+   bool m_dvFailed{false};
++  uint64_t m_dvLayerEpoch{0};
+   unsigned m_dvStartupReported{};
+   uint64_t m_dvDiagnosticGeneration{};
+   void ReportDVStartup(unsigned fact, const char* stage) noexcept;
+diff -ruN a/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVDVideoCodec.h b/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVDVideoCodec.h
+--- a/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVDVideoCodec.h
++++ b/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVDVideoCodec.h
+@@ -126,6 +126,7 @@
+ #define DVD_CODEC_CTRL_DROP         0x08000000  //< drop in decoder or set DVP_FLAG_DROPPED, no render of frame
+ #define DVD_CODEC_CTRL_DROP_ANY     0x10000000  //< drop some non-reference frame
+ #define DVD_CODEC_CTRL_DRAIN        0x20000000  //< squeeze out pictured without feeding new packets
++#define DVD_CODEC_CTRL_POLL         0x00800000  //< temporary/retiring drain, not source EOF
+ #define DVD_CODEC_CTRL_ROTATE       0x40000000  //< rotate if renderer does not support it
+ 
+ // DVP_FLAG 0x00000100 - 0x00000f00 is in use by libmpeg2!
+diff -ruN a/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVOutputSelection.h b/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVOutputSelection.h
+--- a/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVOutputSelection.h
++++ b/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVOutputSelection.h
+@@ -32,7 +32,7 @@
+     auto policy = preferences.HDR10Policy(caps.hdr10PlusSource);
+     if (policy.mode == DVBRIDGE_MODE_DISABLED)
+       return {OutputRoute::Vanilla,{},OutputReason::SourceIneligible};
+-    if (policy.mode != DVBRIDGE_MODE_STANDARD && !preferences.ProfileValid())
++    if (policy.mode != DVBRIDGE_MODE_STANDARD && !preferences.ProfileValid(policy.mode))
+       return {OutputRoute::Vanilla,{},OutputReason::TVProfileRequired};
+     if (!caps.nativeDV)
+       return {OutputRoute::Vanilla,{},OutputReason::NoDVTransport};
+@@ -45,7 +45,7 @@
+   auto policy = preferences.Policy();
+   // Display configuration is known before the first GPU import.
+   if (preferences.output == OutputMode::HDR10 && policy.mode == DVBRIDGE_MODE_HDR10_EXPERT &&
+-      !preferences.ProfileValid())
++      !preferences.ProfileValid(policy.mode))
+     return {OutputRoute::Vanilla, {}, OutputReason::TVProfileRequired};
+   if (!caps.processingKnown)
+   {
+@@ -61,7 +61,7 @@
+   }
+   const auto admission = [&](dvbridge_mode mode) {
+     if ((mode == DVBRIDGE_MODE_HDR10_EXPERT || mode == DVBRIDGE_MODE_ENHANCED_DV) &&
+-        !preferences.ProfileValid())
++        !preferences.ProfileValid(mode))
+       return ModeAdmission{false, OutputReason::TVProfileRequired};
+     auto value = caps.processing[mode];
+     if (!value.usable && value.reason == OutputReason::None)
+diff -ruN a/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVOutputSettings.h b/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVOutputSettings.h
+--- a/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVOutputSettings.h
++++ b/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVOutputSettings.h
+@@ -40,9 +40,13 @@
+   HDR10SourceMode hdr10PlusSource{HDR10SourceMode::Native};
+   int method{0}, panel{0}, gamut{0};
+   double peak{0};
++  double expertPeak{}, expertBlack{};
++  int expertGamut{};
+   bool optimizedDV{true};
++  bool optimizedGUI{false};
+   bool masterIPT{false}, allowMasterFallback{false};
+   bool disableL2Trims{false};
++  bool encodedActiveArea{false};
+   int cmv40Mode{}, cmv40Trigger{}, cmv40Headroom{20};
+   int felUpscaling{0};
+   bool processingOptimizations{false};
+@@ -54,21 +58,35 @@
+         panel >= 0 && panel <= 2 && gamut >= 1 && gamut <= 3;
+   }
+ 
++  bool ExpertProfileValid() const
++  {
++    return std::isfinite(expertPeak) && expertPeak>=50 && expertPeak<=10000 &&
++        std::isfinite(expertBlack) && expertBlack>=0 && expertBlack<=0.5 &&
++        expertGamut>=1 && expertGamut<=3;
++  }
++
+   bool SameValues(const OutputPreferences& other) const
+   {
+     return output == other.output && hdr10Source == other.hdr10Source &&
+         hdr10PlusSource == other.hdr10PlusSource && method == other.method &&
+         panel == other.panel && gamut == other.gamut && optimizedDV == other.optimizedDV &&
++        optimizedGUI == other.optimizedGUI &&
+         masterIPT == other.masterIPT && allowMasterFallback == other.allowMasterFallback &&
+-        disableL2Trims == other.disableL2Trims &&
++        disableL2Trims == other.disableL2Trims && encodedActiveArea == other.encodedActiveArea &&
+         cmv40Mode == other.cmv40Mode && cmv40Trigger == other.cmv40Trigger &&
+         cmv40Headroom == other.cmv40Headroom &&
+         felUpscaling == other.felUpscaling &&
+         processingOptimizations == other.processingOptimizations &&
++        (output!=OutputMode::HDR10 || method!=1 ||
++         (expertPeak == other.expertPeak && expertBlack == other.expertBlack && expertGamut == other.expertGamut)) &&
+         std::bit_cast<uint64_t>(peak) == std::bit_cast<uint64_t>(other.peak);
+   }
+ 
+ #ifdef HAVE_DVBRIDGE
++  bool ProfileValid(dvbridge_mode mode) const
++  {
++    return mode==DVBRIDGE_MODE_HDR10_EXPERT ? ExpertProfileValid() : ProfileValid();
++  }
+   bool L2TrimsDisabled(dvbridge_mode mode, bool hdr10AI = false) const
+   {
+     return disableL2Trims && !hdr10AI &&
+@@ -102,8 +120,12 @@
+     }
+     // Basic/native paths never consume calibration. Keep invalid user values
+     // in this snapshot, rather than silently completing the stored profile.
+-    if (result.mode == DVBRIDGE_MODE_HDR10_EXPERT ||
+-        result.mode == DVBRIDGE_MODE_ENHANCED_DV)
++    if (result.mode == DVBRIDGE_MODE_HDR10_EXPERT)
++    {
++      result.tv={expertPeak,DVBRIDGE_PANEL_OLED,static_cast<dvbridge_gamut>(expertGamut)};
++      result.expert_black_nits=expertBlack;
++    }
++    else if (result.mode == DVBRIDGE_MODE_ENHANCED_DV)
+       result.tv = {peak, static_cast<dvbridge_panel>(panel), static_cast<dvbridge_gamut>(gamut)};
+     return result;
+   }
+@@ -114,12 +136,15 @@
+   dvbridge_policy HDR10Policy(bool hdr10Plus = false) const
+   {
+     auto result = Policy();
+-    result.adaptive=DVBRIDGE_ADAPTIVE_A;
+     result.master_ipt=false;
++    result.expert_black_nits=0;
+     const auto source = HDR10Mode(hdr10Plus);
+     result.mode = source == HDR10SourceMode::ReferenceDV ||
+         source == HDR10SourceMode::HDR10PlusDV ? DVBRIDGE_MODE_STANDARD :
+         source == HDR10SourceMode::EnhancedDV ? DVBRIDGE_MODE_ENHANCED_DV : DVBRIDGE_MODE_DISABLED;
++    // Same scene expansion as Adaptive DV, with predicted rather than authored guidance.
++    result.adaptive = result.mode == DVBRIDGE_MODE_ENHANCED_DV ?
++        DVBRIDGE_ADAPTIVE_B_FP16 : DVBRIDGE_ADAPTIVE_A;
+     result.tv = result.mode == DVBRIDGE_MODE_ENHANCED_DV ?
+         dvbridge_tv_profile{peak,static_cast<dvbridge_panel>(panel),static_cast<dvbridge_gamut>(gamut)} : dvbridge_tv_profile{};
+     return result;
+@@ -159,6 +184,13 @@
+     next.hdr10PlusSource = settings->GetInt("dvbridge.hdr10plussource") == 3 ?
+         HDR10SourceMode::HDR10PlusDV : HDR10SourceMode::Native;
+     next.method = settings->GetInt("dvbridge.hdr10method");
++    {
++      next.expertPeak=settings->GetNumber("dvbridge.expertpeak");
++      next.expertGamut=settings->GetInt("dvbridge.expertgamut");
++      const int black=settings->GetInt("dvbridge.expertblack");
++      next.expertBlack=black==0 ? 0 : black==1 ? 0.005 : black==2 ? 0.05 :
++          black==3 ? settings->GetNumber("dvbridge.expertblackcustom") : -1;
++    }
+     next.peak = settings->GetNumber("dvbridge.tvpeak");
+     next.panel = settings->GetInt("dvbridge.tvpanel");
+     next.gamut = settings->GetInt("dvbridge.tvgamut");
+@@ -166,6 +198,8 @@
+     next.masterIPT = settings->GetInt("dvbridge.masteroutput")==1;
+     next.allowMasterFallback = settings->GetBool("dvbridge.masterfallback");
+     next.disableL2Trims = settings->GetBool("dvbridge.disablel2");
++    next.encodedActiveArea = settings->GetBool("dvbridge.encodedactivearea");
++    next.optimizedGUI = settings->GetBool("dvbridge.optimizedgui");
+     next.cmv40Mode = settings->GetInt("dvbridge.cmv40");
+     next.cmv40Trigger = settings->GetInt("dvbridge.cmv40trigger");
+     next.cmv40Headroom = settings->GetInt("dvbridge.cmv40headroom");
+diff -ruN a/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVPlaybackInfo.h b/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVPlaybackInfo.h
+--- a/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVPlaybackInfo.h
++++ b/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVPlaybackInfo.h
+@@ -70,38 +70,38 @@
+     if ((output & FEL) && source.find("FEL") == std::string::npos)
+       source += " FEL";
+     source += (output & CM4) ? " · CM4 metadata" : " · CM2.9 metadata";
+-    return source + ((output & HDR10) ? " · HDR10 Basic" : " · HDMI Dolby Vision");
++    return source + ((output & HDR10) ? " · HDR10 Rendering" : " · HDMI Dolby Vision");
+   }
+ 
+   template<class Output> static const char* Policy(const Output& output)
+   {
+-    if (IsHDR10PlusDV(output)) return "HDR10+ to Dolby Vision (metadata-guided)";
++    if (IsHDR10PlusDV(output)) return "Dolby Vision Rendering";
+     switch (output.effective)
+     {
+-      case 2: return "HDR10 Reference Basic";
+-      case 3: return "HDR10 Reference Expert";
++      case 2: return "HDR10 Rendering";
++      case 3: return "HDR10 Rendering Reference";
+       case 4: return "Dolby Vision Adaptive HDR Mapping";
+       case 5: return "Dolby Vision Master Reference";
+       case 6: return "Dolby Vision Adaptive HDR Mapping";
+-      case 7: return output.flags & HDR10PLUS ? "HDR10+ conversion" : "HDR10 conversion";
+-      default: return output.flags & HDR10 ? "HDR10 Reference Basic" : "Dolby Vision Reference";
++      case 7: return output.flags & HDR10PLUS ? "HDR10+ Rendering" : "HDR10 Rendering";
++      default: return output.flags & HDR10 ? "HDR10 Rendering" : "Dolby Vision Reference";
+     }
+   }
+   static const char* RequestedPolicy(int mode, bool hdr10AI = false, bool hdr10PlusDV = false)
+   {
+-    if (hdr10PlusDV && mode == 1) return "HDR10+ to Dolby Vision (metadata-guided)";
+-    if (hdr10AI && mode == 1) return "Dolby Vision Reference (AI)";
++    if (hdr10PlusDV && mode == 1) return "Dolby Vision Rendering";
++    if (hdr10AI && mode == 1) return "Dolby Vision Rendering";
+     if (hdr10AI && mode == 4) return "Dolby Vision Adaptive HDR Mapping (AI)";
+     switch(mode)
+     {
+       case 0:return "Dolby Vision Disabled (native Kodi)";
+       case 1:return "Dolby Vision Reference";
+-      case 2:return "HDR10 Reference Basic";
+-      case 3:return "HDR10 Reference Expert";
++      case 2:return "HDR10 Rendering";
++      case 3:return "HDR10 Rendering Reference";
+       case 4:return "Dolby Vision Adaptive HDR Mapping";
+       case 5:return "Dolby Vision Master Reference";
+       case 6:return "Dolby Vision Adaptive HDR Mapping";
+-      case 7:return "HDR10+ conversion";
++      case 7:return "HDR10+ Rendering";
+       default:return "";
+     }
+   }
+diff -ruN a/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVProcessingInfo.h b/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVProcessingInfo.h
+--- a/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVProcessingInfo.h
++++ b/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVProcessingInfo.h
+@@ -16,6 +16,7 @@
+   accepted.effective=output.effective; accepted.method=output.method;
+   accepted.panel=output.panel;
+   accepted.gamut=output.gamut; accepted.manualPeak=output.manualPeak;
++  accepted.displayBlack=output.displayBlack;
+   accepted.revision=output.revision; accepted.stream=output.stream; accepted.picture=output.picture;
+   accepted.format=output.format; accepted.width=output.width; accepted.height=output.height;
+   accepted.refresh=output.refresh; accepted.fallback=output.fallback;
+@@ -29,6 +30,7 @@
+   accepted.felUpscaling=output.felUpscaling;
+ #ifdef CB1_HAS_HDR10_AI
+   accepted.hdr10AI=output.hdr10AI; accepted.aiL1L3=output.aiL1L3;
++  accepted.aiModel=output.aiModel; accepted.aiBaseline=output.aiBaseline;
+   accepted.hdr10PlusDV=output.hdr10PlusDV;
+   accepted.guidedSourceFields=output.guidedSourceFields;
+   accepted.guidedEstimatedFields=output.guidedEstimatedFields;
+diff -ruN a/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVStreamTelemetry.h b/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVStreamTelemetry.h
+--- a/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVStreamTelemetry.h
++++ b/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVStreamTelemetry.h
+@@ -47,7 +47,7 @@
+     float target{};
+     bool level6{};
+     int requested{}, effective{1}, method{}, panel{}, gamut{};
+-    double manualPeak{};
++    double manualPeak{}, displayBlack{};
+     uint64_t revision{};
+     bool fallback{};
+     uint64_t stream{}, picture{};
+@@ -72,6 +72,8 @@
+     bool hdr10PlusDV{}, untranslatedCurve{}, untranslatedSaturation{};
+     unsigned guidedSourceFields{}, guidedEstimatedFields{};
+     std::array<unsigned,6> aiL1L3{};
++    std::string aiModel{};
++    std::array<unsigned,3> aiBaseline{};
+     bool emittedL1Known{};
+     std::array<unsigned,3> emittedL1{};
+     const char* Circuit() const
+diff -ruN a/xbmc/cores/VideoPlayer/DVDDemuxers/BlurayDovi.h b/xbmc/cores/VideoPlayer/DVDDemuxers/BlurayDovi.h
+--- a/xbmc/cores/VideoPlayer/DVDDemuxers/BlurayDovi.h
++++ b/xbmc/cores/VideoPlayer/DVDDemuxers/BlurayDovi.h
+@@ -21,9 +21,11 @@
+ class CBlurayDovi
+ {
+ public:
++  explicit CBlurayDovi(uint64_t* epochs = nullptr, bool transportClock = false)
++    : m_epochs(epochs), m_transportClock(transportClock) { Reset(); }
+   // Preserve each layer's HEVC configuration and time base.
+   bool Configure(const AVCodecParameters* base, const AVCodecParameters* enhancement,
+-                 AVRational baseClock, AVRational enhancementClock)
++                 AVRational baseClock, AVRational enhancementClock, bool transportClock = false)
+   {
+     const auto* filter = av_bsf_get_by_name("hevc_mp4toannexb");
+     if (!filter || baseClock.num <= 0 || baseClock.den <= 0 ||
+@@ -45,6 +47,7 @@
+         return false;
+     }
+     m_filters = std::move(prepared);
++    m_transportClock = transportClock;
+     return true;
+   }
+   const AVCodecParameters* BaseParameters() const { return m_filters[0]->par_out; }
+@@ -65,6 +68,9 @@
+     m_lastDts = {AV_NOPTS_VALUE, AV_NOPTS_VALUE};
+     m_discontinuity = false;
+     m_restartPeer = -1;
++    m_elAnchor = AV_NOPTS_VALUE;
++    m_timing = {};
++    m_epoch = m_epochs ? ++*m_epochs : m_epoch + 1;
+   }
+ 
+   bool Push(const AVPacket* packet, bool enhancement)
+@@ -84,15 +90,17 @@
+       const auto from = filter->time_base_out, to = m_filters[0]->time_base_out;
+       if (av_cmp_q(from, to))
+       {
+-        const auto pts = normalized->pts, dts = normalized->dts, duration = normalized->duration;
++        const auto pts = normalized->pts;
+         av_packet_rescale_ts(normalized.get(), from, to);
+-        if ((pts != AV_NOPTS_VALUE && av_rescale_q(normalized->pts, to, from) != pts) ||
+-            (dts != AV_NOPTS_VALUE && av_rescale_q(normalized->dts, to, from) != dts) ||
+-            av_rescale_q(normalized->duration, to, from) != duration)
++        // PTS identifies the picture; DTS/duration use FFmpeg's native rescaling.
++        if (pts != AV_NOPTS_VALUE && av_compare_ts(pts, from, normalized->pts, to))
+           return Reject("layer-time-base");
+       }
+       packet = normalized.get();
+     }
++    if (m_transportClock && enhancement && packet->pts != AV_NOPTS_VALUE &&
++        packet->dts != AV_NOPTS_VALUE && packet->pts < packet->dts)
++      return Reject("transport-presentation-before-decode");
+     // Wait for both transport clocks before accepting a new layer epoch.
+     if (m_restartPeer == int(enhancement))
+     {
+@@ -122,22 +130,11 @@
+       if (m_resync && !enhancement) return SkipPreroll();
+       return Reject("packet");
+     }
+-    if (!enhancement)
+-    {
+-      ResyncPreroll();
+-      if (m_base.size() >= MAX_PACKETS)
+-        return Reject("base-queue");
+-      Packet owned(av_packet_clone(packet));
+-      if (!owned)
+-        return Reject("allocation");
+-      m_bytes += packet->size;
+-      m_base.push_back(std::move(owned));
+-      return true;
+-    }
+-    if (m_enhancement.size() >= MAX_PACKETS || m_rpu.size() >= MAX_PACKETS)
+-      return Reject("enhancement-queue");
+-    if (m_rpu.contains(packet->pts))
+-      return Reject("duplicate-rpu-pts");
++    auto& queue = enhancement ? m_enhancement : m_base;
++    if (queue.size() >= MAX_PACKETS)
++      return Reject(enhancement ? "enhancement-queue" : "base-queue");
++    if (std::any_of(queue.begin(), queue.end(), [&](const Packet& p) { return p->pts == packet->pts; }))
++      return Reject("duplicate-layer-pts");
+ 
+     std::vector<uint8_t> layer, rpu;
+     auto begin = Start(packet->data, packet->size, 0);
+@@ -150,95 +147,132 @@
+       if (size < 2 || packet->data[begin[1]] & 0x80 || !(packet->data[begin[1]+1] & 7))
+         return Reject("nal-header");
+       const int type = (packet->data[begin[1]] >> 1) & 63;
+-      auto& destination = type == 62 ? rpu : layer;
+-      destination.insert(destination.end(), {0, 0, 0, 1});
+-      if (type != 62)
+-        destination.insert(destination.end(), {0x7e, 1});
+-      destination.insert(destination.end(), packet->data + begin[1], packet->data + next[0]);
++      if (type == 62)
++      {
++        if (!rpu.empty()) return Reject("multiple-rpu");
++        if (!enhancement)
++          layer.insert(layer.end(), packet->data, packet->data + begin[0]);
++        rpu.insert(rpu.end(), {0, 0, 0, 1});
++        rpu.insert(rpu.end(), packet->data + begin[1], packet->data + next[0]);
++      }
++      else if (enhancement)
++      {
++        layer.insert(layer.end(), {0, 0, 0, 1, 0x7e, 1});
++        layer.insert(layer.end(), packet->data + begin[1], packet->data + next[0]);
++      }
++      else if (!rpu.empty())
++        layer.insert(layer.end(), packet->data + begin[0], packet->data + next[0]);
+       if (layer.size() + rpu.size() > MAX_BYTES - m_bytes)
+         return Reject("byte-limit");
+       begin = next;
+     }
+-    if (layer.empty() || rpu.empty())
+-      return Reject("missing-layer-or-rpu");
+-    Packet owned(av_packet_alloc());
+-    if (!owned || av_new_packet(owned.get(), layer.size()) < 0)
+-      return Reject("allocation");
+-    std::memcpy(owned->data, layer.data(), layer.size());
+-    owned->pts = packet->pts;
+-    owned->dts = packet->dts;
+-    m_bytes += layer.size() + rpu.size();
+-    m_enhancement.push_back(std::move(owned));
+-    m_rpu.emplace(packet->pts, std::move(rpu));
++    if ((enhancement || !rpu.empty()) && layer.empty()) return Reject("missing-layer");
++    const auto saved = m_rpu.find(packet->pts);
++    const unsigned layerBit = enhancement ? 2 : 1;
++    if (saved != m_rpu.end() && (saved->second.layers & layerBit))
++      return Reject("duplicate-layer-pts");
++    if (!rpu.empty() && saved != m_rpu.end() && !saved->second.bytes.empty() &&
++        saved->second.bytes != rpu)
++      return Reject("conflicting-rpu");
++    const bool store = !rpu.empty() && (saved == m_rpu.end() || saved->second.bytes.empty());
++    if (saved == m_rpu.end() && m_rpu.size() >= 2 * MAX_PACKETS)
++      return Reject("rpu-queue");
++    Packet owned;
++    if (!enhancement && rpu.empty())
++      owned.reset(av_packet_clone(packet));
++    else
++    {
++      owned.reset(av_packet_alloc());
++      if (!owned || av_new_packet(owned.get(), layer.size()) < 0 ||
++          av_packet_copy_props(owned.get(), packet) < 0)
++        return Reject("allocation");
++      std::memcpy(owned->data, layer.data(), layer.size());
++    }
++    if (!owned) return Reject("allocation");
++    if (enhancement && m_resync && m_elAnchor == AV_NOPTS_VALUE && IsIrap(*owned, true))
++      m_elAnchor = packet->pts;
++    const size_t bytes = owned->size + (store ? rpu.size() : 0);
++    if (bytes > MAX_BYTES - m_bytes) return Reject("byte-limit");
++    m_bytes += bytes;
++    queue.push_back(std::move(owned));
++    auto& record = m_rpu[packet->pts];
++    record.layers |= layerBit;
++    if (store) record.bytes = std::move(rpu);
++    if (record.emitted && record.layers == 3)
++    {
++      m_bytes -= record.bytes.size();
++      m_rpu.erase(packet->pts);
++    }
+     return true;
+   }
+ 
+-  int Take(AVPacket* output)
++  int Take(AVPacket* output, bool end = false)
+   {
+-    ResyncPreroll();
+-    if (m_base.empty() || m_enhancement.empty())
+-      return AVERROR(EAGAIN);
+-    // Equal presentation heads need no prefix recovery despite unequal layer DTS.
+-    if (m_resync && m_base.front()->pts != m_enhancement.front()->pts &&
+-        (IsIrap(*m_base.front(), false) ||
+-        (m_base.front()->dts != AV_NOPTS_VALUE &&
+-        m_enhancement.front()->dts != AV_NOPTS_VALUE &&
+-        m_enhancement.front()->dts < m_base.front()->dts)))
+-    {
+-      // An earlier EL decode prefix is not the layer for the first BL picture.
+-      // Retire it only at a proven common IRAP; preserve non-IRAP references.
+-      const auto& first = m_base.front();
+-      if (!IsIrap(*first, false))
+-        return AVERROR(EAGAIN);
+-      const auto anchor = std::find_if(m_enhancement.begin(), m_enhancement.end(),
+-          [&first](const Packet& el) {
+-            return el->pts == first->pts && IsIrap(*el, true);
+-          });
+-      if (anchor == m_enhancement.end() ||
+-          !std::all_of(m_enhancement.begin(), anchor, [this, &first, &anchor](const Packet& el) {
+-            return el->dts != AV_NOPTS_VALUE && el->dts < (*anchor)->dts &&
+-                el->pts < first->pts && std::none_of(m_base.begin(), m_base.end(),
+-                    [&el](const Packet& bl) { return bl->pts == el->pts; });
+-          }))
+-        return AVERROR(EAGAIN);
+-      const auto count = static_cast<size_t>(std::distance(m_enhancement.begin(), anchor));
+-      if (m_preroll > MAX_PACKETS || count > MAX_PACKETS - m_preroll)
+-        return AVERROR(EAGAIN);
+-      for (size_t i = 0; i < count; ++i)
++    m_timing = {};
++    if (m_base.empty())
++    {
++      if (!end) return AVERROR(EAGAIN);
++      if (m_enhancement.empty())
+       {
+-        const auto rpu = m_rpu.find(m_enhancement.front()->pts);
+-        m_bytes -= m_enhancement.front()->size;
+-        if (rpu != m_rpu.end())
+-        {
+-          m_bytes -= rpu->second.size();
+-          m_rpu.erase(rpu);
+-        }
+-        m_enhancement.pop_front();
+-        ++m_preroll;
++        m_rpu.clear();
++        m_bytes = 0;
++        return AVERROR(EAGAIN);
+       }
++      m_timing = {AV_NOPTS_VALUE, m_enhancement.front()->pts, m_epoch, false};
++      m_bytes -= m_enhancement.front()->size;
++      av_packet_move_ref(output, m_enhancement.front().get());
++      m_enhancement.pop_front();
++      return 0; // Explicit EL-only terminal unit; never sent to the BL decoder.
+     }
++    if (m_enhancement.empty() && !end)
++      return AVERROR(EAGAIN);
+     auto rpu = m_rpu.find(m_base.front()->pts);
+-    if (rpu == m_rpu.end())
++    const bool missing = rpu == m_rpu.end() || rpu->second.bytes.empty();
++    // A seek may leave a BL reference unit whose RPU was before the read point.
++    // Preserve that unit for decoding, but never allow it to become a picture.
++    const bool primer = m_resync && (end || (m_transportClock &&
++        m_lastDts[1] != AV_NOPTS_VALUE && m_base.front()->pts < m_lastDts[1]));
++    if (missing && !primer)
+       return AVERROR(EAGAIN);
+-    const auto& layer = m_enhancement.front();
++    const auto* layer = m_enhancement.empty() ? nullptr : m_enhancement.front().get();
+     const int baseSize = m_base.front()->size;
+-    const size_t extra = layer->size + rpu->second.size();
++    const size_t rpuSize = missing ? 0 : rpu->second.bytes.size();
++    const size_t extra = (layer ? layer->size : 0) + rpuSize;
+     if (extra > MAX_BYTES - static_cast<size_t>(baseSize))
+       return AVERROR_INVALIDDATA;
+     Packet joined(av_packet_clone(m_base.front().get()));
+     if (!joined || av_grow_packet(joined.get(), extra) < 0)
+       return AVERROR(ENOMEM);
+-    std::memcpy(joined->data + baseSize, layer->data, layer->size);
+-    std::memcpy(joined->data + baseSize + layer->size, rpu->second.data(), rpu->second.size());
+-    m_bytes -= baseSize + extra;
++    if (layer) std::memcpy(joined->data + baseSize, layer->data, layer->size);
++    if (rpuSize)
++      std::memcpy(joined->data + baseSize + (layer ? layer->size : 0), rpu->second.bytes.data(), rpuSize);
++    m_timing = {joined->pts, layer ? layer->pts : AV_NOPTS_VALUE, m_epoch, !missing};
++    m_bytes -= baseSize + (layer ? layer->size : 0);
+     av_packet_move_ref(output, joined.get());
+     m_base.pop_front();
+-    m_enhancement.pop_front();
+-    m_rpu.erase(rpu);
+-    m_resync = false;
++    if (layer) m_enhancement.pop_front();
++    if (rpu != m_rpu.end())
++    {
++      rpu->second.emitted = true;
++      if (missing || rpu->second.layers == 3)
++      {
++        m_bytes -= rpu->second.bytes.size();
++        m_rpu.erase(rpu);
++      }
++    }
++    if (!missing && m_elAnchor != AV_NOPTS_VALUE && output->pts >= m_elAnchor)
++      m_resync = false;
+     return 0;
+   }
+ 
++  struct SourceTiming
++  {
++    int64_t basePts{AV_NOPTS_VALUE}, enhancementPts{AV_NOPTS_VALUE};
++    uint64_t epoch{0};
++    bool presentable{false};
++  };
++  SourceTiming Timing() const { return m_timing; }
++
+   bool Pending() const { return !m_base.empty() || !m_enhancement.empty() || !m_rpu.empty(); }
+   const char* LastError() const { return m_error; }
+   struct QueueState
+@@ -254,11 +288,17 @@
+     const auto* el = m_enhancement.empty() ? nullptr : m_enhancement.front().get();
+     return {base ? base->pts : AV_NOPTS_VALUE, base ? base->dts : AV_NOPTS_VALUE,
+             el ? el->pts : AV_NOPTS_VALUE, el ? el->dts : AV_NOPTS_VALUE,
+-            m_base.size(), m_enhancement.size(), m_rpu.size(),
++            m_base.size(), m_enhancement.size(), size_t(std::count_if(m_rpu.begin(), m_rpu.end(),
++              [](const auto& item) { return !item.second.bytes.empty(); })),
+             m_resync, base && IsIrap(*base, false), el && IsIrap(*el, true), m_restartPeer};
+   }
+   int64_t BasePTS() const { return m_base.empty() ? AV_NOPTS_VALUE : m_base.front()->pts; }
+-  int64_t RpuPTS() const { return m_rpu.empty() ? AV_NOPTS_VALUE : m_rpu.begin()->first; }
++  int64_t RpuPTS() const
++  {
++    const auto entry = std::find_if(m_rpu.begin(), m_rpu.end(),
++      [](const auto& item) { return !item.second.bytes.empty(); });
++    return entry == m_rpu.end() ? AV_NOPTS_VALUE : entry->first;
++  }
+   size_t TakePrerollCount() { const auto count=m_preroll; m_preroll=0; return count; }
+   bool TakeDiscontinuity() { const bool changed=m_discontinuity; m_discontinuity=false; return changed; }
+ 
+@@ -270,47 +310,6 @@
+     ++m_preroll;
+     return true;
+   }
+-  void ResyncPreroll()
+-  {
+-    if (!m_resync)
+-      return;
+-    if (!m_enhancement.empty() && m_enhancement.front()->dts != AV_NOPTS_VALUE)
+-    {
+-      if (m_base.size() < MAX_PACKETS && m_enhancement.size() < MAX_PACKETS)
+-        return;
+-      // A common decode anchor proves which BL units precede the first EL unit.
+-      const auto& first = m_enhancement.front();
+-      const auto anchor = std::find_if(m_base.begin(), m_base.end(), [&first](const Packet& base) {
+-        return base->pts == first->pts && (base->dts == first->dts ||
+-            (IsIrap(*base, false) && IsIrap(*first, true)));
+-      });
+-      if (anchor == m_base.end() || !std::all_of(m_base.begin(), anchor, [&first, &anchor](const Packet& base) {
+-            return base->dts != AV_NOPTS_VALUE && base->dts < (*anchor)->dts &&
+-                ((*anchor)->dts == first->dts || base->pts < (*anchor)->pts);
+-          }))
+-        return;
+-      const auto count = static_cast<size_t>(std::distance(m_base.begin(), anchor));
+-      if (m_preroll > MAX_PACKETS || count > MAX_PACKETS - m_preroll)
+-        return;
+-      for (size_t i = 0; i < count; ++i)
+-      {
+-        m_bytes -= m_base.front()->size;
+-        m_base.pop_front();
+-        ++m_preroll;
+-      }
+-      return;
+-    }
+-    // Only retire leading seek packets after a full reorder window proves them orphaned.
+-    if (m_base.size() < MAX_PACKETS || m_rpu.size() < MAX_PACKETS - 1 ||
+-        std::none_of(m_base.begin(),m_base.end(),
+-            [this](const Packet& base) { return m_rpu.contains(base->pts); })) return;
+-    while (!m_base.empty() && m_base.front()->pts < m_rpu.begin()->first)
+-    {
+-      m_bytes -= m_base.front()->size;
+-      m_base.pop_front();
+-      ++m_preroll;
+-    }
+-  }
+   static constexpr size_t MAX_PACKETS = 32;
+   static constexpr size_t MAX_BYTES = 64u * 1024u * 1024u;
+   struct Release { void operator()(AVPacket* p) const { av_packet_free(&p); } };
+@@ -368,7 +367,14 @@
+ 
+   std::deque<Packet> m_base, m_enhancement;
+   // Keep each layer's decode order; associate RPU only by presentation time.
+-  std::map<int64_t, std::vector<uint8_t>> m_rpu;
++  struct Rpu
++  {
++    std::vector<uint8_t> bytes;
++    unsigned layers{0};
++    bool emitted{false};
++  };
++  // Retain emitted metadata until the peer arrives, so late conflicts cannot escape validation.
++  std::map<int64_t, Rpu> m_rpu;
+   size_t m_bytes{0};
+   const char* m_error{""};
+   bool m_resync{false};
+@@ -376,4 +382,9 @@
+   std::array<int64_t, 2> m_lastDts{AV_NOPTS_VALUE, AV_NOPTS_VALUE};
+   bool m_discontinuity{false};
+   int m_restartPeer{-1};
++  int64_t m_elAnchor{AV_NOPTS_VALUE};
++  uint64_t m_epoch{1};
++  uint64_t* m_epochs{};
++  bool m_transportClock{false};
++  SourceTiming m_timing;
+ };
+diff -ruN a/xbmc/cores/VideoPlayer/DVDDemuxers/DemuxMultiSource.h b/xbmc/cores/VideoPlayer/DVDDemuxers/DemuxMultiSource.h
+--- a/xbmc/cores/VideoPlayer/DVDDemuxers/DemuxMultiSource.h
++++ b/xbmc/cores/VideoPlayer/DVDDemuxers/DemuxMultiSource.h
+@@ -49,6 +49,12 @@
+   DemuxPacket* Read() override;
+   bool Reset() override;
+   bool SeekTime(double time, bool backwards = false, double* startpts = NULL) override;
++  bool HasSeekPreroll() const override
++  {
++    for (const auto& [id, demuxer] : m_demuxerMap)
++      if (demuxer->HasSeekPreroll()) return true;
++    return false;
++  }
+ 
+ protected:
+   CDemuxStream* GetStream(int iStreamId) const override { return nullptr; }
+diff -ruN a/xbmc/cores/VideoPlayer/DVDDemuxers/DVDDemuxFFmpeg.cpp b/xbmc/cores/VideoPlayer/DVDDemuxers/DVDDemuxFFmpeg.cpp
+--- a/xbmc/cores/VideoPlayer/DVDDemuxers/DVDDemuxFFmpeg.cpp
++++ b/xbmc/cores/VideoPlayer/DVDDemuxers/DVDDemuxFFmpeg.cpp
+@@ -270,6 +270,7 @@
+   m_speed = DVD_PLAYSPEED_NORMAL;
+   m_program = UINT_MAX;
+   m_seekToKeyFrame = false;
++  m_seekPreroll = false;
+ 
+   const AVIOInterruptCB int_cb = { interrupt_cb, this };
+ 
+@@ -805,6 +806,7 @@
+ #ifdef HAVE_DVBRIDGE
+   if (m_blurayDovi)
+     m_blurayDovi->Reset(true);
++  m_blurayTiming = {};
+ #endif
+   if (m_pFormatContext)
+   {
+@@ -821,6 +823,7 @@
+   m_displayTime = 0;
+   m_dtsAtDisplayTime = DVD_NOPTS_VALUE;
+   m_seekToKeyFrame = false;
++  m_seekPreroll = false;
+ 
+   if (m_offsetMetadata)
+     m_offsetMetadata->Flush();
+@@ -1188,7 +1191,10 @@
+       }
+       else
+       {
+-        ParsePacket(&m_pkt.pkt);
++#ifdef HAVE_DVBRIDGE
++        if (!(m_blurayTiming.valid && m_blurayTiming.basePts == AV_NOPTS_VALUE))
++#endif
++          ParsePacket(&m_pkt.pkt);
+ 
+         if (IsProgramChange())
+         {
+@@ -1282,6 +1288,12 @@
+           pPacket->m_keyFrame = (m_pkt.pkt.flags & AV_PKT_FLAG_KEY) != 0;
+ 
+           CDVDDemuxUtils::StoreSideData(pPacket, &m_pkt.pkt);
++#ifdef HAVE_DVBRIDGE
++          if (m_blurayDovi && m_pkt.pkt.stream_index == m_blurayBase &&
++              m_blurayTiming.valid && (m_blurayTiming.basePts == AV_NOPTS_VALUE ||
++                                       m_blurayTiming.basePts == m_pkt.pkt.pts))
++            pPacket->doviLayerTimes = m_blurayTiming;
++#endif
+ 
+           CDVDInputStream::IDisplayTime* inputStream = m_pInput->GetIDisplayTime();
+           if (inputStream)
+@@ -1393,6 +1405,7 @@
+ bool CDVDDemuxFFmpeg::SeekTime(double time, bool backwards, double* startpts)
+ {
+   bool hitEnd = false;
++  m_seekPreroll = false;
+ 
+   if (!m_pInput)
+     return false;
+@@ -1520,6 +1533,7 @@
+           const int64_t anchor = dvbridge_fel_seek_point_at(m_pFormatContext, id, target, &layerPosition, original);
+           if (anchor != AV_NOPTS_VALUE)
+           {
++            m_seekPreroll = anchor < target;
+             seek_pts = av_rescale_q(anchor, video->time_base, AV_TIME_BASE_Q);
+             backwards = true;
+             CLog::Log(LOGDEBUG, "DV FEL: random-access preroll begins at {} us for {} ms seek",
+@@ -1544,6 +1558,7 @@
+ 
+     if (ret < 0)
+     {
++      m_seekPreroll = false;
+       // demuxer can return failure, if seeking behind eof
+       if (beyondEof)
+       {
+@@ -3286,6 +3301,7 @@
+       return;
+     }
+   m_blurayDovi.reset();
++  m_blurayTiming = {};
+   m_blurayBase = m_blurayEnhancement = -1;
+   m_blurayAwaitBase = false;
+   const bool mov = std::strcmp(format, "mov") == 0 || std::strncmp(format, "mov,", 4) == 0;
+@@ -3354,7 +3370,7 @@
+       report("incompatible-layer-clocks");
+       return;
+     }
+-    auto join = std::make_unique<CBlurayDovi>();
++    auto join = std::make_unique<CBlurayDovi>(&m_blurayEpoch, bluray || transport);
+     std::unique_ptr<AVCodecParameters, AVCodecParametersDeleter> combined(avcodec_parameters_alloc());
+     if (!combined || avcodec_parameters_copy(combined.get(), bl->codecpar) < 0)
+     {
+@@ -3389,7 +3405,7 @@
+         report("missing-dv-config");
+         return;
+       }
+-      if (!join->Configure(bl->codecpar, el->codecpar, bl->time_base, el->time_base) ||
++      if (!join->Configure(bl->codecpar, el->codecpar, bl->time_base, el->time_base, transport) ||
+           avcodec_parameters_copy(combined.get(), join->BaseParameters()) < 0)
+       {
+         CLog::Log(LOGWARNING, "DV layers: HEVC normalization unavailable");
+@@ -3450,12 +3466,27 @@
+ 
+ int CDVDDemuxFFmpeg::ReadBlurayDovi(AVPacket* packet)
+ {
+-  int result = m_blurayDovi->Take(packet);
++  m_blurayTiming = {};
++  auto take = [&](bool end = false) {
++    const int result = m_blurayDovi->Take(packet, end);
++    if (result == 0)
++    {
++      const auto source = m_blurayDovi->Timing();
++      const auto clock = m_pFormatContext->streams[m_blurayBase]->time_base;
++      m_blurayTiming = {source.basePts, source.enhancementPts, source.epoch,
++                        clock.num, clock.den, true, source.presentable};
++      packet->stream_index = m_blurayBase;
++    }
++    return result;
++  };
++  int result = take();
+   while (result == AVERROR(EAGAIN))
+   {
+     result = av_read_frame(m_pFormatContext, packet);
+     if (result < 0)
+     {
++      if (result == AVERROR_EOF && take(true) == 0)
++        return 0;
+       if (result == AVERROR_EOF && m_blurayDovi->Pending())
+         CLog::Log(LOGWARNING, "DV Blu-ray: incomplete layer pair at end of stream");
+       return result;
+@@ -3486,7 +3517,7 @@
+     av_packet_unref(packet);
+     if (!accepted)
+       return AVERROR_INVALIDDATA;
+-    result = m_blurayDovi->Take(packet);
++    result = take();
+   }
+   if (result == 0)
+     if (const auto count = m_blurayDovi->TakePrerollCount())
+diff -ruN a/xbmc/cores/VideoPlayer/DVDDemuxers/DVDDemuxFFmpeg.h b/xbmc/cores/VideoPlayer/DVDDemuxers/DVDDemuxFFmpeg.h
+--- a/xbmc/cores/VideoPlayer/DVDDemuxers/DVDDemuxFFmpeg.h
++++ b/xbmc/cores/VideoPlayer/DVDDemuxers/DVDDemuxFFmpeg.h
+@@ -10,6 +10,7 @@
+ 
+ #include "BlurayOffsetMetadata.h"
+ #include "DVDDemux.h"
++#include "cores/VideoPlayer/Interface/DemuxPacket.h"
+ #include "threads/CriticalSection.h"
+ #include "threads/SystemClock.h"
+ #include <map>
+@@ -104,6 +105,7 @@
+   DemuxPacket* ReadInternal(bool keep);
+ 
+   bool SeekTime(double time, bool backwards = false, double* startpts = NULL) override;
++  bool HasSeekPreroll() const override { return m_seekPreroll; }
+   bool SeekByte(int64_t pos);
+   int GetStreamLength() override;
+   CDemuxStream* GetStream(int iStreamId) const override;
+@@ -185,6 +187,8 @@
+   int m_blurayBase{-1}, m_blurayEnhancement{-1};
+   unsigned m_doviGroups{0};
+   bool m_blurayAwaitBase{false};
++  DemuxPacket::DoviLayerTimes m_blurayTiming;
++  uint64_t m_blurayEpoch{0};
+ #endif
+ 
+   CCriticalSection m_critSection;
+@@ -246,6 +250,7 @@
+   int m_displayTime = 0;
+   double m_dtsAtDisplayTime;
+   bool m_seekToKeyFrame = false;
++  bool m_seekPreroll = false;
+   double m_startTime = 0;
+   std::vector<ChapterFFmpeg> m_chapters;
+ };
+diff -ruN a/xbmc/cores/VideoPlayer/DVDDemuxers/DVDDemux.h b/xbmc/cores/VideoPlayer/DVDDemuxers/DVDDemux.h
+--- a/xbmc/cores/VideoPlayer/DVDDemuxers/DVDDemux.h
++++ b/xbmc/cores/VideoPlayer/DVDDemuxers/DVDDemux.h
+@@ -266,6 +266,9 @@
+    */
+   virtual bool SeekTime(double time, bool backwards = false, double* startpts = nullptr) = 0;
+ 
++  // The last seek deliberately acquired earlier decoder references.
++  virtual bool HasSeekPreroll() const { return false; }
++
+   /*
+    * Seek to a specified chapter.
+    * startpts can be updated to the point where display should start
+diff -ruN a/xbmc/cores/VideoPlayer/Interface/DemuxPacket.h b/xbmc/cores/VideoPlayer/Interface/DemuxPacket.h
+--- a/xbmc/cores/VideoPlayer/Interface/DemuxPacket.h
++++ b/xbmc/cores/VideoPlayer/Interface/DemuxPacket.h
+@@ -46,6 +46,15 @@
+ 
+     //! @brief Packet is a keyframe, only set by demuxers that know it.
+     bool m_keyFrame{false};
++
++    // Native dual-layer identity, kept separate from Kodi's adjusted clock.
++    struct DoviLayerTimes
++    {
++      int64_t basePts{0}, enhancementPts{0};
++      uint64_t epoch{0};
++      int clockNum{0}, clockDen{0};
++      bool valid{false}, presentable{false};
++    } doviLayerTimes;
+   };
+ 
+ #ifdef __cplusplus
+diff -ruN a/xbmc/cores/VideoPlayer/VideoPlayer.cpp b/xbmc/cores/VideoPlayer/VideoPlayer.cpp
+--- a/xbmc/cores/VideoPlayer/VideoPlayer.cpp
++++ b/xbmc/cores/VideoPlayer/VideoPlayer.cpp
+@@ -2056,6 +2056,13 @@
+ 
+ void CVideoPlayer::ProcessVideoData(CDemuxStream* pStream, DemuxPacket* pPacket)
+ {
++#ifdef HAVE_DVBRIDGE
++  if (pPacket->doviLayerTimes.valid && pPacket->doviLayerTimes.basePts == AV_NOPTS_VALUE)
++  {
++    m_VideoPlayerVideo->SendMessage(std::make_shared<CDVDMsgDemuxerPacket>(pPacket, false));
++    return; // Terminal EL work does not advance or initialize the BL clock.
++  }
++#endif
+   CheckStreamChanges(m_CurrentVideo, pStream);
+   bool checkcont = false;
+ 
+@@ -2638,7 +2645,8 @@
+       return true;
+     }
+ 
+-    if ((current.startpts - current.dts) > DVD_SEC_TO_TIME(20))
++    if ((current.startpts - current.dts) > DVD_SEC_TO_TIME(20) &&
++        !(m_pDemuxer && m_pDemuxer->HasSeekPreroll()))
+     {
+       CLog::Log(LOGDEBUG, "{} - too far to decode before finishing seek", __FUNCTION__);
+       if(m_CurrentAudio.startpts != DVD_NOPTS_VALUE)
+diff -ruN a/xbmc/cores/VideoPlayer/VideoPlayerVideo.cpp b/xbmc/cores/VideoPlayer/VideoPlayerVideo.cpp
+--- a/xbmc/cores/VideoPlayer/VideoPlayerVideo.cpp
++++ b/xbmc/cores/VideoPlayer/VideoPlayerVideo.cpp
+@@ -113,6 +113,7 @@
+ {
+   m_bAbortOutput = true;
+   StopThread();
++
+ }
+ 
+ double CVideoPlayerVideo::GetOutputDelay()
+@@ -310,6 +311,8 @@
+   m_bAbortOutput = true;
+   StopThread();
+ 
++  m_drainPending = 0;
++
+   m_messageQueue.End();
+ 
+   CLog::Log(LOGINFO, "deleting video codec");
+@@ -330,7 +333,8 @@
+ 
+ bool CVideoPlayerVideo::HasData() const
+ {
+-  return m_messageQueue.GetDataSize() > 0;
++  return m_drainPending || m_messageQueue.GetDataSize() > 0 ||
++      m_messageParent.GetPacketCount(CDVDMsg::PLAYER_ABORT) > 0;
+ }
+ 
+ bool CVideoPlayerVideo::IsInited() const
+@@ -340,7 +344,14 @@
+ 
+ inline void CVideoPlayerVideo::SendMessage(std::shared_ptr<CDVDMsg> pMsg, int priority)
+ {
+-  m_messageQueue.Put(pMsg, priority);
++  if (pMsg->IsType(CDVDMsg::VIDEO_DRAIN))
++  {
++    std::scoped_lock lock(m_drainMutex);
++    ++m_drainPending;
++    m_messageQueue.Put(pMsg, priority);
++  }
++  else
++    m_messageQueue.Put(pMsg, priority);
+   m_processInfo.SetLevelVQ(m_messageQueue.GetLevel());
+ }
+ 
+@@ -352,7 +363,9 @@
+ 
+ inline void CVideoPlayerVideo::FlushMessages()
+ {
++  std::scoped_lock lock(m_drainMutex);
+   m_messageQueue.Flush();
++  m_drainPending = 0;
+   m_processInfo.SetLevelVQ(m_messageQueue.GetLevel());
+ }
+ 
+@@ -398,6 +411,15 @@
+   m_rewindStalled = false;
+   m_outputSate = OUTPUT_NORMAL;
+ 
++  const auto processDecoderOutput = [&]() {
++#ifdef CB1_HAS_HDR10_AI
++    if ((m_syncState == IDVDStreamPlayer::SYNC_STARTING || m_syncState == IDVDStreamPlayer::SYNC_WAITSYNC) &&
++        m_renderManager.HDR10AIStartupBuffered())
++      return true;
++#endif
++    return ProcessDecoderOutput(frametime, pts);
++  };
++
+   while (!m_bStop)
+   {
+ #ifdef CB1_HAS_HDR10_AI
+@@ -460,7 +482,7 @@
+                 m_processInfo.IsFrameAdvance() ||
+                 m_syncState != IDVDStreamPlayer::SYNC_INSYNC) && !m_paused)
+       {
+-        if (ProcessDecoderOutput(frametime, pts))
++        if (processDecoderOutput())
+         {
+           onlyPrioMsgs = true;
+           continue;
+@@ -477,7 +499,7 @@
+         // squeeze pictures out
+         while (!m_bStop && m_pVideoCodec)
+         {
+-          m_pVideoCodec->SetCodecControl(DVD_CODEC_CTRL_DRAIN);
++          m_pVideoCodec->SetCodecControl(DVD_CODEC_CTRL_DRAIN | DVD_CODEC_CTRL_POLL);
+           if (!ProcessDecoderOutput(frametime, pts))
+             break;
+         }
+@@ -592,7 +614,7 @@
+ 
+       while (!m_bStop && m_pVideoCodec)
+       {
+-        m_pVideoCodec->SetCodecControl(DVD_CODEC_CTRL_DRAIN);
++        m_pVideoCodec->SetCodecControl(DVD_CODEC_CTRL_DRAIN | DVD_CODEC_CTRL_POLL);
+         bool cont = ProcessDecoderOutput(frametime, pts);
+ 
+         if (!cont)
+@@ -615,6 +637,7 @@
+         if (!ProcessDecoderOutput(frametime, pts))
+           break;
+       }
++      --m_drainPending;
+     }
+     else if (pMsg->IsType(CDVDMsg::GENERAL_PAUSE))
+     {
+@@ -744,7 +767,7 @@
+         m_videoStats.AddSampleBytes(pPacket->iSize);
+         UpdatePlayerInfo();
+ 
+-        if (ProcessDecoderOutput(frametime, pts))
++        if (processDecoderOutput())
+         {
+           onlyPrioMsgs = true;
+         }
+@@ -785,6 +808,17 @@
+     return false;
+   }
+ 
++  if (decoderState == CDVDVideoCodec::VC_FATAL)
++  {
++    if (!m_messageQueue.ReceivedAbortRequest())
++    {
++      CLog::Log(LOGERROR, "CVideoPlayerVideo - non-recoverable video decoder failure, stopping playback");
++      m_messageParent.Put(std::make_shared<CDVDMsgBool>(CDVDMsg::PLAYER_ABORT, true));
++      m_messageQueue.Abort();
++    }
++    return false;
++  }
++
+   // if decoder was flushed, we need to seek back again to resume rendering
+   if (decoderState == CDVDVideoCodec::VC_FLUSHED)
+   {
+diff -ruN a/xbmc/cores/VideoPlayer/VideoPlayerVideo.h b/xbmc/cores/VideoPlayer/VideoPlayerVideo.h
+--- a/xbmc/cores/VideoPlayer/VideoPlayerVideo.h
++++ b/xbmc/cores/VideoPlayer/VideoPlayerVideo.h
+@@ -20,6 +20,7 @@
+ #include "utils/BitstreamStats.h"
+ 
+ #include <atomic>
++#include <mutex>
+ #ifdef HAVE_DVBRIDGE
+ #include "utils/DVRenderUsage.h"
+ #endif
+@@ -144,6 +145,8 @@
+   unsigned m_diagnosticTransitions{0};
+ #endif
+   std::atomic_bool m_stalled = false;
++  std::atomic_uint m_drainPending = 0;
++  std::mutex m_drainMutex;
+   std::atomic_bool m_rewindStalled;
+   bool m_paused;
+   IDVDStreamPlayer::ESyncState m_syncState;
+diff -ruN a/xbmc/cores/VideoPlayer/VideoRenderers/BaseRenderer.h b/xbmc/cores/VideoPlayer/VideoRenderers/BaseRenderer.h
+--- a/xbmc/cores/VideoPlayer/VideoRenderers/BaseRenderer.h
++++ b/xbmc/cores/VideoPlayer/VideoRenderers/BaseRenderer.h
+@@ -62,6 +62,7 @@
+   bool ready{true};
+   std::function<Outcome()> execute;
+   std::function<bool(const Outcome&)> publish;
++  bool buffered{false}; // Valid owned startup horizon, available before execute.
+ };
+ #endif
+ 
+diff -ruN a/xbmc/cores/VideoPlayer/VideoRenderers/DVBridgeGLES.cpp b/xbmc/cores/VideoPlayer/VideoRenderers/DVBridgeGLES.cpp
+--- a/xbmc/cores/VideoPlayer/VideoRenderers/DVBridgeGLES.cpp
++++ b/xbmc/cores/VideoPlayer/VideoRenderers/DVBridgeGLES.cpp
+@@ -1117,7 +1117,7 @@
+ }
+ 
+ bool CDVBridgeGLES::SetNativeOverlay(unsigned texture, unsigned degamma, unsigned pq,
+-                                    const CRect& bounds, uint64_t content, bool inputPQ)
++                                    const CRect& bounds, uint64_t content, bool inputPQ, bool optimized)
+ {
+   const int width = m_scanout ? m_scanout->params.w : 0;
+   const int height = m_scanout ? m_scanout->params.h : 0;
+@@ -1137,6 +1137,7 @@
+   const bool layoutChanged = m_nativeOverlayEnabled != enabled || (enabled &&
+       (texture != m_nativeOverlayTextures[0] || degamma != m_nativeOverlayTextures[1] ||
+        pq != m_nativeOverlayTextures[2] || formatChanged || sizeChanged ||
++       optimized != m_nativeOverlay.optimized ||
+        !std::equal(std::begin(nextRect),std::end(nextRect),std::begin(m_nativeOverlay.rect))));
+   if (layoutChanged || (enabled && content != m_nativeOverlayContent))
+     ++m_nativeOverlayRevision;
+@@ -1145,6 +1146,7 @@
+   if (!enabled)
+     return false;
+   m_nativeOverlay.input_pq = inputPQ;
++  m_nativeOverlay.optimized = optimized;
+   std::copy(std::begin(nextRect),std::end(nextRect),std::begin(m_nativeOverlay.rect));
+   const unsigned ids[]{texture, degamma, pq};
+   pl_tex* wrapped[]{&m_nativeOverlay.texture, &m_nativeOverlay.degamma, &m_nativeOverlay.pq};
+@@ -1445,7 +1447,7 @@
+   }
+   // A selected policy already passed output admission, including compatibility routes.
+   const bool fallback = !selected &&
+-      (policy.mode == DVBRIDGE_MODE_HDR10_EXPERT || policy.mode == DVBRIDGE_MODE_ENHANCED_DV) && !preferences.ProfileValid();
++      (policy.mode == DVBRIDGE_MODE_HDR10_EXPERT || policy.mode == DVBRIDGE_MODE_ENHANCED_DV) && !preferences.ProfileValid(policy.mode);
+   if (fallback)
+   {
+     policy.mode = preferences.output == DVBRIDGE::OutputMode::HDR10 ?
+@@ -1460,6 +1462,7 @@
+   const auto admissionIdentity = SelectionIdentity(base.binding, preferences,
+       policy.mode);
+   const bool sameGeometry = geometry.source_width == m_sourceGeometry.source_width &&
++      geometry.ignore_l5 == m_sourceGeometry.ignore_l5 &&
+       geometry.source_height == m_sourceGeometry.source_height &&
+       geometry.x == m_sourceGeometry.x && geometry.y == m_sourceGeometry.y &&
+       geometry.width == m_sourceGeometry.width && geometry.height == m_sourceGeometry.height &&
+@@ -1577,10 +1580,10 @@
+       m_auditRequested.Record(DVBRIDGE::DiagnosticNowMs(),"requested",m_auditSerial))
+   {
+     m_auditRequestedSerial=m_auditSerial;
+-    DVBRIDGE::DiagnosticLog(LOGINFO,"DVBridge policy requested: source={}/{}/{} policy={} requested={} effective={} eligible={} fallback={} l2_trims_disabled={} method={} tv_peak={} tv_panel={} tv_gamut={} tv_profile_valid={}",
++    DVBRIDGE::DiagnosticLog(LOGINFO,"DVBridge policy requested: source={}/{}/{} policy={} requested={} effective={} eligible={} fallback={} l2_trims_disabled={} method={} tv_peak={} tv_panel={} tv_gamut={} tv_profile_valid={} encoded_active_area={}",
+         base.binding.stream,base.binding.picture,base.binding.revision,revision,
+         int(preferences.Policy().mode),int(policy.mode),!m_fallback,m_fallback,preferences.L2TrimsDisabled(policy.mode),
+-        preferences.method,preferences.peak,preferences.panel,preferences.gamut,preferences.ProfileValid());
++        preferences.method,preferences.peak,preferences.panel,preferences.gamut,preferences.ProfileValid(),geometry.ignore_l5);
+     const auto admission=DVBRIDGE::StreamTelemetry::Read().transaction;
+     DVBRIDGE::DiagnosticLog(LOGINFO,"DVBridge output admission: generation={} source_known={} gpu_known={} native_dv={} hdr10={} requested={} effective={} reason={}",
+         admission.capabilities.generation,admission.capabilities.sourceKnown,admission.capabilities.processingKnown,
+@@ -1665,6 +1668,9 @@
+   }
+   else
+   {
++    // Reserve the film's representable ceiling before the GUI is composed.
++    policy.expert_output_bits=m_outputBits;
++    policy.expert_output_limited=m_hdr10Limited;
+     if (allowPacked && m_directUsable && m_scanout && !geometry.x && !geometry.y &&
+         geometry.width == geometry.target_width && geometry.height == geometry.target_height)
+     {
+@@ -2269,6 +2275,9 @@
+       submission.identity.revision != m_pendingIdentity.revision)
+     return false;
+   const auto* hdrOutput = HDR10Output();
++  // Capture the executed mapping before commit releases its pending plan.
++  const double displayBlack = hdrOutput ? hdrOutput->policy.expert_black_nits : 0;
++  const int displayGamut = hdrOutput ? static_cast<int>(hdrOutput->policy.tv.gamut) : 0;
+   const float peak = m_effectiveMode == DVBRIDGE_MODE_HDR10PLUS ? 992.0f :
+       hdrOutput ? hdrOutput->nominal_target.hdr.max_luma :
+       m_advanced && m_effectiveMode == DVBRIDGE_MODE_ENHANCED_DV ? static_cast<float>(m_requested.peak) :
+@@ -2335,6 +2344,11 @@
+       output.hdr10AI=true;
+       const auto& raw=prediction->raw;
+       output.aiL1L3={raw.l1_min,raw.l1_max,raw.l1_avg,raw.l3_min,raw.l3_max,raw.l3_avg};
++      if (prediction->model && !(prediction->source_flags & CB1_SOURCE_STATISTICS))
++      {
++        output.aiModel=prediction->model;
++        output.aiBaseline={prediction->base[0],prediction->base[2],prediction->base[1]};
++      }
+       if (m_aiGuidance)
+       {
+         output.hdr10PlusDV = true;
+@@ -2375,8 +2389,11 @@
+       , m_aiFrame
+ #endif
+   );
+-  output.panel = m_requested.panel; output.gamut = m_requested.gamut;
+-  output.manualPeak = m_requested.peak; output.revision = m_pendingIdentity.revision;
++  const bool expert=m_effectiveMode==DVBRIDGE_MODE_HDR10_EXPERT;
++  output.panel = m_requested.panel; output.gamut = expert?displayGamut:m_requested.gamut;
++  output.manualPeak = expert?static_cast<double>(peak):m_requested.peak;
++  output.displayBlack = expert?displayBlack:0;
++  output.revision = m_pendingIdentity.revision;
+   output.fallback = m_fallback;
+   if (m_effectiveMode == DVBRIDGE_MODE_HDR10PLUS)
+   {
+@@ -2519,7 +2536,7 @@
+           m_pendingSourceInfo.profile,m_pendingSourceInfo.bl,m_pendingSourceInfo.el,m_pendingSourceInfo.rpu,
+           CDVPlaybackInfo::IsHDR10PlusDV(acceptedOutput) ?
+               (acceptedOutput.guidedSourceFields & CB1_HDR10PLUS_DOVI_AVG ?
+-                  "source-HDR10+-statistics" : "source-HDR10+-and-AI-estimates") :
++                  "source-HDR10+-statistics" : "source-HDR10+-and-estimates") :
+           acceptedOutput.effective == 7 ? "reconstructed-picture-statistics" :
+           acceptedOutput.flags & CDVPlaybackInfo::HDR10 ? (acceptedOutput.effective>=3 ? "manual-tv-profile" :
+               acceptedOutput.level6 ? "source-L6" : "reference-default") : "source-RPU");
+diff -ruN a/xbmc/cores/VideoPlayer/VideoRenderers/DVBridgeGLES.h b/xbmc/cores/VideoPlayer/VideoRenderers/DVBridgeGLES.h
+--- a/xbmc/cores/VideoPlayer/VideoRenderers/DVBridgeGLES.h
++++ b/xbmc/cores/VideoPlayer/VideoRenderers/DVBridgeGLES.h
+@@ -184,7 +184,7 @@
+   bool Fallback() const { return m_fallback; }
+   bool Advanced() const { return m_advanced; }
+   bool SetNativeOverlay(unsigned texture, unsigned degamma, unsigned pq,
+-                        const CRect& bounds, uint64_t content, bool inputPQ);
++                        const CRect& bounds, uint64_t content, bool inputPQ, bool optimized = false);
+   bool NativeOverlayComposed() const { return m_direct && m_nativeOverlayEnabled; }
+   bool NativeOverlayPrimed() const { return m_nativeOverlayPrimed; }
+   // GUI or subtitles will cover the next picture: send a full-raster L5.
+@@ -214,6 +214,15 @@
+                        const CDVMetadataBuffer& metadata, dvbridge_geometry geometry, bool allowPacked = false);
+   unsigned int GetPQTexture() const;
+   unsigned int GetPQFramebuffer();
++  bool GetHDR10OutputTarget(unsigned& framebuffer, unsigned& bits)
++  {
++    if (!m_hdr10 || !m_prepared || !m_direct || !m_scanout) return false;
++    framebuffer = m_scanoutFramebuffer;
++    bits = m_outputBits;
++    // As with GetPQFramebuffer, redraw film before another equal-PTS GUI blend.
++    if (m_live) m_guiComposed = true;
++    return true;
++  }
+   bool Pack(unsigned int framebuffer, int width, int height, bool flipY);
+   bool ResolveHDR10(bool limited);
+   bool Presented(bool success);
+diff -ruN a/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/RendererVAAPIGLES.cpp b/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/RendererVAAPIGLES.cpp
+--- a/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/RendererVAAPIGLES.cpp
++++ b/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/RendererVAAPIGLES.cpp
+@@ -22,6 +22,7 @@
+ #include "cores/VideoPlayer/DVDCodecs/Video/HDR10SourceType.h"
+ #include "windowing/gbm/WinSystemGbmGLESContext.h"
+ #include <cmath>
++#include <algorithm>
+ #endif
+ 
+ #include <memory>
+@@ -332,6 +333,12 @@
+   if (!UploadTexture(queue.front())) return {false, {}, {}};
+   const auto index = queue.front();
+   const auto binding = head->doviSourceBinding;
++  const bool buffered = !layers.empty() &&
++      std::all_of(layers.begin(), layers.end(), [&](const auto& layer) {
++        return layer.lease && layer.binding.Valid() && std::isfinite(layer.pts) &&
++            layer.binding.stream == binding.stream && layer.binding.revision == binding.revision;
++      }) && ((end && layers.size() == queue.size()) ||
++             layers.back().pts >= layers.front().pts + 1.0 - 1e-9);
+   const auto preferences = DVBRIDGE::FrameOutputSettings(head->hdrType == StreamHdrType::HDR_TYPE_HDR10PLUS);
+   if (preferences.hdr10Source == DVBRIDGE::HDR10SourceMode::Native)
+   {
+@@ -366,7 +373,7 @@
+           m_aiOutputPending = false;
+         }
+         return true;
+-      }};
++      }, buffered && head->hdrType == StreamHdrType::HDR_TYPE_HDR10};
+ }
+ 
+ bool CRendererVAAPIGLES::HDR10AIFrameCommitted() const
+@@ -376,36 +383,6 @@
+ }
+ #endif
+ 
+-dvbridge_geometry CRendererVAAPIGLES::DVBridgeGeometry()
+-{
+-  auto* window = CServiceBroker::GetWinSystem();
+-  CRect source, dest, view;
+-  GetVideoRect(source, dest, view);
+-  const int width = window->GetWidth(), height = window->GetHeight();
+-  const auto& context = window->GetGfxContext();
+-  if (width <= 0 || height <= 0 || context.GetWidth() <= 0 || context.GetHeight() <= 0)
+-    return {};
+-  const CRect original = dest;
+-  dest.Intersect(CRect(0, 0, context.GetWidth(), context.GetHeight()));
+-  if (dest.Width() <= 0 || dest.Height() <= 0 || original.Width() <= 0 || original.Height() <= 0)
+-    return {};
+-  const float sourceX = source.Width() / original.Width();
+-  const float sourceY = source.Height() / original.Height();
+-  source.x1 += (dest.x1 - original.x1) * sourceX;
+-  source.x2 += (dest.x2 - original.x2) * sourceX;
+-  source.y1 += (dest.y1 - original.y1) * sourceY;
+-  source.y2 += (dest.y2 - original.y2) * sourceY;
+-  const float sx = float(width) / context.GetWidth();
+-  const float sy = float(height) / context.GetHeight();
+-  const float left = dest.x1 * sx, top = dest.y1 * sy;
+-  const float right = dest.x2 * sx, bottom = dest.y2 * sy;
+-  const int x = std::floor(left), y = std::floor(top);
+-  return {static_cast<int>(m_sourceWidth), static_cast<int>(m_sourceHeight),
+-          x, y, static_cast<int>(std::ceil(right)) - x,
+-          static_cast<int>(std::ceil(bottom)) - y, width, height,
+-          {source.x1, source.y1, source.x2, source.y2}, {left, top, right, bottom}};
+-}
+-
+ void CRendererVAAPIGLES::SetDVBridgeFELSuccessor(int index)
+ {
+   m_felSuccessor = {};
+diff -ruN a/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/RendererVAAPIGLES.h b/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/RendererVAAPIGLES.h
+--- a/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/RendererVAAPIGLES.h
++++ b/xbmc/cores/VideoPlayer/VideoRenderers/HwDecRender/RendererVAAPIGLES.h
+@@ -69,9 +69,8 @@
+   bool RenderHook(int idx) override;
+ #ifdef HAVE_DVBRIDGE
+   bool RenderDVBridge(int idx) override;
+-  bool BuildDVBridgeLayer(int idx, CDVBridgeGLES::Layer& layer);
++  bool BuildDVBridgeLayer(int idx, CDVBridgeGLES::Layer& layer) override;
+   CDVBridgeGLES::FELSuccessor m_felSuccessor;
+-  dvbridge_geometry DVBridgeGeometry();
+   bool DVBridgeOrientationSupported(unsigned int orientation) const;
+ #endif
+   void AfterRenderHook(int idx) override;
+diff -ruN a/xbmc/cores/VideoPlayer/VideoRenderers/LinuxRendererGLES.cpp b/xbmc/cores/VideoPlayer/VideoRenderers/LinuxRendererGLES.cpp
+--- a/xbmc/cores/VideoPlayer/VideoRenderers/LinuxRendererGLES.cpp
++++ b/xbmc/cores/VideoPlayer/VideoRenderers/LinuxRendererGLES.cpp
+@@ -1236,10 +1236,97 @@
+   {
+     CalculateTextureSourceRects(index, 3);
+   }
+-
++#ifdef HAVE_DVBRIDGE
++  if (auto* window=dynamic_cast<KODI::WINDOWING::GBM::CWinSystemGbmGLESContext*>(CServiceBroker::GetWinSystem()))
++  {
++    CDVBridgeGLES::Layer layer{};
++    const bool usable=ret && BuildDVBridgeLayer(index,layer);
++    const auto& buffer=m_buffers[index];
++    const auto binding=buffer.doviSourcePicture && buffer.doviSourcePicture->doviSourceBinding.Valid() ?
++        buffer.doviSourcePicture->doviSourceBinding : buffer.doviMetadata.Binding();
++    window->ObserveDVImport(binding,DVBridgeGeometry(),usable);
++  }
++#endif
+   return ret;
+ }
+ 
++#ifdef HAVE_DVBRIDGE
++bool CLinuxRendererGLES::BuildDVBridgeLayer(int index, CDVBridgeGLES::Layer& layer)
++{
++  auto& buffer=m_buffers[index];
++  if (!buffer.doviSourcePicture || !buffer.doviMetadata.Data() ||
++      buffer.doviPts==DVD_NOPTS_VALUE || !std::isfinite(buffer.doviPts) ||
++      m_textureTarget!=GL_TEXTURE_2D || m_renderOrientation!=0)
++    return false;
++  if (m_sourceWidth<=0 || m_sourceWidth>3840 || m_sourceHeight<=0 || m_sourceHeight>2160)
++    return false;
++  switch (m_format)
++  {
++    case AV_PIX_FMT_YUV420P10LE: layer.layout=DVBRIDGE_YUV420P10; break;
++    case AV_PIX_FMT_YUV444P10LE: layer.layout=DVBRIDGE_YUV444P10; break;
++    default: return false;
++  }
++  layer.width=m_sourceWidth; layer.height=m_sourceHeight;
++  layer.scalingMethod=SelectScalingMethod();
++  layer.pts=buffer.doviPts;
++  layer.binding=buffer.doviMetadata.Binding();
++  layer.lease=buffer.doviSourcePicture;
++  layer.sourceInfo=buffer.doviSourcePicture->doviSourceInfo;
++  layer.sourceSideData=buffer.doviSourcePicture->sourceSideData;
++  layer.chromaLocation=buffer.doviSourcePicture->chroma_position;
++  for (int p=0;p<3;++p)
++  {
++    const auto& plane=buffer.fields[FIELD_FULL][p];
++    const bool subsampled=p && m_format==AV_PIX_FMT_YUV420P10LE;
++    const unsigned width=subsampled ? (m_sourceWidth+1)/2 : m_sourceWidth;
++    const unsigned height=subsampled ? (m_sourceHeight+1)/2 : m_sourceHeight;
++    if (!plane.id || plane.texwidth!=width || plane.texheight!=height) return false;
++    layer.planes[p]={plane.id,static_cast<int>(plane.texwidth),static_cast<int>(plane.texheight)};
++  }
++  return layer.binding.Valid();
++}
++
++bool CLinuxRendererGLES::RenderDVBridge(int index)
++{
++  auto* window=dynamic_cast<KODI::WINDOWING::GBM::CWinSystemGbmGLESContext*>(CServiceBroker::GetWinSystem());
++  CDVBridgeGLES::Layer layer{};
++  if (!window || !BuildDVBridgeLayer(index,layer)) return false;
++  const auto& buffer=m_buffers[index];
++  return window->RenderDVBridge(layer,buffer.doviEnhancement,buffer.doviEnhancementBinding,
++      buffer.doviMetadata,DVBridgeGeometry());
++}
++
++dvbridge_geometry CLinuxRendererGLES::DVBridgeGeometry()
++{
++  auto* window = CServiceBroker::GetWinSystem();
++  CRect source, dest, view;
++  GetVideoRect(source, dest, view);
++  const int width = window->GetWidth(), height = window->GetHeight();
++  const auto& context = window->GetGfxContext();
++  if (width <= 0 || height <= 0 || context.GetWidth() <= 0 || context.GetHeight() <= 0)
++    return {};
++  const CRect original = dest;
++  dest.Intersect(CRect(0, 0, context.GetWidth(), context.GetHeight()));
++  if (dest.Width() <= 0 || dest.Height() <= 0 || original.Width() <= 0 || original.Height() <= 0)
++    return {};
++  const float sourceX = source.Width() / original.Width();
++  const float sourceY = source.Height() / original.Height();
++  source.x1 += (dest.x1 - original.x1) * sourceX;
++  source.x2 += (dest.x2 - original.x2) * sourceX;
++  source.y1 += (dest.y1 - original.y1) * sourceY;
++  source.y2 += (dest.y2 - original.y2) * sourceY;
++  const float sx = float(width) / context.GetWidth();
++  const float sy = float(height) / context.GetHeight();
++  const float left = dest.x1 * sx, top = dest.y1 * sy;
++  const float right = dest.x2 * sx, bottom = dest.y2 * sy;
++  const int x = std::floor(left), y = std::floor(top);
++  return {static_cast<int>(m_sourceWidth), static_cast<int>(m_sourceHeight),
++          x, y, static_cast<int>(std::ceil(right)) - x,
++          static_cast<int>(std::ceil(bottom)) - y, width, height,
++          {source.x1, source.y1, source.x2, source.y2}, {left, top, right, bottom}, false};
++}
++#endif
++
+ bool CLinuxRendererGLES::Render(unsigned int flags, int index)
+ {
+   // obtain current field, if interlaced
+diff -ruN a/xbmc/cores/VideoPlayer/VideoRenderers/LinuxRendererGLES.h b/xbmc/cores/VideoPlayer/VideoRenderers/LinuxRendererGLES.h
+--- a/xbmc/cores/VideoPlayer/VideoRenderers/LinuxRendererGLES.h
++++ b/xbmc/cores/VideoPlayer/VideoRenderers/LinuxRendererGLES.h
+@@ -9,6 +9,9 @@
+ #pragma once
+ 
+ #include "BaseRenderer.h"
++#ifdef HAVE_DVBRIDGE
++#include "DVBridgeGLES.h"
++#endif
+ #include "FrameBufferObject.h"
+ #include "RenderFlags.h"
+ #include "RenderInfo.h"
+@@ -145,7 +148,9 @@
+   virtual bool RenderHook(int idx) { return false; }
+ #ifdef HAVE_DVBRIDGE
+   // Failure is terminal for this frame: never silently use the ordinary shader.
+-  virtual bool RenderDVBridge(int idx) { return false; }
++  virtual bool RenderDVBridge(int idx);
++  virtual bool BuildDVBridgeLayer(int idx, CDVBridgeGLES::Layer& layer);
++  dvbridge_geometry DVBridgeGeometry();
+   bool m_dvRequested{false};
+ #endif
+   virtual void AfterRenderHook(int idx) {}
+diff -ruN a/xbmc/cores/VideoPlayer/VideoRenderers/RenderManager.cpp b/xbmc/cores/VideoPlayer/VideoRenderers/RenderManager.cpp
+--- a/xbmc/cores/VideoPlayer/VideoRenderers/RenderManager.cpp
++++ b/xbmc/cores/VideoPlayer/VideoRenderers/RenderManager.cpp
+@@ -316,6 +316,7 @@
+ {
+   if (!m_pRenderer || !m_pRenderer->HDR10AIQueueEligible())
+   {
++    m_aiStartupBuffered = false;
+     m_aiQueuePreparationStale = false;
+     return m_aiQueueReady = true;
+   }
+@@ -341,7 +342,7 @@
+   // A seek can retain the old scanout, but only the new queue may prime AI.
+   if (m_aiStartPts != DVD_NOPTS_VALUE && (paused || pending || selected))
+     queue.push_front(m_presentsource);
+-  if (queue.empty()) return false;
++  if (queue.empty()) { m_aiStartupBuffered = false; return false; }
+   uint64_t deadline = 0;
+   if (m_pRenderer->HDR10AILookahead() && m_aiStartPts != DVD_NOPTS_VALUE)
+   {
+@@ -391,6 +392,7 @@
+   const auto generation = m_aiQueueGeneration;
+   const double startPts = m_Queue[queue.front()].pts + m_Queue[queue.front()].duration;
+   auto preparation = renderer->CaptureHDR10AIQueue(queue,m_aiEnd,paused,deadline);
++  m_aiStartupBuffered = preparation.buffered;
+   if (preparation.execute)
+   {
+     m_aiGUIOwnsRenderer = true;
+@@ -399,12 +401,13 @@
+     lock.unlock();
+     HDR10AIQueuePreparation::Outcome outcome{};
+     try { outcome = preparation.execute(); }
+-    catch (...) { lock.lock(); throw; }
++    catch (...) { lock.lock(); m_aiStartupBuffered = false; throw; }
+     lock.lock();
+     if (generation != m_aiQueueGeneration || renderer != m_pRenderer ||
+         !preparation.publish || !preparation.publish(outcome))
+     {
+       m_aiQueuePreparationStale = true;
++      m_aiStartupBuffered = false;
+       // Reject only unsubmitted output; accepted KMS work keeps its owner.
+ #ifdef HAVE_DVBRIDGE
+       if (auto* window = dynamic_cast<KODI::WINDOWING::GBM::CWinSystemGbmGLESContext*>(
+@@ -416,6 +419,7 @@
+       m_presentstep = m_queued.empty() ? PRESENT_IDLE : PRESENT_READY;
+       return m_aiQueueReady = false;
+     }
++    m_aiStartupBuffered = preparation.buffered && outcome.lookahead;
+     // After rejection, fresh pending analysis is not yet a new selected frame.
+     if (outcome.lookahead && !lookahead)
+     {
+@@ -501,6 +505,13 @@
+       m_aiFullscreenRequested && !m_aiGuiReady;
+ }
+ 
++bool CRenderManager::HDR10AIStartupBuffered()
++{
++  std::unique_lock lock(m_presentlock);
++  return m_pRenderer && m_pRenderer->HDR10AIQueueEligible() && m_pRenderer->HDR10AILookahead() &&
++      !m_showVideo && m_aiFullscreenRequested && m_aiStartupBuffered;
++}
++
+ void CRenderManager::EndHDR10AIQueue()
+ {
+   std::unique_lock lock(m_presentlock);
+@@ -510,6 +521,7 @@
+ void CRenderManager::ResetHDR10AIQueue()
+ {
+   ++m_aiQueueGeneration;
++  m_aiStartupBuffered = false;
+   if (m_clockSync.m_cb1Phase)
+   {
+     m_clockSync.Reset();
+diff -ruN a/xbmc/cores/VideoPlayer/VideoRenderers/RenderManager.h b/xbmc/cores/VideoPlayer/VideoRenderers/RenderManager.h
+--- a/xbmc/cores/VideoPlayer/VideoRenderers/RenderManager.h
++++ b/xbmc/cores/VideoPlayer/VideoRenderers/RenderManager.h
+@@ -126,6 +126,7 @@
+   bool GetHDR10AIStartTime(double& pts);
+   bool PrepareHDR10AIStartup(bool fullscreen);
+   bool HDR10AIPriming();
++  bool HDR10AIStartupBuffered();
+   void EndHDR10AIQueue();
+   void ResetHDR10AIQueue();
+ #endif
+@@ -188,6 +189,7 @@
+   std::atomic_bool m_aiGUIOwnsRenderer{false};
+   bool m_aiQueueReady{true},m_aiEnd{};
+   bool m_aiQueuePreparationStale{};
++  bool m_aiStartupBuffered{};
+   bool m_aiFullscreenRequested{},m_aiGuiReady{},m_aiFullscreenWanted{};
+   double m_aiStartPts{DVD_NOPTS_VALUE};
+ #endif
+diff -ruN a/xbmc/cores/VideoProcessingInfo.h b/xbmc/cores/VideoProcessingInfo.h
+--- a/xbmc/cores/VideoProcessingInfo.h
++++ b/xbmc/cores/VideoProcessingInfo.h
+@@ -37,7 +37,7 @@
+     float target{};
+     bool level6{};
+     int requested{}, effective{1}, method{}, panel{}, gamut{};
+-    double manualPeak{};
++    double manualPeak{}, displayBlack{};
+     uint64_t revision{}, stream{}, picture{};
+     uint32_t format{};
+     unsigned width{}, height{};
+@@ -54,6 +54,8 @@
+     bool hdr10PlusDV{}, untranslatedCurve{}, untranslatedSaturation{};
+     unsigned guidedSourceFields{}, guidedEstimatedFields{};
+     std::array<unsigned,6> aiL1L3{};
++    std::string aiModel{};
++    std::array<unsigned,3> aiBaseline{};
+     std::array<unsigned,3> emittedL1{};
+     std::string engine, circuit;
+   } output;
+diff -ruN a/xbmc/dialogs/DVPlaybackModes.cpp b/xbmc/dialogs/DVPlaybackModes.cpp
+--- a/xbmc/dialogs/DVPlaybackModes.cpp
++++ b/xbmc/dialogs/DVPlaybackModes.cpp
+@@ -7,6 +7,7 @@
+ #include "application/ApplicationPlayer.h"
+ #include "cores/VideoPlayer/Interface/StreamInfo.h"
+ #include "GUIDialogNumeric.h"
++#include "guilib/GUIKeyboardFactory.h"
+ #include "GUIDialogKaiToast.h"
+ #include "GUIDialogSelect.h"
+ #include "GUIDialogBusy.h"
+@@ -30,6 +31,13 @@
+ #include "threads/IRunnable.h"
+ #include <cstdio>
+ 
++namespace
++{
++struct Choice { int output,method,label; };
++constexpr Choice dvChoices[]={{0,0,40812},{4,0,40913},
++    {5,0,40914},
++    {2,0,40814},{1,0,40822},{1,1,40823},{1,2,40922}};
++}
+ 
+ CDVPlaybackModes& CDVPlaybackModes::GetInstance()
+ {
+@@ -37,6 +45,31 @@
+   return instance;
+ }
+ 
++void CDVPlaybackModes::OnSettingsLoaded()
++{
++  const auto settings=CServiceBroker::GetSettingsComponent()->GetSettings();
++  m_expertBlackPreset=settings->GetInt("dvbridge.expertblack");
++}
++
++void CDVPlaybackModes::OnSettingChanged(const std::shared_ptr<const CSetting>& setting)
++{
++  if(!setting)return;
++  const auto settings=CServiceBroker::GetSettingsComponent()->GetSettings();
++  if(setting->GetId()=="dvbridge.expertblackcustom")
++    settings->SetBool("dvbridge.expertblackcustomset",true);
++  else if(setting->GetId()=="dvbridge.expertblack")
++  {
++    const int mode=settings->GetInt("dvbridge.expertblack");
++    if(mode==3 && !settings->GetBool("dvbridge.expertblackcustomset"))
++    {
++      settings->SetNumber("dvbridge.expertblackcustom",
++          m_expertBlackPreset==1 ? 0.005 : m_expertBlackPreset==2 ? 0.05 : 0);
++      settings->SetBool("dvbridge.expertblackcustomset",true);
++    }
++    if(mode!=3)m_expertBlackPreset=mode;
++  }
++}
++
+ bool CDVPlaybackModes::MenuEnabled()
+ {
+   return DVBRIDGE::PlaybackMenuEnabled();
+@@ -59,33 +92,38 @@
+   auto* dialog=CServiceBroker::GetGUI()->GetWindowManager().GetWindow<CGUIDialogSelect>(WINDOW_DIALOG_SELECT);
+   if (!settings || !dialog) return false;
+   const auto preferences=DVBRIDGE::FrameOutputSettings();
++  const bool expert=preferences.output==DVBRIDGE::OutputMode::HDR10 && preferences.method==1;
+   const auto& strings=CServiceBroker::GetResourcesComponent().GetLocalizeStrings();
+-  std::string peak=StringUtils::Format("{:g}",preferences.peak);
+-  if (!CGUIDialogNumeric::ShowAndGetNumber(peak,strings.Get(40829))) return false;
++  std::string peak=StringUtils::Format("{:g}",expert?preferences.expertPeak:preferences.peak);
++  if (expert ? !CGUIKeyboardFactory::ShowAndGetInput(peak,strings.Get(41030),false) :
++               !CGUIDialogNumeric::ShowAndGetNumber(peak,strings.Get(40829))) return false;
+   double value{};
+   try
+   {
+     size_t length{};
+     value=std::stod(peak,&length);
+-    if (length!=peak.size() || !std::isfinite(value) || value<=0 || value>10000) return false;
++    if (length!=peak.size() || !std::isfinite(value) || value<(expert?50:0.000001) || value>10000) return false;
+   }
+   catch (const std::exception&) { return false; }
+   dialog->Reset(); dialog->SetHeading(40836);
+   for(int id : {40838,40839,40840}) dialog->Add(strings.Get(id));
+-  dialog->SetSelected(preferences.gamut>0 ? preferences.gamut-1 : 1);
++  const int currentGamut=expert?preferences.expertGamut:preferences.gamut;
++  dialog->SetSelected(currentGamut>0 ? currentGamut-1 : 1);
+   dialog->Open();
+   if (!dialog->IsConfirmed()) return false;
+   const int gamut=dialog->GetSelectedItem()+1;
+   auto profile=preferences;
+-  profile.peak=value; profile.gamut=gamut;
+-  if (!profile.ProfileValid()) return false;
++  if(expert){profile.expertPeak=value;profile.expertGamut=gamut;}
++  else{profile.peak=value;profile.gamut=gamut;}
++  if (!(expert?profile.ExpertProfileValid():profile.ProfileValid())) return false;
+   {
+     std::lock_guard lock(DVBRIDGE::OutputSettingsMutex());
+-    if (!settings->SetNumber("dvbridge.tvpeak",value) ||
+-        !settings->SetInt("dvbridge.tvgamut",gamut))
++    const char* peakKey=expert?"dvbridge.expertpeak":"dvbridge.tvpeak";
++    const char* gamutKey=expert?"dvbridge.expertgamut":"dvbridge.tvgamut";
++    if (!settings->SetNumber(peakKey,value) || !settings->SetInt(gamutKey,gamut))
+     {
+-      settings->SetNumber("dvbridge.tvpeak",preferences.peak);
+-      settings->SetInt("dvbridge.tvgamut",preferences.gamut);
++      settings->SetNumber(peakKey,expert?preferences.expertPeak:preferences.peak);
++      settings->SetInt(gamutKey,currentGamut);
+       return false;
+     }
+   }
+@@ -93,18 +131,14 @@
+   return true;
+ }
+ 
+-bool CDVPlaybackModes::ShowMenu()
++bool CDVPlaybackModes::ShowMenu(bool settingsMenu)
+ {
+-  if (!MenuEnabled()) return false;
++  if (!settingsMenu && !MenuEnabled()) return false;
+   auto* dialog=CServiceBroker::GetGUI()->GetWindowManager().GetWindow<CGUIDialogSelect>(WINDOW_DIALOG_SELECT);
+   if (!dialog) return false;
+   const auto settings=CServiceBroker::GetSettingsComponent()->GetSettings();
+   const auto& strings=CServiceBroker::GetResourcesComponent().GetLocalizeStrings();
+-  struct Choice { int output,method,label; };
+-  constexpr Choice dvChoices[]={{0,0,40812},{4,0,40913},
+-      {5,0,40914},
+-      {2,0,40814},{1,0,40822},{1,1,40823},{1,2,40922}};
+-  const auto nativeSource=SourceType();
++  const auto nativeSource=settingsMenu ? StreamHdrType::HDR_TYPE_DOLBYVISION : SourceType();
+   const bool hdr10PlusSource=nativeSource==StreamHdrType::HDR_TYPE_HDR10PLUS;
+   const bool hdr10Source=nativeSource==StreamHdrType::HDR_TYPE_HDR10 ||
+                          nativeSource==StreamHdrType::HDR_TYPE_HDR10PLUS;
+@@ -120,7 +154,7 @@
+   const Choice* choices=hdr10PlusSource ? hdr10PlusChoices : hdr10Source ? hdr10Choices : dvChoices;
+   const int count=hdr10PlusSource ? std::size(hdr10PlusChoices) : hdr10Source ? std::size(hdr10Choices) : std::size(dvChoices);
+   const char* sourceSetting=hdr10PlusSource ? "dvbridge.hdr10plussource" : "dvbridge.hdr10source";
+-  const auto choiceSetting=std::make_shared<CSettingInt>(hdr10PlusSource ? "dvbridge.hdr10plusplaybackchoice" :
++  const auto choiceSetting=std::make_shared<CSettingInt>(settingsMenu ? "dvbridge.playback" : hdr10PlusSource ? "dvbridge.hdr10plusplaybackchoice" :
+       hdr10Source ? "dvbridge.hdr10playbackchoice" : "dvbridge.playbackchoice");
+   {
+     const auto preferences=DVBRIDGE::FrameOutputSettings(hdr10PlusSource);
+@@ -140,8 +174,9 @@
+         int(nativeSource), source.sourceKnown, source.isDV, source.isHDR10, source.isHDR10Plus, source.processingKnown,
+         int(preferences.output), int(preferences.hdr10Source));
+     dialog->Reset();
+-    dialog->SetHeading(StringUtils::Format(strings.Get(40876), hdr10PlusSource ? "HDR10+" : hdr10Source ? "HDR10" : "Dolby Vision"));
+-    dialog->SetUseDetails(true);
++    dialog->SetHeading(settingsMenu ? strings.Get(40811) :
++        StringUtils::Format(strings.Get(40876), hdr10PlusSource ? "HDR10+" : hdr10Source ? "HDR10" : "Dolby Vision"));
++    dialog->SetUseDetails(!settingsMenu);
+     for(const auto& option : options)
+     {
+       DVBRIDGE::DiagnosticLog(LOGINFO, "Playback mode option: value={} label={} reason={}",
+@@ -154,14 +189,14 @@
+       dialog->Add(item);
+     }
+     dialog->SetSelected(current);
+-    dialog->SetProperty("CB1.PlaybackModes",true);
++    if (!settingsMenu) dialog->SetProperty("CB1.PlaybackModes",true);
+     dialog->Open();
+     dialog->SetProperty("CB1.PlaybackModes", CVariant{});
+     if (!dialog->IsConfirmed()) return true;
+     const int selected=dialog->GetSelectedItem();
+     if (selected<0 || selected>=count) return true;
+     // Admission may change during the dialog's nested event loop.
+-    if (SourceType()!=nativeSource) return true;
++    if (!settingsMenu && SourceType()!=nativeSource) return true;
+     CSettingConditions::DVOutputOptions(choiceSetting,options);
+     for(const auto& [name,value] : options[selected].properties)
+       if (name=="disabled" && value.asBoolean()) return true;
+@@ -192,6 +227,7 @@
+ void CDVPlaybackModes::OnSettingAction(const std::shared_ptr<const CSetting>& setting)
+ {
+   if (setting && setting->GetId()=="dvbridge.configureprofile") ConfigureProfile();
++  else if (setting && setting->GetId()=="dvbridge.playback") ShowMenu(true);
+ }
+ 
+ 
+diff -ruN a/xbmc/dialogs/DVPlaybackModes.h b/xbmc/dialogs/DVPlaybackModes.h
+--- a/xbmc/dialogs/DVPlaybackModes.h
++++ b/xbmc/dialogs/DVPlaybackModes.h
+@@ -2,16 +2,21 @@
+ #pragma once
+ #ifdef HAVE_DVBRIDGE
+ #include "settings/lib/ISettingCallback.h"
++#include "settings/lib/ISettingsHandler.h"
+ enum class StreamHdrType;
+ 
+-class CDVPlaybackModes : public ISettingCallback
++class CDVPlaybackModes : public ISettingCallback, public ISettingsHandler
+ {
+ public:
+   static CDVPlaybackModes& GetInstance();
+   static bool MenuEnabled();
+   static StreamHdrType SourceType();
+-  static bool ShowMenu();
++  static bool ShowMenu(bool settingsMenu = false);
+   static bool ConfigureProfile();
+   void OnSettingAction(const std::shared_ptr<const CSetting>& setting) override;
++  void OnSettingsLoaded() override;
++  void OnSettingChanged(const std::shared_ptr<const CSetting>& setting) override;
++private:
++  int m_expertBlackPreset{};
+ };
+ #endif
+diff -ruN a/xbmc/dialogs/GUIDialogPlayerProcessInfo.cpp b/xbmc/dialogs/GUIDialogPlayerProcessInfo.cpp
+--- a/xbmc/dialogs/GUIDialogPlayerProcessInfo.cpp
++++ b/xbmc/dialogs/GUIDialogPlayerProcessInfo.cpp
+@@ -145,6 +145,8 @@
+     SetProperty("DV.Engine", data.output.engine);
+     SetProperty("DV.Circuit", data.output.circuit);
+     SetProperty("DV.Reconstruction", "");
++    SetProperty("DV.AIModel", "");
++    SetProperty("DV.BeforeAI", "");
+     SetProperty("DV.AIL1", "");
+     SetProperty("DV.AIL3", "");
+     SetProperty("DV.OutputL1", "");
+@@ -158,10 +160,19 @@
+       const int label=data.output.hdr10PlusDV ? 40970 : data.output.effective==1 ? 40867 : 40868;
+       SetProperty("DV.Mode", localizer.Get(label));
+       SetProperty("DV.ActivePolicy", localizer.Get(label));
+-      SetProperty("DV.Reconstruction", "AI-estimated L1/L3");
++      const bool ai=!data.output.aiModel.empty();
++      SetProperty("DV.Reconstruction", "AI-generated L1/L3");
++      if (ai)
++      {
++        SetProperty("DV.AIModel", data.output.aiModel);
++        const auto& base=data.output.aiBaseline;
++        SetProperty("DV.BeforeAI", StringUtils::Format("{} | {} | {}",base[0],base[1],base[2]));
++      }
+       if (data.output.hdr10PlusDV)
+-        SetProperty("DV.Reconstruction", std::string(data.output.guidedSourceFields & 2u ?
+-            "Max: HDR10+; min/avg: AI estimates" : "Min/max/avg: AI estimates") +
++        SetProperty("DV.Reconstruction", std::string(data.output.guidedSourceFields & 4u ?
++            "Max/avg: HDR10+; min: estimated" : data.output.guidedSourceFields & 2u ?
++            (ai ? "Max: HDR10+; min/avg: AI" : "Max: HDR10+; min/avg: estimated") :
++            (ai ? "Min/max/avg: AI" : "Min/max/avg: estimated")) +
+             (data.output.untranslatedCurve ? "; authored curve not translated" : "") +
+             (data.output.untranslatedSaturation ? "; authored saturation not translated" : ""));
+       SetProperty("DV.Profile", "");
+@@ -216,11 +227,14 @@
+     SetProperty("DV.TVProfile", active && (data.output.effective==3 || data.output.effective==4 || data.output.effective==6) ?
+         StringUtils::Format("{} / {:g} nits",
+             data.output.gamut==1 ? "BT.709" : data.output.gamut==2 ? "P3-D65" : "BT.2020",
+-            data.output.manualPeak) : "");
++            data.output.effective==3 ? static_cast<double>(data.output.target) :
++                                      static_cast<double>(data.output.manualPeak)) : "");
++    SetProperty("DV.DisplayBlack", hdr10 && data.output.effective==3 ?
++        StringUtils::Format("{:g} nits", data.output.displayBlack) : "");
+     SetProperty("DV.HDR10Policy", hdr10 ? CDVPlaybackInfo::Policy(data.output) : "");
+-    SetProperty("DV.HDR10Target", hdr10 ? StringUtils::Format("{:g} nits", data.output.target) : "");
+-    SetProperty("DV.HDR10TargetLabel", hdr10 ? (data.output.effective==2 ? "Source reference" :
+-        data.output.effective==3 ? "Display reference" : data.output.effective==7 ? "Curve reference" : "Mapping target") : "");
++    SetProperty("DV.HDR10Target", hdr10 && data.output.effective!=3 ? StringUtils::Format("{:g} nits", data.output.target) : "");
++    SetProperty("DV.HDR10TargetLabel", hdr10 && data.output.effective!=3 ? (data.output.effective==2 ? "Source reference" :
++        data.output.effective==7 ? "Curve reference" : "Mapping target") : "");
+     SetProperty("DV.CreativeTrims", active ? (data.output.creativeKnown ?
+         (data.output.creativeStatus==static_cast<int>(VideoCreativeStatus::Invalid) ||
+          data.output.creativeStatus==static_cast<int>(VideoCreativeStatus::Unsupported) ?
+diff -ruN a/xbmc/rendering/gles/GuiCompositeShaderGLES.cpp b/xbmc/rendering/gles/GuiCompositeShaderGLES.cpp
+--- a/xbmc/rendering/gles/GuiCompositeShaderGLES.cpp
++++ b/xbmc/rendering/gles/GuiCompositeShaderGLES.cpp
+@@ -64,6 +64,7 @@
+   m_hProj = glGetUniformLocation(ProgramHandle(), "u_proj");
+   m_hOotfGamma = glGetUniformLocation(ProgramHandle(), "u_ootfGamma");
+   m_hInputPQ = glGetUniformLocation(ProgramHandle(), "u_inputPQ");
++  m_hOutputRange = glGetUniformLocation(ProgramHandle(), "u_outputRange");
+   glUseProgram(ProgramHandle());
+   glUniform1i(m_hSamp, 0);
+   glUniform1i(m_hLutDegamma, 1);
+@@ -78,6 +79,7 @@
+ 
+   glUniform1f(m_hOotfGamma, m_ootfGamma);
+   glUniform1i(m_hInputPQ, m_inputPQ);
++  glUniform2f(m_hOutputRange, m_outputScale, m_outputOffset);
+ 
+   glActiveTexture(GL_TEXTURE1);
+   glBindTexture(GL_TEXTURE_2D, m_lutDegammaTexId);
+diff -ruN a/xbmc/rendering/gles/GuiCompositeShaderGLES.h b/xbmc/rendering/gles/GuiCompositeShaderGLES.h
+--- a/xbmc/rendering/gles/GuiCompositeShaderGLES.h
++++ b/xbmc/rendering/gles/GuiCompositeShaderGLES.h
+@@ -21,6 +21,7 @@
+ 
+   void SetProjection(const GLfloat* proj) { m_proj = proj; }
+   void SetInputPQ(bool value) { m_inputPQ = value; }
++  void SetOutputRange(float scale, float offset) { m_outputScale = scale; m_outputOffset = offset; }
+ 
+   bool CreateLUTs(int colorTransfer);
+ 
+@@ -48,6 +49,7 @@
+   GLuint m_lutTFTexId{0};
+   float m_ootfGamma{0.0f};
+   bool m_inputPQ{false};
++  float m_outputScale{1.0f}, m_outputOffset{0.0f};
+ 
+   GLint m_hPos{-1};
+   GLint m_hTex{-1};
+@@ -57,4 +59,5 @@
+   GLint m_hProj{-1};
+   GLint m_hOotfGamma{-1};
+   GLint m_hInputPQ{-1};
++  GLint m_hOutputRange{-1};
+ };
+diff -ruN a/xbmc/settings/SettingConditions.cpp b/xbmc/settings/SettingConditions.cpp
+--- a/xbmc/settings/SettingConditions.cpp
++++ b/xbmc/settings/SettingConditions.cpp
+@@ -516,6 +516,7 @@
+ {
+   // Availability never substitutes or saves a different requested preference.
+   const bool menu=setting->GetId()=="dvbridge.playbackchoice";
++  const bool playback=setting->GetId()=="dvbridge.playback";
+   const bool hdr10PlusMenu=setting->GetId()=="dvbridge.hdr10plusplaybackchoice";
+   const bool hdr10Menu=hdr10PlusMenu || setting->GetId()=="dvbridge.hdr10playbackchoice";
+   const auto preferences=DVBRIDGE::FrameOutputSettings();
+@@ -558,7 +559,7 @@
+     const int mode=hdr10PlusMenu ? (option.value>=0 && option.value<int(std::size(hdr10PlusMenuModes)) ? hdr10PlusMenuModes[option.value] : 0) :
+         hdr10Menu ? (option.value>=0 && option.value<int(std::size(hdr10MenuModes)) ? hdr10MenuModes[option.value] : 0) :
+         hdr10Source ? (option.value==1 || option.value==3 ? 1 : option.value==2 ? 4 : 0) :
+-        menu ? (option.value>=0 && option.value<int(std::size(menuModes)) ? menuModes[option.value] : 0) :
++        (menu || playback) ? (option.value>=0 && option.value<int(std::size(menuModes)) ? menuModes[option.value] : 0) :
+         method ? (option.value==0 ? 2 : option.value==1 ? 3 : option.value==2 ? 6 : 0) :
+         (option.value==0 ? 1 : option.value==1 ? 2 : option.value==3 || option.value==5 ? 4 : option.value==4 ? 5 : 0);
+     auto reason=DVBRIDGE::OutputReason::None;
+@@ -579,13 +580,17 @@
+       else if (!processing[mode].usable)
+         reason=processing[mode].reason==DVBRIDGE::OutputReason::None ?
+             DVBRIDGE::OutputReason::NoGPUProcessing : processing[mode].reason;
+-      else if ((mode==3 || mode==4) && !preferences.ProfileValid())
++      else if ((mode==3 || mode==4) && !preferences.ProfileValid(static_cast<dvbridge_mode>(mode)))
+         reason=DVBRIDGE::OutputReason::TVProfileRequired;
+     }
+     int reasonId=CDVPlaybackInfo::ReasonLabel(reason);
+     if (reason==DVBRIDGE::OutputReason::TVProfileRequired)
+-      reasonId=!std::isfinite(preferences.peak) || preferences.peak<=0 || preferences.peak>10000 ? 40911 :
+-          preferences.gamut<1 || preferences.gamut>3 ? 40912 : 40845;
++    {
++      const double peak=mode==3?preferences.expertPeak:preferences.peak;
++      const int gamut=mode==3?preferences.expertGamut:preferences.gamut;
++      reasonId=!std::isfinite(peak) || peak<(mode==3?50:0.000001) || peak>10000 ? 40911 :
++          gamut<1 || gamut>3 ? 40912 : 40845;
++    }
+     if (reasonId && reason!=DVBRIDGE::OutputReason::TVProfileRequired)
+       option.label+=" / "+localizer.Get(40851);
+     option.label2=reasonId ? localizer.Get(reasonId) :
+diff -ruN a/xbmc/settings/Settings.cpp b/xbmc/settings/Settings.cpp
+--- a/xbmc/settings/Settings.cpp
++++ b/xbmc/settings/Settings.cpp
+@@ -257,6 +257,35 @@
+         break;
+       }
+   }
++  // Copy an explicitly stored legacy calibration once. Do not rename/delete
++  // it: Adaptive and CM4 continue to own the original TV preferences.
++  bool hasExpertPeak=false;
++  bool hasExpertGamut=false;
++  const TiXmlElement* legacyPeak=nullptr;
++  const TiXmlElement* legacyGamut=nullptr;
++  for(const auto* setting=root->FirstChildElement("setting");setting;
++      setting=setting->NextSiblingElement("setting"))
++  {
++    const char* id=setting->Attribute("id");
++    if(!id)continue;
++    if(std::string_view(id)=="dvbridge.expertpeak")hasExpertPeak=true;
++    if(std::string_view(id)=="dvbridge.expertgamut")hasExpertGamut=true;
++    if(std::string_view(id)=="dvbridge.tvpeak")legacyPeak=setting;
++    if(std::string_view(id)=="dvbridge.tvgamut")legacyGamut=setting;
++  }
++  if(!hasExpertPeak && legacyPeak && legacyPeak->GetText() &&
++     (!legacyPeak->Attribute("default") || std::string_view(legacyPeak->Attribute("default"))!="true"))
++  {
++    if(!migrated)migrated.reset(root->Clone()->ToElement());
++    for(const auto& entry : {std::pair{legacyPeak,"dvbridge.expertpeak"},
++                            std::pair{legacyGamut,"dvbridge.expertgamut"}})
++    {
++      if(!entry.first || (entry.first==legacyGamut && hasExpertGamut))continue;
++      auto* copy=entry.first->Clone()->ToElement();
++      copy->SetAttribute("id",entry.second);copy->RemoveAttribute("default");
++      migrated->LinkEndChild(copy);
++    }
++  }
+   if (migrated) root = migrated.get();
+ #endif
+ 
+@@ -595,6 +624,7 @@
+ void CSettings::InitializeISettingsHandlers()
+ {
+ #ifdef HAVE_DVBRIDGE
++  GetSettingsManager()->RegisterSettingsHandler(&CDVPlaybackModes::GetInstance());
+ #endif
+   // register ISettingsHandler implementations
+   // The order of these matters! Handlers are processed in the order they were registered.
+@@ -611,6 +641,7 @@
+ void CSettings::UninitializeISettingsHandlers()
+ {
+ #ifdef HAVE_DVBRIDGE
++  GetSettingsManager()->UnregisterSettingsHandler(&CDVPlaybackModes::GetInstance());
+ #endif
+   // unregister ISettingsHandler implementations
+   GetSettingsManager()->UnregisterSettingsHandler(&CMediaSettings::GetInstance());
+@@ -647,7 +678,8 @@
+ {
+ #ifdef HAVE_DVBRIDGE
+   GetSettingsManager()->RegisterCallback(&CDVPlaybackModes::GetInstance(),
+-      {"dvbridge.configureprofile"});
++      {"dvbridge.configureprofile","dvbridge.expertblack","dvbridge.expertblackcustom",
++       "dvbridge.playback"});
+ #endif
+   // register any ISettingCallback implementations
+   GetSettingsManager()->RegisterCallback(
+diff -ruN a/xbmc/video/windows/GUIWindowFullScreen.cpp b/xbmc/video/windows/GUIWindowFullScreen.cpp
+--- a/xbmc/video/windows/GUIWindowFullScreen.cpp
++++ b/xbmc/video/windows/GUIWindowFullScreen.cpp
+@@ -383,7 +383,9 @@
+   // Single-plane: MarkDirtyRegion every frame so the render pass keeps
+   // running and draws the next video frame. D2P video plane updates
+   // independently.
+-  if (!appPlayer->IsRenderingVideoLayer())
++  // CB1's persistent GUI FBO also leaves movie updates to RenderEx.
++  if (!appPlayer->IsRenderingVideoLayer() &&
++      !CServiceBroker::GetWinSystem()->CanReuseGuiComposite())
+     MarkDirtyRegion();
+ 
+   m_controlStats->Reset();
+diff -ruN a/xbmc/windowing/gbm/drm/DRMAtomic.cpp b/xbmc/windowing/gbm/drm/DRMAtomic.cpp
+--- a/xbmc/windowing/gbm/drm/DRMAtomic.cpp
++++ b/xbmc/windowing/gbm/drm/DRMAtomic.cpp
+@@ -679,11 +679,12 @@
+   if (m_need_modeset)
+   {
+     flags |= DRM_MODE_ATOMIC_ALLOW_MODESET;
+-    m_need_modeset = false;
+     CLog::LogF(LOGDEBUG, "Execute modeset at next commit");
+   }
+ 
+   m_lastPageAccepted=DrmAtomicCommit(!drm_fb ? 0 : drm_fb->fb_id, flags, rendered, videoLayer);
++  if (m_lastPageAccepted && IsSelectedModeCommitted())
++    m_need_modeset = false;
+ }
+ 
+ bool CDRMAtomic::InitDrm()
+diff -ruN a/xbmc/windowing/gbm/drm/DRMConnector.cpp b/xbmc/windowing/gbm/drm/DRMConnector.cpp
+--- a/xbmc/windowing/gbm/drm/DRMConnector.cpp
++++ b/xbmc/windowing/gbm/drm/DRMConnector.cpp
+@@ -105,7 +105,9 @@
+   uint64_t blob_id = GetPropertyValue("EDID").value_or(0);
+   if (refresh)
+   {
+-    auto* current = drmModeGetConnector(m_fd,m_connector->connector_id);
++    // Refresh the published properties, not the physical link. Video startup
++    // must not force a new DDC probe while HDMI is changing modes.
++    auto* current = drmModeGetConnectorCurrent(m_fd,m_connector->connector_id);
+     if (!current) return {};
+     const auto property = GetPropertyId("EDID");
+     blob_id = 0;
+diff -ruN a/xbmc/windowing/gbm/WinSystemGbmGLESContext.cpp b/xbmc/windowing/gbm/WinSystemGbmGLESContext.cpp
+--- a/xbmc/windowing/gbm/WinSystemGbmGLESContext.cpp
++++ b/xbmc/windowing/gbm/WinSystemGbmGLESContext.cpp
+@@ -67,7 +67,10 @@
+ #include "application/ApplicationPlayer.h"
+ #include "guilib/GUIComponent.h"
+ #include "guilib/GUIWindowManager.h"
++#include "guilib/IDirtyRegionSolver.h"
+ #include "rendering/capture/CaptureService.h"
++#include "settings/AdvancedSettings.h"
++#include "settings/SettingsComponent.h"
+ #include "cores/VideoPlayer/DVDCodecs/Video/DVPlaybackPolicy.h"
+ #include "cores/VideoPlayer/DVDCodecs/Video/DVOutputSettings.h"
+ #include "cores/VideoPlayer/DVDCodecs/Video/DVStreamTelemetry.h"
+@@ -377,6 +380,8 @@
+   // A prepared picture already includes its GUI; wait before drawing it again.
+   if (m_cb1FramePending && m_dvFrame)
+   {
++    if (CServiceBroker::GetGUI()->GetWindowManager().HasDirtyRegions())
++      m_guiCacheValid = false;
+     PresentFrame(false, true);
+     return false;
+   }
+@@ -756,6 +761,7 @@
+ 
+ bool CWinSystemGbmGLESContext::SetGuiCompositing(int colorTransfer)
+ {
++  m_guiCacheValid = false;
+   m_guiCompositing = (colorTransfer != 0);
+ 
+   if (m_guiCompositing)
+@@ -805,6 +811,32 @@
+   return m_guiCompositing;
+ }
+ 
++bool CWinSystemGbmGLESContext::CanReuseGuiComposite() const
++{
++#ifdef HAVE_DVBRIDGE
++  const auto advanced = CServiceBroker::GetSettingsComponent()->GetAdvancedSettings();
++  const int dirtyAlgorithm = advanced->m_guiAlgorithmDirtyRegions;
++  // A live redraw clears the entire GUI FBO; partial-scissor damage cannot repopulate it.
++  if (advanced->m_guiVisualizeDirtyRegions ||
++      (dirtyAlgorithm != DIRTYREGION_SOLVER_FILL_VIEWPORT_ALWAYS &&
++       dirtyAlgorithm != DIRTYREGION_SOLVER_FILL_VIEWPORT_ON_CHANGE))
++    return false;
++  if (!(m_dvState.Captured() || m_hdrConversion) || !GetGfxContext().IsFullScreenVideo() ||
++      !DVBRIDGE::FrameOutputSettings().optimizedGUI || !m_guiCompositing || !m_guiCacheValid ||
++      !m_guiFbo.IsValid() || !m_guiFbo.IsBound() || !m_compositeShader ||
++      m_guiFboWidth != m_nWidth || m_guiFboHeight != m_nHeight ||
++      m_dvOverlays || m_dvSubtitleDraws || m_dvPQSubtitleDraws)
++    return false;
++  const auto player = CServiceBroker::GetAppComponents().GetComponent<CApplicationPlayer>();
++  if (player && player->HasVisibleOverlay()) return false;
++  const auto capture = CServiceBroker::GetCaptureService();
++  return !capture || (capture->TakeActive(KODI::RENDERING::CAPTURE::CaptureContent::COMPOSITE).empty() &&
++                      capture->TakeActive(KODI::RENDERING::CAPTURE::CaptureContent::VIDEO).empty());
++#else
++  return false;
++#endif
++}
++
+ bool CWinSystemGbmGLESContext::BeginGuiComposite(bool guiWillRender)
+ {
+ #ifdef HAVE_DVBRIDGE
+@@ -877,21 +909,26 @@
+ 
+     m_guiFboWidth = width;
+     m_guiFboHeight = height;
++    m_guiCacheValid = false;
+     m_guiFboClean = false; // fresh FBO is undefined, force a clear
+     CLog::Log(LOGDEBUG, "CWinSystemGbmGLESContext: created GUI FBO {}x{}", width, height);
+   }
+ 
+-  // When GUI render is being skipped, leave the FBO bind/clear out: nothing
+-  // will draw into it this frame. The FBO's prior sRGB GUI content is
+-  // implicitly preserved across the skipped frame as a side effect.
+-  //! @todo The preserved sRGB FBO is currently not leveraged: D2P reuses the
+-  //! post-PQ GUI plane back buffer directly via display HW, and single-plane
+-  //! never reaches !guiWillRender (the dirty-driven skip is gated on
+-  //! IsRenderingVideoLayer). Future single-plane "gate, don't move" work
+-  //! lets the GUI walk skip while CompositeGui still runs each video frame,
+-  //! re-using this cached sRGB FBO as the composite source.
++#ifdef HAVE_DVBRIDGE
++  if ((m_dvState.Captured() || m_hdrConversion) && std::getenv("CB1_PRESENTATION_AUDIT"))
++  {
++    static unsigned redraws = 0, cached = 0;
++    ++(guiWillRender ? redraws : cached);
++    if ((redraws + cached) % 120 == 0)
++      DVBRIDGE::DiagnosticLog(LOGINFO, "CB1 GUI cache: redraws={} cached={}", redraws, cached);
++  }
++#endif
++  // Reuse only GUI content; RenderEx still prepares the current movie picture.
+   if (!guiWillRender)
++  {
++    m_GUIElementCount = m_guiCachedElementCount;
+     return true;
++  }
+ 
+ #ifdef HAVE_DVBRIDGE
+   m_dvPQGuiMergeAttempted = m_dvPQGuiComposed = false;
+@@ -929,7 +966,11 @@
+ void CWinSystemGbmGLESContext::EndGuiComposite()
+ {
+   if (m_guiWillRender)
++  {
+     m_guiFbo.EndRender();
++    m_guiCachedElementCount = GetGUIElementCount();
++    m_guiCacheValid = true;
++  }
+ 
+ #ifdef HAVE_DVBRIDGE
+   // CB1 overwrites the full scanout raster, including exact black borders.
+@@ -1007,16 +1048,24 @@
+   GLint previousFramebuffer = 0;
+   GLint previousViewport[4]{};
+   const bool dvComposite = m_dvState.Captured() || m_hdrConversion;
++  bool directHDR10 = false;
+   if (dvComposite)
+   {
+     if (!m_dvFrame || !m_dvBridge)
+       return;
+-    const auto target = m_dvBridge->GetPQFramebuffer();
+-    if (!target)
++    unsigned target = 0, bits = 0;
++    directHDR10 = m_hdrConversion && m_dvBridge->GetHDR10OutputTarget(target, bits);
++    if (!directHDR10 && !(target = m_dvBridge->GetPQFramebuffer()))
+     {
+       m_dvFrame = false;
+       return;
+     }
++    if (directHDR10 && UseLimitedColor())
++    {
++      const float maximum = (1u << bits) - 1;
++      m_compositeShader->SetOutputRange((219u << (bits - 8)) / maximum,
++                                      (16u << (bits - 8)) / maximum);
++    }
+     glGetIntegerv(GL_FRAMEBUFFER_BINDING, &previousFramebuffer);
+     glGetIntegerv(GL_VIEWPORT, previousViewport);
+     glBindFramebuffer(GL_FRAMEBUFFER, target);
+@@ -1044,7 +1093,7 @@
+   // BEGIN GUI target projection (also exercised by the GPU orientation regression).
+   GLfloat proj[16] = {2, 0, 0, 0, 0, 2, 0, 0, 0, 0, -1, 0, -1, -1, 0, 1};
+ #ifdef HAVE_DVBRIDGE
+-  if (dvComposite)
++  if (dvComposite && !directHDR10)
+   {
+     // libplacebo's PQ texture stores logical top at row zero. The final HDMI
+     // packing pass reverses it for EGL scanout. Compose the GUI in that same
+@@ -1097,6 +1146,7 @@
+     m_compositeShader->Disable();
+   }
+   m_compositeShader->SetInputPQ(false);
++  m_compositeShader->SetOutputRange(1.0f, 0.0f);
+ 
+   glDisableVertexAttribArray(posLoc);
+   glDisableVertexAttribArray(texLoc);
+@@ -1107,6 +1157,8 @@
+   {
+     glBindFramebuffer(GL_FRAMEBUFFER, previousFramebuffer);
+     glViewport(previousViewport[0], previousViewport[1], previousViewport[2], previousViewport[3]);
++    // A delayed handoff owns this finished surface, including its GUI.
++    m_dvNativeGui = directHDR10;
+   }
+ #endif
+ }
+@@ -1373,6 +1425,8 @@
+     return caps;
+   }
+   const auto& metadata = picture->doviMetadata;
++  auto importGeometry=m_dvImportGeometry;
++  importGeometry.ignore_l5=preferences.encodedActiveArea;
+   const bool paired = picture->doviEnhancement && picture->doviEnhancementBinding.Valid() &&
+       picture->doviEnhancementBinding == metadata.Binding() &&
+       picture->doviEnhancement->pts == picture->doviSourcePts;
+@@ -1381,7 +1435,7 @@
+   const bool valid = m_dvImportUsable && metadata.Binding().Valid() &&
+       picture->doviSourcePts != AV_NOPTS_VALUE && !(picture->iFlags & DVP_FLAG_INTERLACED) &&
+       picture->stereoMode.empty() &&
+-      dvbridge_frame_area(margins, metadata.Data(), metadata.Size(), m_dvImportGeometry) &&
++      dvbridge_frame_area(margins, metadata.Data(), metadata.Size(), importGeometry) &&
+       dvbridge_map_color(&color, metadata.Data(), metadata.Size(), paired);
+   dvbridge_hdr10_session session{};
+   const bool basic = valid && dvbridge_hdr10_session_init(&session, metadata.Data(), metadata.Size());
+@@ -1407,14 +1461,18 @@
+           (!raw.residual || masterChroma == enhancementChroma);
+       if(!masterPhase) caps.processing[mode]={false,DVBRIDGE::OutputReason::SourceIneligible};
+     }
+-    else if ((mode == DVBRIDGE_MODE_HDR10_EXPERT || mode == DVBRIDGE_MODE_ENHANCED_DV) && caps.processing[mode].usable && preferences.ProfileValid())
++    else if ((mode == DVBRIDGE_MODE_HDR10_EXPERT || mode == DVBRIDGE_MODE_ENHANCED_DV) && caps.processing[mode].usable && preferences.ProfileValid(static_cast<dvbridge_mode>(mode)))
+     {
+       auto policy = preferences.Policy();
+       policy.mode = static_cast<dvbridge_mode>(mode);
+       if (mode != DVBRIDGE_MODE_ENHANCED_DV)
+         policy.adaptive = DVBRIDGE_ADAPTIVE_A;
+-      policy.tv = {preferences.peak, static_cast<dvbridge_panel>(preferences.panel),
+-          static_cast<dvbridge_gamut>(preferences.gamut)};
++      policy.tv = mode==DVBRIDGE_MODE_HDR10_EXPERT ?
++          dvbridge_tv_profile{preferences.expertPeak,DVBRIDGE_PANEL_OLED,
++              static_cast<dvbridge_gamut>(preferences.expertGamut)} :
++          dvbridge_tv_profile{preferences.peak,static_cast<dvbridge_panel>(preferences.panel),
++              static_cast<dvbridge_gamut>(preferences.gamut)};
++      policy.expert_black_nits=mode==DVBRIDGE_MODE_HDR10_EXPERT?preferences.expertBlack:0;
+       pl_color_space nominal{};
+       dvbridge_hdr10_metadata signal{};
+       if (!dvbridge_reference_map(&color, &nominal, &signal, &policy,
+@@ -2255,8 +2313,9 @@
+       KODI::RENDERING::CAPTURE::CaptureContent::COMPOSITE).empty();
+   const bool masterCapture=capturing && m_dvSelection.policy.mode==DVBRIDGE_MODE_MASTER_REFERENCE;
+   if (masterCapture) m_dvBridge->InvalidateScreenshot();
++  const bool guiAvailable = m_guiWillRender || CanReuseGuiComposite();
+   const bool overlayFree = (!capturing || masterCapture) &&
+-      (!m_guiWillRender || GetGUIElementCount() == 0) && !m_dvOverlays;
++      (!guiAvailable || GetGUIElementCount() == 0) && !m_dvOverlays;
+   const auto player = CServiceBroker::GetAppComponents().GetComponent<CApplicationPlayer>();
+   m_continuousFrameEligible = !capturing && overlayFree && player && player->GetPlaySpeed() == 1 &&
+       m_previousSourceStream == layer.binding.stream &&
+@@ -2290,20 +2349,21 @@
+   }
+   m_preparedSourceStream = layer.binding.stream;
+   m_preparedSourcePts = layer.pts;
++  geometry.ignore_l5=metadata.Data() && preferences.encodedActiveArea;
+   const bool mergedPQGUI = ComposeDVPQGUI();
+-  const bool subtitlesOnly = !capturing && m_guiWillRender && m_guiFbo.IsValid() &&
++  const bool subtitlesOnly = !capturing && guiAvailable && m_guiFbo.IsValid() &&
+       m_guiFboWidth == m_nWidth && m_guiFboHeight == m_nHeight && m_compositeShader &&
+       m_dvSubtitleDraws && m_dvSubtitleDraws == GetGUIElementCount() &&
+       (!m_dvPQSubtitleDraws || m_dvPQSubtitleDraws == m_dvSubtitleDraws);
+   const bool pqSubtitles = (subtitlesOnly || mergedPQGUI) && m_dvPQSubtitleDraws;
+   const bool enhancedSubtitles = subtitlesOnly && metadata.Data() &&
+       m_dvSelection.policy.mode == DVBRIDGE_MODE_ENHANCED_DV;
+-  const bool fullGUI = m_guiWillRender && GetGUIElementCount() &&
++  const bool fullGUI = guiAvailable && GetGUIElementCount() &&
+       (mergedPQGUI || CDVBridgeGLES::CanComposeSDRGUI(preferences.optimizedDV ||
+           m_dvSelection.policy.mode == DVBRIDGE_MODE_MASTER_REFERENCE,m_hdrConversion,capturing && !masterCapture,
+           m_guiFboWidth,m_guiFboHeight,m_dvPQSubtitleDraws));
+   // The TV masks L5 margins. Keep controls/subtitles in letterbox bars visible.
+-  m_dvBridge->SetOverlayVisible((m_guiWillRender && GetGUIElementCount()) || m_dvOverlays);
++  m_dvBridge->SetOverlayVisible((guiAvailable && GetGUIElementCount()) || m_dvOverlays);
+   // Prime the subtitle shader once; empty frames retain the lean native shader.
+   const bool nativeOverlay = !m_hdrConversion &&
+       (fullGUI || subtitlesOnly || (overlayFree && !m_dvBridge->NativeOverlayPrimed())) &&
+@@ -2313,7 +2373,8 @@
+       nativeOverlay ? m_compositeShader->GetDegammaTexture() : 0,
+       nativeOverlay ? m_compositeShader->GetTransferTexture() : 0,
+       fullGUI && !enhancedSubtitles ? CRect(0,0,m_nWidth,m_nHeight) : m_dvSubtitleBounds,
+-      fullGUI && !enhancedSubtitles ? m_dvGUIContentGeneration : m_dvSubtitleContent, pqSubtitles);
++      fullGUI && !enhancedSubtitles ? m_dvGUIContentGeneration : m_dvSubtitleContent,
++      pqSubtitles, preferences.optimizedGUI);
+   if (std::getenv("CB1_PRESENTATION_AUDIT"))
+   {
+     static unsigned prior = ~0u;
+@@ -2344,7 +2405,8 @@
+           prediction, policy, allowAsync, overlayFree || (preferences.optimizedDV && nativeSubtitles));
+ #endif
+     return m_dvBridge->PrepareHardwareFrame(layer, enhancement, enhancementBinding,
+-        metadata, geometry, preferences, overlayFree || nativeSubtitles, &policy, allowAsync);
++        metadata, geometry, preferences,
++        overlayFree || nativeSubtitles || (preferences.optimizedGUI && m_hdrConversion && !capturing), &policy, allowAsync);
+   };
+   const double refresh = m_DRM->GetCurrentMode().fRefreshRate;
+   const auto interval = std::chrono::duration<double>(refresh >= 10 ? 1.0 / refresh : 0.02);
+diff -ruN a/xbmc/windowing/gbm/WinSystemGbmGLESContext.h b/xbmc/windowing/gbm/WinSystemGbmGLESContext.h
+--- a/xbmc/windowing/gbm/WinSystemGbmGLESContext.h
++++ b/xbmc/windowing/gbm/WinSystemGbmGLESContext.h
+@@ -67,6 +67,7 @@
+   // GUI compositing for HDR
+   bool SetGuiCompositing(int colorTransfer) override;
+   bool BeginGuiComposite(bool guiWillRender) override;
++  bool CanReuseGuiComposite() const override;
+   void EndGuiComposite() override;
+   void CompositeGui() override;
+   bool IsHdrComposite() const override { return m_guiCompositing; }
+@@ -189,6 +190,8 @@
+   bool m_guiFboClean{false};
+   // Whether the GUI render pass will run this frame; set by BeginGuiComposite.
+   bool m_guiWillRender{true};
++  bool m_guiCacheValid{false};
++  unsigned m_guiCachedElementCount{0};
+ 
+   std::unique_ptr<CGuiCompositeShaderGLES> m_compositeShader;
+ #ifdef HAVE_DVBRIDGE
+diff -ruN a/xbmc/windowing/WinSystem.h b/xbmc/windowing/WinSystem.h
+--- a/xbmc/windowing/WinSystem.h
++++ b/xbmc/windowing/WinSystem.h
+@@ -283,6 +283,7 @@
+   // When false, implementations should skip FBO bind/clear since no GUI
+   // draws will land in the FBO this frame.
+   virtual bool BeginGuiComposite(bool guiWillRender) { return false; }
++  virtual bool CanReuseGuiComposite() const { return false; }
+   virtual void EndGuiComposite() {}
+   virtual void CompositeGui() {}
+ 
