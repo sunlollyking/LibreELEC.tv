@@ -1,0 +1,11 @@
+--- a/Makefile	2026-11-09 23:03:51.300226817 +0000
++++ b/Makefile	2026-11-09 23:03:51.302796961 +0000
+@@ -80,7 +80,7 @@
+    HAVE_THREADS=1
+    ifneq ($(filter $(ARCH),x86 x86_64),)
+      ifneq ($(DISABLE_OPENGL), 1)
+-       LIBS += -lGL
++       LIBS += $(if $(GL_LIB),$(GL_LIB),-lGL)
+        HAVE_OPENGL=1
+      endif
+    endif
