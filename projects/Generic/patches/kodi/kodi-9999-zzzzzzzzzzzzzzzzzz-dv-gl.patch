@@ -1107,20 +1107,21 @@ index 76ab7fed74..06c8f0591e 100644
  // YUV texture creation, deletion, copying + clearing
  //********************************************************************************************************
 diff --git a/xbmc/cores/VideoPlayer/VideoRenderers/LinuxRendererGL.h b/xbmc/cores/VideoPlayer/VideoRenderers/LinuxRendererGL.h
-index 9b4b4be9e6..7b2adecacf 100644
+index 9b4b4be9e6..ed3fbb8d9d 100644
 --- a/xbmc/cores/VideoPlayer/VideoRenderers/LinuxRendererGL.h
 +++ b/xbmc/cores/VideoPlayer/VideoRenderers/LinuxRendererGL.h
-@@ -16,6 +16,9 @@
+@@ -16,6 +16,10 @@
  #include "cores/VideoSettings.h"
  #include "RenderInfo.h"
  #include "BaseRenderer.h"
++#include "cores/VideoPlayer/Interface/TimingConstants.h"
 +#ifdef HAVE_DVBRIDGE
 +#include "DVBridgeGLES.h"
 +#endif
  #include "ColorManager.h"
  #include "utils/Geometry.h"
  
-@@ -71,9 +74,13 @@ public:
+@@ -71,9 +75,13 @@ public:
    void SetBufferSize(int numBuffers) override { m_NumYUVBuffers = numBuffers; }
    void ReleaseBuffer(int idx) override;
    void RenderUpdate(int index, int index2, bool clear, unsigned int flags, unsigned int alpha) override;
@@ -1134,7 +1135,7 @@ index 9b4b4be9e6..7b2adecacf 100644
  
    // Feature support
    bool SupportsMultiPassRendering() override;
-@@ -84,6 +91,12 @@ public:
+@@ -84,6 +92,12 @@ public:
    bool VideoBypassesFramebuffer() override { return false; }
  
  protected:
@@ -1147,7 +1148,7 @@ index 9b4b4be9e6..7b2adecacf 100644
  
    bool Render(unsigned int flags, int renderBuffer);
    void ClearBackBuffer();
-@@ -94,6 +107,7 @@ protected:
+@@ -94,6 +108,7 @@ protected:
    virtual bool ValidateRenderTarget();
    virtual void LoadShaders(int field=FIELD_FULL);
    void SetTextureFilter(GLenum method);
@@ -1155,7 +1156,7 @@ index 9b4b4be9e6..7b2adecacf 100644
    void UpdateVideoFilter();
    void CheckVideoParameters(int index);
    AVColorPrimaries GetSrcPrimaries(AVColorPrimaries srcPrimaries, unsigned int width, unsigned int height);
-@@ -138,6 +152,13 @@ protected:
+@@ -138,6 +153,13 @@ protected:
    // hooks for HwDec Renderer
    virtual bool LoadShadersHook() { return false; }
    virtual bool RenderHook(int idx) { return false; }
@@ -1169,7 +1170,7 @@ index 9b4b4be9e6..7b2adecacf 100644
    virtual void AfterRenderHook(int idx) {}
    virtual bool CanSaveBuffers() { return true; }
  
-@@ -204,12 +225,17 @@ protected:
+@@ -204,12 +226,17 @@ protected:
      bool hasLightMetadata = false;
      AVContentLightMetadata lightMetadata;
      CDVMetadataBuffer doviMetadata;
