@@ -1,0 +1,11 @@
+--- a/xbmc/windowing/gbm/WinSystemGbmGLESContext.cpp
++++ b/xbmc/windowing/gbm/WinSystemGbmGLESContext.cpp
+@@ -826,6 +826,8 @@
+     }
+     CRenderSystemGLES::SetViewPort(viewport);
+     const auto& context = GetGfxContext();
++    // libplacebo passes leave the scissor test off; the GUI's clipping needs it on.
++    glEnable(GL_SCISSOR_TEST);
+     CRenderSystemGLES::SetScissors(context.StereoCorrection(context.GetScissors()));
+     if (report)
+     {
