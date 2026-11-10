@@ -1,0 +1,28 @@
+Read frames back after the frame instead of in the middle of flip
+
+Without the frontend's Vulkan device, each frame is copied back for the
+frontend. The immediate copy waits for the GPU inside flip. When a game's
+display format differs from its back buffer, get_present_source flips from
+a temporary image it has already handed to the texture cache to dispose
+of, and that wait completes the frame, so the image is freed while flip
+still blits from it. In Kodi, Mortal Kombat vs. DC Universe deadlocked at
+its first logo on the heap this corrupted. The deferred copy, already
+there, runs with the rest of the frame and is handed over once the frame
+has finished.
+
+--- a/rpcs3/libretro/libretro_core.cpp
++++ b/rpcs3/libretro/libretro_core.cpp
+@@ -984,9 +984,10 @@ static void libretro_apply_core_options()
+ 
+     g_libretro_frontend_vblank = get_option_value("rpcs3_frame_pacing", "emulator") == "frontend";
+ 
+-    // Immediate: the readback path is only the fallback without the
+-    // frontend's Vulkan device now, and no longer offered as an option.
+-    g_libretro_deferred_readback = false;
++    // Deferred: the immediate copy waits for the GPU in the middle of flip,
++    // and the temporary image a display format conversion flips from is
++    // freed by that wait while flip still uses it
++    g_libretro_deferred_readback = true;
+ 
+     // Driver Wake-Up Delay
+     std::string driver_delay = get_option_value("rpcs3_driver_wakeup_delay", "0");
