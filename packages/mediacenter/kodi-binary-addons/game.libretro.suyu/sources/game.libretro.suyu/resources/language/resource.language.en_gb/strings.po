@@ -31,3 +31,23 @@ msgstr ""
 msgctxt "#30004"
 msgid "Show game performance"
 msgstr ""
+
+msgctxt "#30005"
+msgid "Window adapting filter (reload content)"
+msgstr ""
+
+msgctxt "#30006"
+msgid "Anti-aliasing (reload content)"
+msgstr ""
+
+msgctxt "#30007"
+msgid "CPU accuracy (reload content)"
+msgstr ""
+
+msgctxt "#30008"
+msgid "Fastmem (reload content)"
+msgstr ""
+
+msgctxt "#30009"
+msgid "suyu online play (reload content)"
+msgstr ""

@@ -3,13 +3,54 @@
 	<section id="game.libretro.suyu">
 		<category id="general" label="128">
 			<group id="1">
-				<setting id="suyu_audio_output" type="string" label="30001">
+				<setting id="suyu_resolution" type="string" label="30003">
 					<level>0</level>
-					<default>Frontend (libretro)</default>
+					<default>1x</default>
 					<constraints>
 						<options>
-							<option>Frontend (libretro)</option>
-							<option>Host (direct)</option>
+							<option>1x</option>
+							<option>2x</option>
+							<option>3x</option>
+							<option>4x</option>
+						</options>
+					</constraints>
+					<control type="list" format="string" />
+				</setting>
+				<setting id="suyu_scaling_filter" type="string" label="30005">
+					<level>0</level>
+					<default>Bilinear</default>
+					<constraints>
+						<options>
+							<option>Bilinear</option>
+							<option>Bicubic</option>
+							<option>Lanczos</option>
+							<option>ScaleForce</option>
+							<option>FSR</option>
+							<option>NearestNeighbor</option>
+						</options>
+					</constraints>
+					<control type="list" format="string" />
+				</setting>
+				<setting id="suyu_anti_aliasing" type="string" label="30006">
+					<level>0</level>
+					<default>None</default>
+					<constraints>
+						<options>
+							<option>None</option>
+							<option>FXAA</option>
+							<option>SMAA</option>
+						</options>
+					</constraints>
+					<control type="list" format="string" />
+				</setting>
+				<setting id="suyu_cpu_accuracy" type="string" label="30007">
+					<level>0</level>
+					<default>Auto</default>
+					<constraints>
+						<options>
+							<option>Auto</option>
+							<option>Accurate</option>
+							<option>Unsafe</option>
 						</options>
 					</constraints>
 					<control type="list" format="string" />
@@ -25,16 +66,35 @@
 					</constraints>
 					<control type="list" format="string" />
 				</setting>
-				<setting id="suyu_resolution" type="string" label="30003">
+				<setting id="suyu_fastmem" type="string" label="30008">
 					<level>0</level>
-					<default>1x</default>
+					<default>Enabled</default>
 					<constraints>
 						<options>
-							<option>0.5x</option>
-							<option>0.75x</option>
-							<option>1x</option>
-							<option>2x</option>
-							<option>3x</option>
+							<option>Enabled</option>
+							<option>Disabled</option>
+						</options>
+					</constraints>
+					<control type="list" format="string" />
+				</setting>
+				<setting id="suyu_audio_output" type="string" label="30001">
+					<level>0</level>
+					<default>Frontend (libretro)</default>
+					<constraints>
+						<options>
+							<option>Host (direct)</option>
+							<option>Frontend (libretro)</option>
+						</options>
+					</constraints>
+					<control type="list" format="string" />
+				</setting>
+				<setting id="suyu_online_enable" type="string" label="30009">
+					<level>0</level>
+					<default>Disabled</default>
+					<constraints>
+						<options>
+							<option>Disabled</option>
+							<option>Enabled</option>
 						</options>
 					</constraints>
 					<control type="list" format="string" />
@@ -44,8 +104,8 @@
 					<default>Off</default>
 					<constraints>
 						<options>
-							<option>Off</option>
 							<option>On</option>
+							<option>Off</option>
 						</options>
 					</constraints>
 					<control type="list" format="string" />
