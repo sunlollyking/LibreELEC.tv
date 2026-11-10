@@ -17,7 +17,8 @@ PKG_LIBVAR="SUYU_LIB"
 # so it needs Vulkan on the device (VULKAN="vulkan-loader") but nothing from Kodi. The toolchain's
 # cmake cannot download over https, so CPM's sources are fetched into the clone's .cache/cpm
 # beforehand (tools/cpmutil.sh package fetch <name>, with the host's cmake). LibreELEC's static
-# Boost lacks the compiled container library suyu needs, so it takes its own pinned Boost.
+# Boost lacks the compiled container library suyu needs, so it takes its own pinned Boost. The
+# device's Vulkan headers come without the utility libraries suyu also wants, so it takes its own.
 PKG_CMAKE_OPTS_TARGET="-DSUYU_BUILD_LIBRETRO_CORE=ON \
                        -DENABLE_QT=OFF \
                        -DYUZU_CMD=OFF \
@@ -31,6 +32,7 @@ PKG_CMAKE_OPTS_TARGET="-DSUYU_BUILD_LIBRETRO_CORE=ON \
                        -DYUZU_USE_BUNDLED_FFMPEG=OFF \
                        -DUSE_DISCORD_PRESENCE=OFF \
                        -DBoost_FORCE_BUNDLED=ON \
+                       -DVulkanHeaders_FORCE_BUNDLED=ON \
                        -DCPMUTIL_OFFLINE=ON"
 
 # Built from a local clone of the v14.1.0 tag with its submodules (letmp/stretch/suyu-src); the
