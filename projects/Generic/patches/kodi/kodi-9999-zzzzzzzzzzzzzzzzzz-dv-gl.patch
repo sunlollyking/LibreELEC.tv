@@ -220,7 +220,7 @@ index 19e54726c1..867c6f832c 100644
    add_subdirectory("${DVBRIDGE_SOURCE_DIR}" "${CMAKE_CURRENT_BINARY_DIR}/dvbridge-core")
    file(READ "${DVBRIDGE_SOURCE_DIR}/pack_gles300.vert" DVBRIDGE_VERTEX_SOURCE)
 diff --git a/xbmc/cores/VideoPlayer/VideoRenderers/DVBridgeGLES.cpp b/xbmc/cores/VideoPlayer/VideoRenderers/DVBridgeGLES.cpp
-index 34aadc0375..74d46593fb 100644
+index 34aadc0375..8a9d429604 100644
 --- a/xbmc/cores/VideoPlayer/VideoRenderers/DVBridgeGLES.cpp
 +++ b/xbmc/cores/VideoPlayer/VideoRenderers/DVBridgeGLES.cpp
 @@ -1,6 +1,10 @@
@@ -338,7 +338,23 @@ index 34aadc0375..74d46593fb 100644
  #ifdef CB1_HAS_HDR10_AI
    ClearNextHDR10AI();
  #endif
-@@ -1092,6 +1129,7 @@ CDVBridgeGLES::FrameStatus CDVBridgeGLES::TakeFELPrefetch(const std::shared_ptr<
+@@ -457,6 +494,7 @@ void CDVBridgeGLES::Context::Retain(std::shared_ptr<void> base, std::shared_ptr<
+ void CDVBridgeGLES::Context::SourceReadComplete() { m_state->foreign.clear(); }
+ bool CDVBridgeGLES::Context::FenceLastUse()
+ {
++  ClearInheritedGLErrors();
+   if (m_state->quarantined) return false;
+   auto fence = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE,0);
+   glFlush();
+@@ -491,6 +529,7 @@ HDR10AISource& CDVBridgeGLES::Context::HDR10AI()
+ 
+ bool CDVBridgeGLES::Context::FenceHDR10AIUse()
+ {
++  ClearInheritedGLErrors();
+   if (m_state->quarantined) return false;
+   const auto submission = HDR10AI().Metrics().gpu_submissions;
+   if (!submission || submission == m_state->aiFencedSubmission) return true;
+@@ -1092,6 +1131,7 @@ CDVBridgeGLES::FrameStatus CDVBridgeGLES::TakeFELPrefetch(const std::shared_ptr<
  
  CDVBridgeGLES::~CDVBridgeGLES()
  {
@@ -346,7 +362,7 @@ index 34aadc0375..74d46593fb 100644
    cb1_hdr10plus_analysis_destroy(&m_hdr10plusAnalysis);
    ClearFELPrefetch();
    Summary("closed");
-@@ -1177,16 +1215,26 @@ bool CDVBridgeGLES::Initialize(bool allowSoftware, bool hdr10, std::shared_ptr<C
+@@ -1177,16 +1217,26 @@ bool CDVBridgeGLES::Initialize(bool allowSoftware, bool hdr10, std::shared_ptr<C
      return Failure("opengl-create");
    m_gl = m_context->GL(); m_log = m_context->Log();
    // GUI alpha blending takes place in the 32F PQ target, before transport packing.
@@ -374,7 +390,7 @@ index 34aadc0375..74d46593fb 100644
    if (!m_gl || m_pending || m_prepared) return false;
    pl_opengl_wrap_params output{};
    const auto display = eglGetCurrentDisplay();
-@@ -1200,12 +1248,28 @@ bool CDVBridgeGLES::RebindOutputSurface(bool hdr10)
+@@ -1200,12 +1250,28 @@ bool CDVBridgeGLES::RebindOutputSurface(bool hdr10)
    glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &draw);
    glGetIntegerv(GL_READ_FRAMEBUFFER_BINDING, &read);
    glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -404,7 +420,7 @@ index 34aadc0375..74d46593fb 100644
    pl_tex candidate{};
    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE &&
        ((hdr10 && red >= 10 && green >= 10 && blue >= 10) ||
-@@ -1250,6 +1314,7 @@ bool CDVBridgeGLES::SetHDR10Session(const dvbridge_hdr10_session& session, uint6
+@@ -1250,6 +1316,7 @@ bool CDVBridgeGLES::SetHDR10Session(const dvbridge_hdr10_session& session, uint6
  
  void CDVBridgeGLES::Reset()
  {
@@ -412,7 +428,7 @@ index 34aadc0375..74d46593fb 100644
    Summary("reset");
    Cancel();
    m_rawELCache.clear();
-@@ -1267,6 +1332,7 @@ void CDVBridgeGLES::Reset()
+@@ -1267,6 +1334,7 @@ void CDVBridgeGLES::Reset()
  bool CDVBridgeGLES::Prepare(const Layer& base, const Layer* enhancement,
                            const CDVMetadataBuffer& metadata, dvbridge_geometry geometry, bool allowPacked)
  {
@@ -420,7 +436,7 @@ index 34aadc0375..74d46593fb 100644
    m_prepared = m_packed = false;
    m_direct = false;
    if (!m_renderer)
-@@ -1912,6 +1978,7 @@ bool CDVBridgeGLES::ReadScreenshot(KODI::RENDERING::CAPTURE::ReadbackBuffer& out
+@@ -1912,6 +1980,7 @@ bool CDVBridgeGLES::ReadScreenshot(KODI::RENDERING::CAPTURE::ReadbackBuffer& out
  bool CDVBridgeGLES::PrepareHardware(const Layer& base, const AVFrame* enhancement,
                                    const CDVMetadataBuffer& metadata, dvbridge_geometry geometry, bool allowPacked)
  {
@@ -1650,6 +1666,22 @@ index 4651b0bce2..4fb97abf42 100644
    VertexShader()->LoadSource("gl_yuv2rgb_vertex.glsl", m_defines);
  
    CLog::Log(LOGDEBUG, "GL: using shader format: {}",
+diff --git a/xbmc/guilib/GUIFontTTFGL.cpp b/xbmc/guilib/GUIFontTTFGL.cpp
+index b05e43f5c8..55c5466896 100644
+--- a/xbmc/guilib/GUIFontTTFGL.cpp
++++ b/xbmc/guilib/GUIFontTTFGL.cpp
+@@ -156,6 +156,11 @@ void CGUIFontTTFGL::LastEnd()
+ 
+   CRenderSystemGL* renderSystem = dynamic_cast<CRenderSystemGL*>(CServiceBroker::GetRenderSystem());
+ 
++  // Textures drawn while the batch was open (a masked group's stencil, a button's background)
++  // leave another shader current.
++  renderSystem->EnableShader(m_scissorClip ? ShaderMethodGL::SM_FONTS_RGBA
++                                           : ShaderMethodGL::SM_FONTS_RGBA_SHADER_CLIP);
++
+   GLint posLoc = renderSystem->ShaderGetPos();
+   GLint colLoc = renderSystem->ShaderGetCol();
+   GLint tex0Loc = renderSystem->ShaderGetCoord0();
 diff --git a/xbmc/rendering/gl/GuiCompositeShaderGL.cpp b/xbmc/rendering/gl/GuiCompositeShaderGL.cpp
 index 0efa6df3df..085dfd8754 100644
 --- a/xbmc/rendering/gl/GuiCompositeShaderGL.cpp
