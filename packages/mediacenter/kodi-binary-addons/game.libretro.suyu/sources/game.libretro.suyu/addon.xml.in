@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<addon id="game.libretro.suyu"
+		name="Nintendo - Switch (suyu)"
+		version="0.1.4.1"
+		provider-name="suyu Emulator Project">
+	<requires>
+		<import addon="game.libretro" version="1.0.0"/>
+		<import addon="game.controller.default" version="1.0.0"/>
+	</requires>
+	<extension point="kodi.gameclient"
+			library_@PLATFORM@="@LIBRARY_FILENAME@">
+		<platforms>Nintendo - Switch</platforms>
+		<extensions>xci|nsp|nca|nro|nso</extensions>
+		<supports_vfs>false</supports_vfs>
+		<supports_standalone>false</supports_standalone>
+		<supports_disc_control>false</supports_disc_control>
+		<libretro_core>suyu_libretro</libretro_core>
+	</extension>
+	<extension point="xbmc.addon.metadata">
+		<license>GPL-3.0-or-later</license>
+		<platform>@PLATFORM@</platform>
+		<source>https://github.com/suyu-emu/suyu-main</source>
+		<summary lang="en_GB">Nintendo - Switch (suyu)</summary>
+		<description lang="en_GB">suyu is a Nintendo Switch emulator, a fork of yuzu.[CR][CR]It needs prod.keys and title.keys dumped from your own console in the system folder's suyu/keys directory, and Vulkan. It has no save states.</description>
+	</extension>
+</addon>

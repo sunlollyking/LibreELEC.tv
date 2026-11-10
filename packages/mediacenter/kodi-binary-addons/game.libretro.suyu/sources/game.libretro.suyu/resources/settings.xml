@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<settings version="1">
+	<section id="game.libretro.suyu">
+		<category id="general" label="128">
+			<group id="1">
+				<setting id="suyu_audio_output" type="string" label="30001">
+					<level>0</level>
+					<default>Frontend (libretro)</default>
+					<constraints>
+						<options>
+							<option>Frontend (libretro)</option>
+							<option>Host (direct)</option>
+						</options>
+					</constraints>
+					<control type="list" format="string" />
+				</setting>
+				<setting id="suyu_use_docked" type="string" label="30002">
+					<level>0</level>
+					<default>Yes</default>
+					<constraints>
+						<options>
+							<option>Yes</option>
+							<option>No</option>
+						</options>
+					</constraints>
+					<control type="list" format="string" />
+				</setting>
+				<setting id="suyu_resolution" type="string" label="30003">
+					<level>0</level>
+					<default>1x</default>
+					<constraints>
+						<options>
+							<option>0.5x</option>
+							<option>0.75x</option>
+							<option>1x</option>
+							<option>2x</option>
+							<option>3x</option>
+						</options>
+					</constraints>
+					<control type="list" format="string" />
+				</setting>
+				<setting id="suyu_show_perf" type="string" label="30004">
+					<level>0</level>
+					<default>Off</default>
+					<constraints>
+						<options>
+							<option>Off</option>
+							<option>On</option>
+						</options>
+					</constraints>
+					<control type="list" format="string" />
+				</setting>
+			</group>
+		</category>
+	</section>
+</settings>
