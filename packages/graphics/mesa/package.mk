@@ -138,6 +138,14 @@ else
   PKG_MESON_OPTS_TARGET+=" -Dvulkan-drivers="
 fi
 
+pre_configure_target() {
+  # RADV's addrlib calls __builtin_cpu_supports. libgcc_s keeps __cpu_model only as a compat
+  # symbol, and g++ links shared libraries without the static libgcc that has it.
+  if [ "${VULKAN_SUPPORT}" = "yes" ]; then
+    export TARGET_LDFLAGS+=" -lgcc"
+  fi
+}
+
 pre_configure_host() {
   local msg="mesa-reusable ${PKG_REUSABLE_VERSION} is not available for ${MACHINE_HARDWARE_NAME}"
 
