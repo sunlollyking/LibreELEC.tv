@@ -15,6 +15,7 @@
 		<supports_standalone>false</supports_standalone>
 		<supports_disc_control>false</supports_disc_control>
 		<libretro_core>suyu_libretro</libretro_core>
+		<savestate_features>null</savestate_features>
 	</extension>
 	<extension point="xbmc.addon.metadata">
 		<license>GPL-3.0-or-later</license>

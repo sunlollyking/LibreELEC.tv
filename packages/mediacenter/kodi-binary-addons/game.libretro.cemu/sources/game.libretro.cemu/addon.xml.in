@@ -19,6 +19,7 @@
 		<supports_disc_control>false</supports_disc_control>
 		<requires_opengl>true</requires_opengl>
 		<libretro_core>cemu_libretro</libretro_core>
+		<savestate_features>null</savestate_features>
 	</extension>
 	<extension point="xbmc.addon.metadata">
 		<license>MPL-2.0</license>

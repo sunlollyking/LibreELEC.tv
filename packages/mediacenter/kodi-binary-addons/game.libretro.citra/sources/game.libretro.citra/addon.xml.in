@@ -16,6 +16,7 @@
 		<supports_disc_control>false</supports_disc_control>
 		<requires_opengl>true</requires_opengl>
 		<libretro_core>citra_libretro</libretro_core>
+		<savestate_features>basic</savestate_features>
 	</extension>
 	<extension point="xbmc.addon.metadata">
 		<license>GPL-2.0-or-later</license>
