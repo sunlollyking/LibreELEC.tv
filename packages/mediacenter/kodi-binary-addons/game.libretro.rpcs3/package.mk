@@ -3,7 +3,7 @@
 
 PKG_NAME="game.libretro.rpcs3"
 PKG_VERSION="0.0.43"
-PKG_REV="3"
+PKG_REV="4"
 PKG_ARCH="x86_64"
 PKG_LICENSE="GPL-2.0-only"
 PKG_SITE="https://github.com/WizzardSK/rpcs3-libretro"
