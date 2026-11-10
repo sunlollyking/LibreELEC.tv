@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<addon id="game.libretro.citra"
+		name="Nintendo - 3DS (Citra)"
+		version="2026.9.20.1"
+		provider-name="Citra Emulator Project">
+	<requires>
+		<import addon="game.libretro" version="1.0.0"/>
+		<import addon="game.controller.3ds" version="1.0.0"/>
+	</requires>
+	<extension point="kodi.gameclient"
+			library_@PLATFORM@="@LIBRARY_FILENAME@">
+		<platforms>Nintendo - 3DS</platforms>
+		<extensions>3ds|3dsx|cia|elf</extensions>
+		<supports_vfs>false</supports_vfs>
+		<supports_standalone>false</supports_standalone>
+		<supports_disc_control>false</supports_disc_control>
+		<requires_opengl>true</requires_opengl>
+		<libretro_core>citra_libretro</libretro_core>
+	</extension>
+	<extension point="xbmc.addon.metadata">
+		<license>GPL-2.0-or-later</license>
+		<platform>@PLATFORM@</platform>
+		<source>https://github.com/libretro/citra</source>
+		<summary lang="en_GB">Nintendo - 3DS (Citra)</summary>
+		<description lang="en_GB">Citra is a Nintendo 3DS emulator. It renders with OpenGL 3.3.[CR][CR]Encrypted games need the AES keys from your own console: aes_keys.txt or boot9.bin in the sysdata folder of Citra's save directory.</description>
+	</extension>
+</addon>
