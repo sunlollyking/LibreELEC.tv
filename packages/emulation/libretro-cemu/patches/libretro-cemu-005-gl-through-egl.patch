@@ -1,0 +1,49 @@
+Resolve GL through EGL when there is no libGL
+
+On a system without GLX, such as LibreELEC on GBM, there is no libGL.
+LoadOpenGLImports then called a null glXGetProcAddressARB and crashed as
+soon as a game started, and cemu_gl_get_proc returned null for every GL
+function. Fall back to eglGetProcAddress in both.
+
+--- a/src/Cafe/HW/Latte/Renderer/OpenGL/OpenGLRenderer.cpp
++++ b/src/Cafe/HW/Latte/Renderer/OpenGL/OpenGLRenderer.cpp
+@@ -274,12 +274,10 @@
+ {
+ 	PFNGLXGETPROCADDRESSPROC _glXGetProcAddress = nullptr;
+ 	void* libGL = dlopen("libGL.so.1", RTLD_NOW | RTLD_GLOBAL);
+-	_glXGetProcAddress = (PFNGLXGETPROCADDRESSPROC)dlsym(libGL, "glXGetProcAddressARB");
+-	if(!_glXGetProcAddress)
+-	{
++	if(!libGL)
+ 		libGL = dlopen("libGL.so", RTLD_NOW | RTLD_GLOBAL);
++	if(libGL)
+ 		_glXGetProcAddress = (PFNGLXGETPROCADDRESSPROC)dlsym(libGL, "glXGetProcAddressARB");
+-	}
+ 
+ 	void* libEGL = dlopen("libEGL.so.1", RTLD_NOW | RTLD_GLOBAL);
+ 	if(!libEGL)
+@@ -287,7 +285,9 @@
+ 		libGL = dlopen("libEGL.so", RTLD_NOW | RTLD_GLOBAL);
+ 	}
+ 
+-#define GLFUNC(__type, __name)	__name = (__type)_GetOpenGLFunction(libGL, _glXGetProcAddress, STRINGIFY(__name));
++	// A system without GLX has no libGL; EGL resolves the GL entry points there.
++	auto _eglGetProcAddress = (GL_IMPORT(*)(const char*))(libEGL ? dlsym(libEGL, "eglGetProcAddress") : nullptr);
++#define GLFUNC(__type, __name)	__name = (__type)(_glXGetProcAddress ? _GetOpenGLFunction(libGL, _glXGetProcAddress, STRINGIFY(__name)) : _eglGetProcAddress ? _eglGetProcAddress(STRINGIFY(__name)) : nullptr);
+ #define EGLFUNC(__type, __name)	__name = (__type)dlsym(libEGL, STRINGIFY(__name));
+ #include "Common/GLInclude/glFunctions.h"
+ #undef GLFUNC
+--- a/src/libretro/CemuLibretro.cpp
++++ b/src/libretro/CemuLibretro.cpp
+@@ -310,7 +310,10 @@
+ 	// No GLX; eglGetProcAddress covers both core and extension entry points here.
+ 	return (void*)eglGetProcAddress(name);
+ #else
+-	return (void*)lr_glXGetProcAddress((const GLubyte*)name);
++	if (void* p = (void*)lr_glXGetProcAddress((const GLubyte*)name))
++		return p;
++	// No libGL in the process: the frontend's context is an EGL one.
++	return (void*)eglGetProcAddress(name);
+ #endif
+ }
+ #endif // ENABLE_OPENGL

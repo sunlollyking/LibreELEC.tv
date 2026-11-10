@@ -3,7 +3,7 @@
 
 PKG_NAME="game.libretro.cemu"
 PKG_VERSION="2.6.0"
-PKG_REV="2"
+PKG_REV="3"
 PKG_ARCH="any"
 PKG_LICENSE="MPL-2.0"
 PKG_SITE="https://github.com/WizzardSK/cemu-libretro"
