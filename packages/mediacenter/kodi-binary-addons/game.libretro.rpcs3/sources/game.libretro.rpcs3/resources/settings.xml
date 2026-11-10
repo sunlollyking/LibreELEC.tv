@@ -1,0 +1,1244 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<settings version="1">
+	<section id="game.libretro.rpcs3">
+		<category id="cpu" label="30001" help="30002">
+			<group id="1">
+				<setting id="rpcs3_ppu_decoder" type="string" label="30003" help="30004">
+					<level>0</level>
+					<default>llvm</default>
+					<constraints>
+						<options>
+							<option label="30005">llvm</option>
+							<option label="30006">interpreter</option>
+						</options>
+					</constraints>
+					<control type="list" format="string" />
+				</setting>
+				<setting id="rpcs3_spu_decoder" type="string" label="30007" help="30008">
+					<level>0</level>
+					<default>llvm</default>
+					<constraints>
+						<options>
+							<option label="30005">llvm</option>
+							<option label="30009">asmjit</option>
+							<option label="30010">dynamic</option>
+							<option label="30006">interpreter</option>
+						</options>
+					</constraints>
+					<control type="list" format="string" />
+				</setting>
+				<setting id="rpcs3_spu_xfloat_accuracy" type="string" label="30011" help="30012">
+					<level>0</level>
+					<default>approximate</default>
+					<constraints>
+						<options>
+							<option label="30013">accurate</option>
+							<option label="30014">approximate</option>
+							<option label="30015">relaxed</option>
+							<option label="30016">inaccurate</option>
+						</options>
+					</constraints>
+					<control type="list" format="string" />
+				</setting>
+				<setting id="rpcs3_spu_block_size" type="string" label="30017" help="30018">
+					<level>0</level>
+					<default>safe</default>
+					<constraints>
+						<options>
+							<option label="30019">safe</option>
+							<option label="30020">mega</option>
+							<option label="30021">giga</option>
+						</options>
+					</constraints>
+					<control type="list" format="string" />
+				</setting>
+				<setting id="rpcs3_accurate_rsx_reservation" type="string" label="30022" help="30023">
+					<level>0</level>
+					<default>disabled</default>
+					<constraints>
+						<options>
+							<option label="13106">disabled</option>
+							<option label="305">enabled</option>
+						</options>
+					</constraints>
+					<control type="list" format="string" />
+				</setting>
+				<setting id="rpcs3_spu_accurate_dma" type="string" label="30024" help="30025">
+					<level>0</level>
+					<default>disabled</default>
+					<constraints>
+						<options>
+							<option label="13106">disabled</option>
+							<option label="305">enabled</option>
+						</options>
+					</constraints>
+					<control type="list" format="string" />
+				</setting>
+				<setting id="rpcs3_spu_accurate_reservations" type="string" label="30026" help="30027">
+					<level>0</level>
+					<default>enabled</default>
+					<constraints>
+						<options>
+							<option label="305">enabled</option>
+							<option label="13106">disabled</option>
+						</options>
+					</constraints>
+					<control type="list" format="string" />
+				</setting>
+				<setting id="rpcs3_debug_console_mode" type="string" label="30028" help="30029">
+					<level>0</level>
+					<default>disabled</default>
+					<constraints>
+						<options>
+							<option label="13106">disabled</option>
+							<option label="305">enabled</option>
+						</options>
+					</constraints>
+					<control type="list" format="string" />
+				</setting>
+				<setting id="rpcs3_mfc_delay_command" type="string" label="30030" help="30031">
+					<level>0</level>
+					<default>disabled</default>
+					<constraints>
+						<options>
+							<option label="13106">disabled</option>
+							<option label="305">enabled</option>
+						</options>
+					</constraints>
+					<control type="list" format="string" />
+				</setting>
+				<setting id="rpcs3_disable_getllar_spin_opt" type="string" label="30032" help="30033">
+					<level>0</level>
+					<default>disabled</default>
+					<constraints>
+						<options>
+							<option label="13106">disabled</option>
+							<option label="305">enabled</option>
+						</options>
+					</constraints>
+					<control type="list" format="string" />
+				</setting>
+				<setting id="rpcs3_emulate_hdd_speed" type="string" label="30034" help="30035">
+					<level>0</level>
+					<default>disabled</default>
+					<constraints>
+						<options>
+							<option label="13106">disabled</option>
+							<option label="305">enabled</option>
+						</options>
+					</constraints>
+					<control type="list" format="string" />
+				</setting>
+				<setting id="rpcs3_emulate_bdvd_speed" type="string" label="30036" help="30037">
+					<level>0</level>
+					<default>disabled</default>
+					<constraints>
+						<options>
+							<option label="13106">disabled</option>
+							<option label="305">enabled</option>
+						</options>
+					</constraints>
+					<control type="list" format="string" />
+				</setting>
+				<setting id="rpcs3_ppu_reservation_priority" type="string" label="30038" help="30039">
+					<level>0</level>
+					<default>disabled</default>
+					<constraints>
+						<options>
+							<option label="13106">disabled</option>
+							<option label="305">enabled</option>
+						</options>
+					</constraints>
+					<control type="list" format="string" />
+				</setting>
+				<setting id="rpcs3_llvm_precompilation" type="string" label="30040" help="30041">
+					<level>0</level>
+					<default>enabled</default>
+					<constraints>
+						<options>
+							<option label="305">enabled</option>
+							<option label="13106">disabled</option>
+						</options>
+					</constraints>
+					<control type="list" format="string" />
+				</setting>
+				<setting id="rpcs3_sleep_timers_accuracy" type="string" label="30042" help="30043">
+					<level>0</level>
+					<default>auto</default>
+					<constraints>
+						<options>
+							<option label="30044">auto</option>
+							<option label="30045">as_host</option>
+							<option label="30046">usleep</option>
+							<option label="30047">all_timers</option>
+						</options>
+					</constraints>
+					<control type="list" format="string" />
+				</setting>
+				<setting id="rpcs3_clocks_scale" type="string" label="30048" help="30049">
+					<level>0</level>
+					<default>100</default>
+					<constraints>
+						<options>
+							<option label="30050">50</option>
+							<option label="30051">75</option>
+							<option label="30052">100</option>
+							<option label="30053">150</option>
+							<option label="30054">200</option>
+							<option label="30055">300</option>
+						</options>
+					</constraints>
+					<control type="list" format="string" />
+				</setting>
+			</group>
+		</category>
+		<category id="gpu" label="30056" help="30057">
+			<group id="1">
+				<setting id="rpcs3_renderer" type="string" label="30058" help="30059">
+					<level>0</level>
+					<default>vulkan</default>
+					<constraints>
+						<options>
+							<option label="30060">opengl</option>
+							<option label="30061">vulkan</option>
+							<option label="30062">null</option>
+						</options>
+					</constraints>
+					<control type="list" format="string" />
+				</setting>
+				<setting id="rpcs3_aspect_ratio" type="string" label="30063" help="30064">
+					<level>0</level>
+					<default>16:9</default>
+					<constraints>
+						<options>
+							<option label="30065">16:9</option>
+							<option label="30066">4:3</option>
+						</options>
+					</constraints>
+					<control type="list" format="string" />
+				</setting>
+				<setting id="rpcs3_frame_limit" type="string" label="30067" help="30068">
+					<level>0</level>
+					<default>auto</default>
+					<constraints>
+						<options>
+							<option label="30069">auto</option>
+							<option label="30070">ps3</option>
+							<option label="30071">off</option>
+							<option label="30072">30</option>
+							<option label="30073">50</option>
+							<option label="30074">60</option>
+							<option label="30075">120</option>
+							<option label="30076">144</option>
+							<option label="30077">240</option>
+						</options>
+					</constraints>
+					<control type="list" format="string" />
+				</setting>
+				<setting id="rpcs3_anisotropic_filter" type="string" label="30078" help="30079">
+					<level>0</level>
+					<default>auto</default>
+					<constraints>
+						<options>
+							<option label="30069">auto</option>
+							<option label="30080">2</option>
+							<option label="30081">4</option>
+							<option label="30082">8</option>
+							<option label="30083">16</option>
+						</options>
+					</constraints>
+					<control type="list" format="string" />
+				</setting>
+				<setting id="rpcs3_msaa" type="string" label="30084" help="30085">
+					<level>0</level>
+					<default>auto</default>
+					<constraints>
+						<options>
+							<option label="30069">auto</option>
+							<option label="13106">disabled</option>
+						</options>
+					</constraints>
+					<control type="list" format="string" />
+				</setting>
+				<setting id="rpcs3_zcull_accuracy" type="string" label="30086" help="30087">
+					<level>0</level>
+					<default>precise</default>
+					<constraints>
+						<options>
+							<option label="30088">precise</option>
+							<option label="30014">approximate</option>
+							<option label="30089">relaxed</option>
+						</options>
+					</constraints>
+					<control type="list" format="string" />
+				</setting>
+				<setting id="rpcs3_shader_quality" type="string" label="30090" help="30091">
+					<level>0</level>
+					<default>high</default>
+					<constraints>
+						<options>
+							<option label="30092">low</option>
+							<option label="30093">high</option>
+							<option label="30094">ultra</option>
+						</options>
+					</constraints>
+					<control type="list" format="string" />
+				</setting>
+				<setting id="rpcs3_default_resolution" type="string" label="30095" help="30096">
+					<level>0</level>
+					<default>720p</default>
+					<constraints>
+						<options>
+							<option label="30097">720p</option>
+							<option label="30098">1080p</option>
+							<option label="30099">480p</option>
+							<option label="30100">576p</option>
+						</options>
+					</constraints>
+					<control type="list" format="string" />
+				</setting>
+				<setting id="rpcs3_resolution_scale" type="string" label="30101" help="30102">
+					<level>0</level>
+					<default>100</default>
+					<constraints>
+						<options>
+							<option label="30103">25</option>
+							<option label="30050">50</option>
+							<option label="30104">66</option>
+							<option label="30051">75</option>
+							<option label="30105">100</option>
+							<option label="30053">150</option>
+							<option label="30054">200</option>
+							<option label="30106">250</option>
+							<option label="30055">300</option>
+							<option label="30107">400</option>
+							<option label="30108">500</option>
+							<option label="30109">600</option>
+							<option label="30110">700</option>
+							<option label="30111">800</option>
+						</options>
+					</constraints>
+					<control type="list" format="string" />
+				</setting>
+				<setting id="rpcs3_scale_threshold" type="string" label="30112" help="30113">
+					<level>0</level>
+					<default>16</default>
+					<constraints>
+						<options>
+							<option label="30114">1</option>
+							<option label="30115">16</option>
+							<option label="30116">64</option>
+							<option label="30117">128</option>
+							<option label="30118">160</option>
+							<option label="30119">256</option>
+							<option label="30120">320</option>
+							<option label="30121">512</option>
+							<option label="30122">592</option>
+							<option label="30123">640</option>
+							<option label="30124">1024</option>
+						</options>
+					</constraints>
+					<control type="list" format="string" />
+				</setting>
+				<setting id="rpcs3_shader_mode" type="string" label="30125" help="30126">
+					<level>0</level>
+					<default>async</default>
+					<constraints>
+						<options>
+							<option label="30127">async</option>
+							<option label="30128">async_interpreter</option>
+							<option label="30129">async_recompiler</option>
+							<option label="30130">interpreter</option>
+							<option label="30131">sync</option>
+						</options>
+					</constraints>
+					<control type="list" format="string" />
+				</setting>
+				<setting id="rpcs3_write_color_buffers" type="string" label="30132" help="30133">
+					<level>0</level>
+					<default>disabled</default>
+					<constraints>
+						<options>
+							<option label="13106">disabled</option>
+							<option label="305">enabled</option>
+						</options>
+					</constraints>
+					<control type="list" format="string" />
+				</setting>
+				<setting id="rpcs3_strict_rendering" type="string" label="30134" help="30135">
+					<level>0</level>
+					<default>disabled</default>
+					<constraints>
+						<options>
+							<option label="13106">disabled</option>
+							<option label="305">enabled</option>
+						</options>
+					</constraints>
+					<control type="list" format="string" />
+				</setting>
+				<setting id="rpcs3_stretch_to_display" type="string" label="30136" help="30137">
+					<level>0</level>
+					<default>disabled</default>
+					<constraints>
+						<options>
+							<option label="13106">disabled</option>
+							<option label="30138">enabled</option>
+							<option label="30139">16:10</option>
+							<option label="30140">21:9</option>
+							<option label="30141">32:9</option>
+							<option label="30066">4:3</option>
+							<option label="30142">5:4</option>
+						</options>
+					</constraints>
+					<control type="list" format="string" />
+				</setting>
+				<setting id="rpcs3_multithreaded_rsx" type="string" label="30143" help="30144">
+					<level>0</level>
+					<default>disabled</default>
+					<constraints>
+						<options>
+							<option label="13106">disabled</option>
+							<option label="305">enabled</option>
+						</options>
+					</constraints>
+					<control type="list" format="string" />
+				</setting>
+				<setting id="rpcs3_async_texture_streaming" type="string" label="30145" help="30146">
+					<level>0</level>
+					<default>disabled</default>
+					<constraints>
+						<options>
+							<option label="13106">disabled</option>
+							<option label="305">enabled</option>
+						</options>
+					</constraints>
+					<control type="list" format="string" />
+				</setting>
+				<setting id="rpcs3_host_gpu_labels" type="string" label="30147" help="30148">
+					<level>0</level>
+					<default>disabled</default>
+					<constraints>
+						<options>
+							<option label="13106">disabled</option>
+							<option label="305">enabled</option>
+						</options>
+					</constraints>
+					<control type="list" format="string" />
+				</setting>
+				<setting id="rpcs3_disable_blit_upscaling" type="string" label="30149" help="30150">
+					<level>0</level>
+					<default>disabled</default>
+					<constraints>
+						<options>
+							<option label="13106">disabled</option>
+							<option label="305">enabled</option>
+						</options>
+					</constraints>
+					<control type="list" format="string" />
+				</setting>
+				<setting id="rpcs3_disable_vertex_cache" type="string" label="30151" help="30152">
+					<level>0</level>
+					<default>disabled</default>
+					<constraints>
+						<options>
+							<option label="13106">disabled</option>
+							<option label="305">enabled</option>
+						</options>
+					</constraints>
+					<control type="list" format="string" />
+				</setting>
+				<setting id="rpcs3_emulate_depth_compare" type="string" label="30153" help="30154">
+					<level>0</level>
+					<default>disabled</default>
+					<constraints>
+						<options>
+							<option label="13106">disabled</option>
+							<option label="305">enabled</option>
+						</options>
+					</constraints>
+					<control type="list" format="string" />
+				</setting>
+				<setting id="rpcs3_force_hw_msaa_resolve" type="string" label="30155" help="30156">
+					<level>0</level>
+					<default>disabled</default>
+					<constraints>
+						<options>
+							<option label="13106">disabled</option>
+							<option label="305">enabled</option>
+						</options>
+					</constraints>
+					<control type="list" format="string" />
+				</setting>
+				<setting id="rpcs3_handle_tiled_memory" type="string" label="30157" help="30158">
+					<level>0</level>
+					<default>disabled</default>
+					<constraints>
+						<options>
+							<option label="13106">disabled</option>
+							<option label="305">enabled</option>
+						</options>
+					</constraints>
+					<control type="list" format="string" />
+				</setting>
+				<setting id="rpcs3_read_depth_buffers" type="string" label="30159" help="30160">
+					<level>0</level>
+					<default>disabled</default>
+					<constraints>
+						<options>
+							<option label="13106">disabled</option>
+							<option label="305">enabled</option>
+						</options>
+					</constraints>
+					<control type="list" format="string" />
+				</setting>
+				<setting id="rpcs3_read_color_buffers" type="string" label="30161" help="30162">
+					<level>0</level>
+					<default>disabled</default>
+					<constraints>
+						<options>
+							<option label="13106">disabled</option>
+							<option label="305">enabled</option>
+						</options>
+					</constraints>
+					<control type="list" format="string" />
+				</setting>
+				<setting id="rpcs3_use_rebar" type="string" label="30163" help="30164">
+					<level>0</level>
+					<default>enabled</default>
+					<constraints>
+						<options>
+							<option label="305">enabled</option>
+							<option label="13106">disabled</option>
+						</options>
+					</constraints>
+					<control type="list" format="string" />
+				</setting>
+				<setting id="rpcs3_write_depth_buffers" type="string" label="30165" help="30166">
+					<level>0</level>
+					<default>disabled</default>
+					<constraints>
+						<options>
+							<option label="13106">disabled</option>
+							<option label="305">enabled</option>
+						</options>
+					</constraints>
+					<control type="list" format="string" />
+				</setting>
+				<setting id="rpcs3_rsx_fifo_accuracy" type="string" label="30167" help="30168">
+					<level>0</level>
+					<default>atomic</default>
+					<constraints>
+						<options>
+							<option label="30169">fast</option>
+							<option label="30170">atomic</option>
+							<option label="30171">atomic_ordered</option>
+							<option label="30172">as_ps3</option>
+						</options>
+					</constraints>
+					<control type="list" format="string" />
+				</setting>
+				<setting id="rpcs3_driver_wakeup_delay" type="string" label="30173" help="30174">
+					<level>0</level>
+					<default>0</default>
+					<constraints>
+						<options>
+							<option label="30175">0</option>
+							<option label="30176">20</option>
+							<option label="30177">50</option>
+							<option label="30178">100</option>
+							<option label="30179">200</option>
+							<option label="30180">400</option>
+							<option label="30181">800</option>
+						</options>
+					</constraints>
+					<control type="list" format="string" />
+				</setting>
+				<setting id="rpcs3_vblank_rate" type="string" label="30182" help="30183">
+					<level>0</level>
+					<default>60</default>
+					<constraints>
+						<options>
+							<option label="30184">50</option>
+							<option label="30185">60</option>
+							<option label="30186">120</option>
+							<option label="30187">144</option>
+							<option label="30188">240</option>
+							<option label="30189">list</option>
+						</options>
+					</constraints>
+					<control type="list" format="string" />
+				</setting>
+			</group>
+		</category>
+		<category id="threads" label="30190" help="30191">
+			<group id="1">
+				<setting id="rpcs3_thread_scheduler" type="string" label="30192" help="30193">
+					<level>0</level>
+					<default>os</default>
+					<constraints>
+						<options>
+							<option label="30194">os</option>
+							<option label="30195">old</option>
+							<option label="30196">alt</option>
+						</options>
+					</constraints>
+					<control type="list" format="string" />
+				</setting>
+				<setting id="rpcs3_preferred_spu_threads" type="string" label="30197" help="30198">
+					<level>0</level>
+					<default>0</default>
+					<constraints>
+						<options>
+							<option label="30069">0</option>
+							<option label="30199">1</option>
+							<option label="30200">2</option>
+							<option label="30201">3</option>
+							<option label="30202">4</option>
+							<option label="30203">5</option>
+							<option label="30204">6</option>
+						</options>
+					</constraints>
+					<control type="list" format="string" />
+				</setting>
+				<setting id="rpcs3_spu_loop_detection" type="string" label="30205" help="30206">
+					<level>0</level>
+					<default>disabled</default>
+					<constraints>
+						<options>
+							<option label="13106">disabled</option>
+							<option label="305">enabled</option>
+						</options>
+					</constraints>
+					<control type="list" format="string" />
+				</setting>
+				<setting id="rpcs3_llvm_threads" type="string" label="30207" help="30208">
+					<level>0</level>
+					<default>0</default>
+					<constraints>
+						<options>
+							<option label="30069">0</option>
+							<option label="30199">1</option>
+							<option label="30200">2</option>
+							<option label="30201">3</option>
+							<option label="30202">4</option>
+							<option label="30204">6</option>
+							<option label="30209">8</option>
+						</options>
+					</constraints>
+					<control type="list" format="string" />
+				</setting>
+				<setting id="rpcs3_shader_compiler_threads" type="string" label="30210" help="30211">
+					<level>0</level>
+					<default>auto</default>
+					<constraints>
+						<options>
+							<option label="30069">auto</option>
+							<option label="30199">1</option>
+							<option label="30200">2</option>
+							<option label="30201">3</option>
+							<option label="30202">4</option>
+							<option label="30204">6</option>
+							<option label="30209">8</option>
+						</options>
+					</constraints>
+					<control type="list" format="string" />
+				</setting>
+				<setting id="rpcs3_ppu_threads" type="string" label="30212" help="30213">
+					<level>0</level>
+					<default>2</default>
+					<constraints>
+						<options>
+							<option label="30199">1</option>
+							<option label="30214">2</option>
+							<option label="30201">3</option>
+							<option label="30202">4</option>
+							<option label="30203">5</option>
+							<option label="30204">6</option>
+							<option label="30215">7</option>
+							<option label="30209">8</option>
+						</options>
+					</constraints>
+					<control type="list" format="string" />
+				</setting>
+				<setting id="rpcs3_max_spurs_threads" type="string" label="30216" help="30217">
+					<level>0</level>
+					<default>auto</default>
+					<constraints>
+						<options>
+							<option label="30069">auto</option>
+							<option label="30199">1</option>
+							<option label="30200">2</option>
+							<option label="30201">3</option>
+							<option label="30202">4</option>
+							<option label="30203">5</option>
+							<option label="30204">6</option>
+						</options>
+					</constraints>
+					<control type="list" format="string" />
+				</setting>
+				<setting id="rpcs3_max_preempt_count" type="string" label="30218" help="30219">
+					<level>0</level>
+					<default>0</default>
+					<constraints>
+						<options>
+							<option label="30220">0</option>
+							<option label="30221">10</option>
+							<option label="30176">20</option>
+							<option label="30177">50</option>
+							<option label="30178">100</option>
+							<option label="30179">200</option>
+							<option label="30180">400</option>
+						</options>
+					</constraints>
+					<control type="list" format="string" />
+				</setting>
+			</group>
+		</category>
+		<category id="network" label="30222" help="30223">
+			<group id="1">
+				<setting id="rpcs3_network_enabled" type="string" label="30224" help="30225">
+					<level>0</level>
+					<default>disabled</default>
+					<constraints>
+						<options>
+							<option label="13106">disabled</option>
+							<option label="305">enabled</option>
+						</options>
+					</constraints>
+					<control type="list" format="string" />
+				</setting>
+				<setting id="rpcs3_psn_status" type="string" label="30226" help="30227">
+					<level>0</level>
+					<default>disabled</default>
+					<constraints>
+						<options>
+							<option label="13106">disabled</option>
+							<option label="30228">simulated</option>
+							<option label="30229">rpcn</option>
+						</options>
+					</constraints>
+					<control type="list" format="string" />
+				</setting>
+				<setting id="rpcs3_upnp" type="string" label="30230" help="30231">
+					<level>0</level>
+					<default>disabled</default>
+					<constraints>
+						<options>
+							<option label="13106">disabled</option>
+							<option label="305">enabled</option>
+						</options>
+					</constraints>
+					<control type="list" format="string" />
+				</setting>
+				<setting id="rpcs3_show_rpcn_popups" type="string" label="30232" help="30233">
+					<level>0</level>
+					<default>enabled</default>
+					<constraints>
+						<options>
+							<option label="305">enabled</option>
+							<option label="13106">disabled</option>
+						</options>
+					</constraints>
+					<control type="list" format="string" />
+				</setting>
+				<setting id="rpcs3_show_trophy_popups" type="string" label="30234" help="30235">
+					<level>0</level>
+					<default>enabled</default>
+					<constraints>
+						<options>
+							<option label="305">enabled</option>
+							<option label="13106">disabled</option>
+						</options>
+					</constraints>
+					<control type="list" format="string" />
+				</setting>
+				<setting id="rpcs3_dns" type="string" label="30236" help="30237">
+					<level>0</level>
+					<default>8.8.8.8</default>
+					<constraints>
+						<options>
+							<option label="30238">8.8.8.8</option>
+							<option label="30239">1.1.1.1</option>
+							<option label="30240">208.67.222.222</option>
+						</options>
+					</constraints>
+					<control type="list" format="string" />
+				</setting>
+			</group>
+		</category>
+		<category id="debug" label="30241" help="30242">
+			<group id="1">
+				<setting id="rpcs3_disable_fifo_reordering" type="string" label="30243" help="30244">
+					<level>0</level>
+					<default>disabled</default>
+					<constraints>
+						<options>
+							<option label="13106">disabled</option>
+							<option label="305">enabled</option>
+						</options>
+					</constraints>
+					<control type="list" format="string" />
+				</setting>
+				<setting id="rpcs3_disable_hw_blending" type="string" label="30245" help="30246">
+					<level>0</level>
+					<default>disabled</default>
+					<constraints>
+						<options>
+							<option label="13106">disabled</option>
+							<option label="305">enabled</option>
+						</options>
+					</constraints>
+					<control type="list" format="string" />
+				</setting>
+				<setting id="rpcs3_disable_hw_colorspace" type="string" label="30247" help="30248">
+					<level>0</level>
+					<default>disabled</default>
+					<constraints>
+						<options>
+							<option label="13106">disabled</option>
+							<option label="305">enabled</option>
+						</options>
+					</constraints>
+					<control type="list" format="string" />
+				</setting>
+				<setting id="rpcs3_disable_zcull_queries" type="string" label="30249" help="30250">
+					<level>0</level>
+					<default>disabled</default>
+					<constraints>
+						<options>
+							<option label="13106">disabled</option>
+							<option label="305">enabled</option>
+						</options>
+					</constraints>
+					<control type="list" format="string" />
+				</setting>
+				<setting id="rpcs3_cpu_blit" type="string" label="30251" help="30252">
+					<level>0</level>
+					<default>disabled</default>
+					<constraints>
+						<options>
+							<option label="13106">disabled</option>
+							<option label="305">enabled</option>
+						</options>
+					</constraints>
+					<control type="list" format="string" />
+				</setting>
+				<setting id="rpcs3_gpu_texture_scaling" type="string" label="30253" help="30254">
+					<level>0</level>
+					<default>disabled</default>
+					<constraints>
+						<options>
+							<option label="13106">disabled</option>
+							<option label="305">enabled</option>
+						</options>
+					</constraints>
+					<control type="list" format="string" />
+				</setting>
+				<setting id="rpcs3_spu_events_busy_loop" type="string" label="30255" help="30256">
+					<level>0</level>
+					<default>disabled</default>
+					<constraints>
+						<options>
+							<option label="13106">disabled</option>
+							<option label="305">enabled</option>
+						</options>
+					</constraints>
+					<control type="list" format="string" />
+				</setting>
+				<setting id="rpcs3_hook_static_funcs" type="string" label="30257" help="30258">
+					<level>0</level>
+					<default>disabled</default>
+					<constraints>
+						<options>
+							<option label="13106">disabled</option>
+							<option label="305">enabled</option>
+						</options>
+					</constraints>
+					<control type="list" format="string" />
+				</setting>
+				<setting id="rpcs3_set_daz_ftz" type="string" label="30259" help="30260">
+					<level>0</level>
+					<default>disabled</default>
+					<constraints>
+						<options>
+							<option label="13106">disabled</option>
+							<option label="305">enabled</option>
+						</options>
+					</constraints>
+					<control type="list" format="string" />
+				</setting>
+				<setting id="rpcs3_spu_cache_line_stores" type="string" label="30261" help="30262">
+					<level>0</level>
+					<default>disabled</default>
+					<constraints>
+						<options>
+							<option label="13106">disabled</option>
+							<option label="305">enabled</option>
+						</options>
+					</constraints>
+					<control type="list" format="string" />
+				</setting>
+				<setting id="rpcs3_ppu_set_fpcc" type="string" label="30263" help="30264">
+					<level>0</level>
+					<default>disabled</default>
+					<constraints>
+						<options>
+							<option label="13106">disabled</option>
+							<option label="305">enabled</option>
+						</options>
+					</constraints>
+					<control type="list" format="string" />
+				</setting>
+				<setting id="rpcs3_ppu_set_sat_bit" type="string" label="30265" help="30266">
+					<level>0</level>
+					<default>disabled</default>
+					<constraints>
+						<options>
+							<option label="13106">disabled</option>
+							<option label="305">enabled</option>
+						</options>
+					</constraints>
+					<control type="list" format="string" />
+				</setting>
+				<setting id="rpcs3_ppu_nj_mode" type="string" label="30267" help="30268">
+					<level>0</level>
+					<default>disabled</default>
+					<constraints>
+						<options>
+							<option label="13106">disabled</option>
+							<option label="305">enabled</option>
+						</options>
+					</constraints>
+					<control type="list" format="string" />
+				</setting>
+				<setting id="rpcs3_ppu_accurate_vector_nan" type="string" label="30269" help="30270">
+					<level>0</level>
+					<default>disabled</default>
+					<constraints>
+						<options>
+							<option label="13106">disabled</option>
+							<option label="305">enabled</option>
+						</options>
+					</constraints>
+					<control type="list" format="string" />
+				</setting>
+				<setting id="rpcs3_accurate_ppu_128" type="string" label="30271" help="30272">
+					<level>0</level>
+					<default>0</default>
+					<constraints>
+						<options>
+							<option label="30273">0</option>
+							<option label="30274">-1</option>
+							<option label="30199">1</option>
+							<option label="30200">2</option>
+							<option label="30201">3</option>
+							<option label="30202">4</option>
+							<option label="30203">5</option>
+							<option label="30204">6</option>
+							<option label="30215">7</option>
+							<option label="30209">8</option>
+							<option label="30275">9</option>
+							<option label="30221">10</option>
+							<option label="30276">11</option>
+							<option label="30277">12</option>
+							<option label="30278">13</option>
+							<option label="30279">14</option>
+						</options>
+					</constraints>
+					<control type="list" format="string" />
+				</setting>
+				<setting id="rpcs3_fb_aliasing_bias" type="string" label="30280" help="30281">
+					<level>0</level>
+					<default>auto</default>
+					<constraints>
+						<options>
+							<option label="30069">auto</option>
+							<option label="30282">color</option>
+							<option label="30283">depth</option>
+						</options>
+					</constraints>
+					<control type="list" format="string" />
+				</setting>
+			</group>
+		</category>
+		<category id="core" label="30284" help="30285">
+			<group id="1">
+				<setting id="rpcs3_database_override" type="string" label="30286" help="30287">
+					<level>0</level>
+					<default>enabled</default>
+					<constraints>
+						<options>
+							<option label="305">enabled</option>
+							<option label="13106">disabled</option>
+						</options>
+					</constraints>
+					<control type="list" format="string" />
+				</setting>
+				<setting id="rpcs3_perf_overlay" type="string" label="30288" help="30289">
+					<level>0</level>
+					<default>disabled</default>
+					<constraints>
+						<options>
+							<option label="13106">disabled</option>
+							<option label="30290">minimal</option>
+							<option label="30092">low</option>
+							<option label="30291">medium</option>
+							<option label="30093">high</option>
+						</options>
+					</constraints>
+					<control type="list" format="string" />
+				</setting>
+				<setting id="rpcs3_frame_pacing" type="string" label="30292" help="30293">
+					<level>0</level>
+					<default>emulator</default>
+					<constraints>
+						<options>
+							<option label="30294">frontend</option>
+							<option label="30295">emulator</option>
+						</options>
+					</constraints>
+					<control type="list" format="string" />
+				</setting>
+				<setting id="rpcs3_master_volume" type="string" label="30296" help="30297">
+					<level>0</level>
+					<default>100</default>
+					<constraints>
+						<options>
+							<option label="30298">0</option>
+							<option label="30299">10</option>
+							<option label="30300">20</option>
+							<option label="30301">30</option>
+							<option label="30302">40</option>
+							<option label="30050">50</option>
+							<option label="30303">60</option>
+							<option label="30304">70</option>
+							<option label="30305">80</option>
+							<option label="30306">90</option>
+							<option label="30052">100</option>
+						</options>
+					</constraints>
+					<control type="list" format="string" />
+				</setting>
+				<setting id="rpcs3_audio_format" type="string" label="30307" help="30308">
+					<level>0</level>
+					<default>stereo</default>
+					<constraints>
+						<options>
+							<option label="30309">stereo</option>
+							<option label="30310">surround_5_1</option>
+							<option label="30311">surround_7_1</option>
+						</options>
+					</constraints>
+					<control type="list" format="string" />
+				</setting>
+				<setting id="rpcs3_disk_cache_size" type="string" label="30312" help="30313">
+					<level>0</level>
+					<default>1gb</default>
+					<constraints>
+						<options>
+							<option label="30314">unlimited</option>
+							<option label="30315">1gb</option>
+							<option label="30316">5gb</option>
+							<option label="30317">wipe</option>
+						</options>
+					</constraints>
+					<control type="list" format="string" />
+				</setting>
+				<setting id="rpcs3_language" type="string" label="30318" help="30319">
+					<level>0</level>
+					<default>english</default>
+					<constraints>
+						<options>
+							<option label="30320">english</option>
+							<option label="30321">japanese</option>
+							<option label="30322">french</option>
+							<option label="30323">spanish</option>
+							<option label="30324">german</option>
+							<option label="30325">italian</option>
+							<option label="30326">dutch</option>
+							<option label="30327">portuguese</option>
+							<option label="30328">russian</option>
+							<option label="30329">korean</option>
+							<option label="30330">chinese_trad</option>
+							<option label="30331">chinese_simp</option>
+						</options>
+					</constraints>
+					<control type="list" format="string" />
+				</setting>
+				<setting id="rpcs3_license_area" type="string" label="30332" help="30333">
+					<level>0</level>
+					<default>usa</default>
+					<constraints>
+						<options>
+							<option label="30334">usa</option>
+							<option label="30335">eu</option>
+							<option label="30336">jp</option>
+							<option label="30337">hk</option>
+							<option label="30338">kr</option>
+							<option label="30339">cn</option>
+						</options>
+					</constraints>
+					<control type="list" format="string" />
+				</setting>
+				<setting id="rpcs3_enter_button" type="string" label="30340" help="30341">
+					<level>0</level>
+					<default>cross</default>
+					<constraints>
+						<options>
+							<option label="30342">cross</option>
+							<option label="30343">circle</option>
+						</options>
+					</constraints>
+					<control type="list" format="string" />
+				</setting>
+				<setting id="rpcs3_usio_mode" type="string" label="30344" help="30345">
+					<level>0</level>
+					<default>fighting</default>
+					<constraints>
+						<options>
+							<option label="30346">fighting</option>
+							<option label="30347">shooter</option>
+						</options>
+					</constraints>
+					<control type="list" format="string" />
+				</setting>
+				<setting id="rpcs3_show_ppu_compilation_hint" type="string" label="30348" help="30349">
+					<level>0</level>
+					<default>disabled</default>
+					<constraints>
+						<options>
+							<option label="13106">disabled</option>
+							<option label="305">enabled</option>
+						</options>
+					</constraints>
+					<control type="list" format="string" />
+				</setting>
+				<setting id="rpcs3_show_shader_compilation_hint" type="string" label="30350" help="30351">
+					<level>0</level>
+					<default>disabled</default>
+					<constraints>
+						<options>
+							<option label="13106">disabled</option>
+							<option label="305">enabled</option>
+						</options>
+					</constraints>
+					<control type="list" format="string" />
+				</setting>
+				<setting id="rpcs3_silence_all_logs" type="string" label="30352" help="30353">
+					<level>0</level>
+					<default>disabled</default>
+					<constraints>
+						<options>
+							<option label="13106">disabled</option>
+							<option label="305">enabled</option>
+						</options>
+					</constraints>
+					<control type="list" format="string" />
+				</setting>
+				<setting id="rpcs3_spu_cache" type="string" label="30354" help="30355">
+					<level>0</level>
+					<visible>false</visible>
+					<default>enabled</default>
+					<constraints>
+						<options>
+							<option label="305">enabled</option>
+							<option label="13106">disabled</option>
+						</options>
+					</constraints>
+					<control type="list" format="string" />
+				</setting>
+				<setting id="rpcs3_accurate_dfma" type="string" label="30356" help="30357">
+					<level>0</level>
+					<visible>false</visible>
+					<default>enabled</default>
+					<constraints>
+						<options>
+							<option label="305">enabled</option>
+							<option label="13106">disabled</option>
+						</options>
+					</constraints>
+					<control type="list" format="string" />
+				</setting>
+				<setting id="rpcs3_spu_verification" type="string" label="30358" help="30359">
+					<level>0</level>
+					<visible>false</visible>
+					<default>enabled</default>
+					<constraints>
+						<options>
+							<option label="13106">disabled</option>
+							<option label="305">enabled</option>
+						</options>
+					</constraints>
+					<control type="list" format="string" />
+				</setting>
+				<setting id="rpcs3_driver_recovery_timeout" type="string" label="30360" help="30361">
+					<level>0</level>
+					<visible>false</visible>
+					<default>1000</default>
+					<constraints>
+						<options>
+							<option label="30362">0</option>
+							<option label="30363">1000</option>
+							<option label="30364">2000</option>
+							<option label="30365">5000</option>
+							<option label="30366">10000</option>
+						</options>
+					</constraints>
+					<control type="list" format="string" />
+				</setting>
+				<setting id="rpcs3_mfc_shuffling" type="string" label="30367" help="30368">
+					<level>0</level>
+					<visible>false</visible>
+					<default>disabled</default>
+					<constraints>
+						<options>
+							<option label="13106">disabled</option>
+							<option label="305">enabled</option>
+						</options>
+					</constraints>
+					<control type="list" format="string" />
+				</setting>
+				<setting id="rpcs3_spu_delay_penalty" type="string" label="30369" help="30370">
+					<level>0</level>
+					<visible>false</visible>
+					<default>3</default>
+					<constraints>
+						<options>
+							<option label="30371">0</option>
+							<option label="30199">1</option>
+							<option label="30200">2</option>
+							<option label="30372">3</option>
+							<option label="30202">4</option>
+							<option label="30203">5</option>
+						</options>
+					</constraints>
+					<control type="list" format="string" />
+				</setting>
+				<setting id="rpcs3_vblank_ntsc" type="string" label="30373" help="30374">
+					<level>0</level>
+					<visible>false</visible>
+					<default>enabled</default>
+					<constraints>
+						<options>
+							<option label="305">enabled</option>
+							<option label="13106">disabled</option>
+						</options>
+					</constraints>
+					<control type="list" format="string" />
+				</setting>
+				<setting id="rpcs3_hle_lwmutex" type="string" label="30375" help="30376">
+					<level>0</level>
+					<visible>false</visible>
+					<default>disabled</default>
+					<constraints>
+						<options>
+							<option label="13106">disabled</option>
+							<option label="305">enabled</option>
+						</options>
+					</constraints>
+					<control type="list" format="string" />
+				</setting>
+			</group>
+		</category>
+	</section>
+</settings>

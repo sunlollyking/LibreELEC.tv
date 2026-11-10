@@ -15,3 +15,1509 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Language: en_GB\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+# Empty string with ID 30000
+
+msgctxt "#30001"
+msgid "CPU"
+msgstr ""
+
+msgctxt "#30002"
+msgid "PPU and SPU decoders, accuracy and CPU emulation options."
+msgstr ""
+
+msgctxt "#30003"
+msgid "PPU Decoder"
+msgstr ""
+
+msgctxt "#30004"
+msgid "PPU (main CPU) decoder. LLVM Recompiler is fastest."
+msgstr ""
+
+msgctxt "#30005"
+msgid "Recompiler (LLVM)"
+msgstr ""
+
+msgctxt "#30006"
+msgid "Interpreter (static)"
+msgstr ""
+
+msgctxt "#30007"
+msgid "SPU Decoder"
+msgstr ""
+
+msgctxt "#30008"
+msgid "SPU (co-processor) decoder. LLVM Recompiler is fastest."
+msgstr ""
+
+msgctxt "#30009"
+msgid "Recompiler (ASMJIT)"
+msgstr ""
+
+msgctxt "#30010"
+msgid "Interpreter (dynamic)"
+msgstr ""
+
+msgctxt "#30011"
+msgid "SPU XFloat Accuracy"
+msgstr ""
+
+msgctxt "#30012"
+msgid "SPU floating-point accuracy level."
+msgstr ""
+
+msgctxt "#30013"
+msgid "Accurate"
+msgstr ""
+
+msgctxt "#30014"
+msgid "Approximate"
+msgstr ""
+
+msgctxt "#30015"
+msgid "Relaxed"
+msgstr ""
+
+msgctxt "#30016"
+msgid "Inaccurate"
+msgstr ""
+
+msgctxt "#30017"
+msgid "SPU Block Size"
+msgstr ""
+
+msgctxt "#30018"
+msgid "SPU recompiler block size. Mega/Giga may improve performance."
+msgstr ""
+
+msgctxt "#30019"
+msgid "Safe"
+msgstr ""
+
+msgctxt "#30020"
+msgid "Mega"
+msgstr ""
+
+msgctxt "#30021"
+msgid "Giga"
+msgstr ""
+
+msgctxt "#30022"
+msgid "Accurate RSX Reservation Access"
+msgstr ""
+
+msgctxt "#30023"
+msgid "Synchronize RSX memory accesses with the reservations of the CPU threads. Needed by a few games, slower."
+msgstr ""
+
+msgctxt "#30024"
+msgid "Accurate SPU DMA"
+msgstr ""
+
+msgctxt "#30025"
+msgid "Accurately processes SPU DMA operations, as in RPCS3. Fixes a few games, at a large cost in speed."
+msgstr ""
+
+msgctxt "#30026"
+msgid "Accurate SPU Reservations"
+msgstr ""
+
+msgctxt "#30027"
+msgid "Accurately processes SPU reservations, as in RPCS3 (on by default there too). Turning it off can make some games faster and break others."
+msgstr ""
+
+msgctxt "#30028"
+msgid "Debug Console Mode"
+msgstr ""
+
+msgctxt "#30029"
+msgid "Emulates a PS3 debug console (more memory and debug features) instead of a retail one. Only for software that needs it; not recommended otherwise."
+msgstr ""
+
+msgctxt "#30030"
+msgid "Delay Each Odd MFC Command"
+msgstr ""
+
+msgctxt "#30031"
+msgid "Delays every second MFC (SPU DMA) command, as in RPCS3. Only for the few games that need it."
+msgstr ""
+
+msgctxt "#30032"
+msgid "Disable SPU GETLLAR Spin Optimization"
+msgstr ""
+
+msgctxt "#30033"
+msgid "Turn off the detection of SPU busy-wait loops on GETLLAR. A few games need it off."
+msgstr ""
+
+msgctxt "#30034"
+msgid "Emulate HDD Read Speed"
+msgstr ""
+
+msgctxt "#30035"
+msgid "Reads from the emulated hard disk at the speed of the PS3's, for games that break when loading is instant."
+msgstr ""
+
+msgctxt "#30036"
+msgid "Emulate BD-ROM Read Speed"
+msgstr ""
+
+msgctxt "#30037"
+msgid "Reads from the disc at the PS3 drive's 2x speed (9 MB/s), for games that stream movies from disc and show corrupted video when loading is instant. Loading takes longer."
+msgstr ""
+
+msgctxt "#30038"
+msgid "PPU Reservation Priority"
+msgstr ""
+
+msgctxt "#30039"
+msgid "Gives PPU reservations priority over the SPUs', as in RPCS3. Can help games that stall on them."
+msgstr ""
+
+msgctxt "#30040"
+msgid "PPU/SPU LLVM Precompilation"
+msgstr ""
+
+msgctxt "#30041"
+msgid "Precompile PPU modules at boot for faster subsequent loads."
+msgstr ""
+
+msgctxt "#30042"
+msgid "Sleep Timers Accuracy"
+msgstr ""
+
+msgctxt "#30043"
+msgid "Sleep timers accuracy level."
+msgstr ""
+
+msgctxt "#30044"
+msgid "Automatic"
+msgstr ""
+
+msgctxt "#30045"
+msgid "As Host"
+msgstr ""
+
+msgctxt "#30046"
+msgid "Usleep Only"
+msgstr ""
+
+msgctxt "#30047"
+msgid "All Timers"
+msgstr ""
+
+msgctxt "#30048"
+msgid "Clocks Scale"
+msgstr ""
+
+msgctxt "#30049"
+msgid "Scale PS3 clock speed percentage."
+msgstr ""
+
+msgctxt "#30050"
+msgid "50%"
+msgstr ""
+
+msgctxt "#30051"
+msgid "75%"
+msgstr ""
+
+msgctxt "#30052"
+msgid "100%"
+msgstr ""
+
+msgctxt "#30053"
+msgid "150%"
+msgstr ""
+
+msgctxt "#30054"
+msgid "200%"
+msgstr ""
+
+msgctxt "#30055"
+msgid "300%"
+msgstr ""
+
+msgctxt "#30056"
+msgid "GPU"
+msgstr ""
+
+msgctxt "#30057"
+msgid "Renderer, resolution, shaders and graphics accuracy options."
+msgstr ""
+
+msgctxt "#30058"
+msgid "Renderer"
+msgstr ""
+
+msgctxt "#30059"
+msgid "Vulkan renders on the frontend's Vulkan device and hands it each finished frame as an image; when the frontend is not running its Vulkan video driver, the frame is copied back through memory instead. OpenGL draws straight into the frontend's OpenGL context. (Restart required)"
+msgstr ""
+
+msgctxt "#30060"
+msgid "OpenGL"
+msgstr ""
+
+msgctxt "#30061"
+msgid "Vulkan"
+msgstr ""
+
+msgctxt "#30062"
+msgid "Null (No Video)"
+msgstr ""
+
+msgctxt "#30063"
+msgid "Aspect Ratio"
+msgstr ""
+
+msgctxt "#30064"
+msgid "Changes output aspect ratio. Only some PS3 games support native 4:3. (Restart required)"
+msgstr ""
+
+msgctxt "#30065"
+msgid "16:9 (default)"
+msgstr ""
+
+msgctxt "#30066"
+msgid "4:3"
+msgstr ""
+
+msgctxt "#30067"
+msgid "Frame Limit"
+msgstr ""
+
+msgctxt "#30068"
+msgid "Highest frame rate the game may run at. Auto is the VBlank Frequency, as in RPCS3; PS3 Native paces flips the way the PS3 does; Off lets games that do not wait for the PS3's refresh themselves run too fast."
+msgstr ""
+
+msgctxt "#30069"
+msgid "Auto"
+msgstr ""
+
+msgctxt "#30070"
+msgid "PS3 Native"
+msgstr ""
+
+msgctxt "#30071"
+msgid "Off"
+msgstr ""
+
+msgctxt "#30072"
+msgid "30 FPS"
+msgstr ""
+
+msgctxt "#30073"
+msgid "50 FPS"
+msgstr ""
+
+msgctxt "#30074"
+msgid "60 FPS"
+msgstr ""
+
+msgctxt "#30075"
+msgid "120 FPS"
+msgstr ""
+
+msgctxt "#30076"
+msgid "144 FPS"
+msgstr ""
+
+msgctxt "#30077"
+msgid "240 FPS"
+msgstr ""
+
+msgctxt "#30078"
+msgid "Anisotropic Filtering"
+msgstr ""
+
+msgctxt "#30079"
+msgid "Texture filtering quality."
+msgstr ""
+
+msgctxt "#30080"
+msgid "2x"
+msgstr ""
+
+msgctxt "#30081"
+msgid "4x"
+msgstr ""
+
+msgctxt "#30082"
+msgid "8x"
+msgstr ""
+
+msgctxt "#30083"
+msgid "16x"
+msgstr ""
+
+msgctxt "#30084"
+msgid "Anti-Aliasing"
+msgstr ""
+
+msgctxt "#30085"
+msgid "Multi-sample anti-aliasing where the game asks for it, as in RPCS3."
+msgstr ""
+
+msgctxt "#30086"
+msgid "ZCULL Accuracy"
+msgstr ""
+
+msgctxt "#30087"
+msgid "How exactly occlusion queries are answered, as in RPCS3. Precise is correct and the default there; Approximate and Relaxed are faster, and can break effects such as lens flares. Relaxed is worth trying on phones."
+msgstr ""
+
+msgctxt "#30088"
+msgid "Precise (Default)"
+msgstr ""
+
+msgctxt "#30089"
+msgid "Relaxed (Fastest)"
+msgstr ""
+
+msgctxt "#30090"
+msgid "Shader Quality"
+msgstr ""
+
+msgctxt "#30091"
+msgid "Precision of the shaders RPCS3 generates. Low is fastest, Ultra most accurate."
+msgstr ""
+
+msgctxt "#30092"
+msgid "Low"
+msgstr ""
+
+msgctxt "#30093"
+msgid "High"
+msgstr ""
+
+msgctxt "#30094"
+msgid "Ultra"
+msgstr ""
+
+msgctxt "#30095"
+msgid "Default Resolution"
+msgstr ""
+
+msgctxt "#30096"
+msgid "DO NOT CHANGE THIS OPTION TO UPSCALE THE GAME. Use Resolution Scale instead. Only use 1080p if the game supports it. Rarely due to emulation bugs some games will only render at resolutions below 720p."
+msgstr ""
+
+msgctxt "#30097"
+msgid "720p (Default)"
+msgstr ""
+
+msgctxt "#30098"
+msgid "1080p"
+msgstr ""
+
+msgctxt "#30099"
+msgid "480p"
+msgstr ""
+
+msgctxt "#30100"
+msgid "576p"
+msgstr ""
+
+msgctxt "#30101"
+msgid "Resolution Scale"
+msgstr ""
+
+msgctxt "#30102"
+msgid "Internal rendering resolution as a percentage of the game's own. 200% of a 720p game is 2560x1440, of a 1080p one 3840x2160."
+msgstr ""
+
+msgctxt "#30103"
+msgid "25%"
+msgstr ""
+
+msgctxt "#30104"
+msgid "66%"
+msgstr ""
+
+msgctxt "#30105"
+msgid "100% (Native)"
+msgstr ""
+
+msgctxt "#30106"
+msgid "250%"
+msgstr ""
+
+msgctxt "#30107"
+msgid "400%"
+msgstr ""
+
+msgctxt "#30108"
+msgid "500%"
+msgstr ""
+
+msgctxt "#30109"
+msgid "600%"
+msgstr ""
+
+msgctxt "#30110"
+msgid "700%"
+msgstr ""
+
+msgctxt "#30111"
+msgid "800%"
+msgstr ""
+
+msgctxt "#30112"
+msgid "Resolution Scale Threshold"
+msgstr ""
+
+msgctxt "#30113"
+msgid "Render targets smaller than this are not scaled. Some games need a different value for the scaling to look right."
+msgstr ""
+
+msgctxt "#30114"
+msgid "1x1"
+msgstr ""
+
+msgctxt "#30115"
+msgid "16x16 (Default)"
+msgstr ""
+
+msgctxt "#30116"
+msgid "64x64"
+msgstr ""
+
+msgctxt "#30117"
+msgid "128x128"
+msgstr ""
+
+msgctxt "#30118"
+msgid "160x160"
+msgstr ""
+
+msgctxt "#30119"
+msgid "256x256"
+msgstr ""
+
+msgctxt "#30120"
+msgid "320x320"
+msgstr ""
+
+msgctxt "#30121"
+msgid "512x512"
+msgstr ""
+
+msgctxt "#30122"
+msgid "592x592"
+msgstr ""
+
+msgctxt "#30123"
+msgid "640x640"
+msgstr ""
+
+msgctxt "#30124"
+msgid "1024x1024"
+msgstr ""
+
+msgctxt "#30125"
+msgid "Shader Mode"
+msgstr ""
+
+msgctxt "#30126"
+msgid "How shaders are compiled. Async compiles in the background but the frame that first needs a pipeline waits for it, which is what a long freeze on a new scene usually is. Async with Shader Interpreter draws that frame through the interpreter instead and swaps in the compiled shader when it is ready: no freeze, lower speed while it catches up."
+msgstr ""
+
+msgctxt "#30127"
+msgid "Async (Recommended)"
+msgstr ""
+
+msgctxt "#30128"
+msgid "Async with Shader Interpreter (no stalls)"
+msgstr ""
+
+msgctxt "#30129"
+msgid "Async with Recompiler"
+msgstr ""
+
+msgctxt "#30130"
+msgid "Shader Interpreter only"
+msgstr ""
+
+msgctxt "#30131"
+msgid "Synchronous"
+msgstr ""
+
+msgctxt "#30132"
+msgid "Write Color Buffers"
+msgstr ""
+
+msgctxt "#30133"
+msgid "Write color buffers to main memory. Fixes some effects."
+msgstr ""
+
+msgctxt "#30134"
+msgid "Strict Rendering Mode"
+msgstr ""
+
+msgctxt "#30135"
+msgid "Enable strict rendering for accuracy."
+msgstr ""
+
+msgctxt "#30136"
+msgid "Stretch to Display Area"
+msgstr ""
+
+msgctxt "#30137"
+msgid "Stretch game output to fill the display, reported to RetroArch at this aspect ratio: pick the display's for games patched to a wider one (21:9, 32:9). Needs RetroArch's aspect ratio set to Core Provided."
+msgstr ""
+
+msgctxt "#30138"
+msgid "16:9"
+msgstr ""
+
+msgctxt "#30139"
+msgid "16:10"
+msgstr ""
+
+msgctxt "#30140"
+msgid "21:9"
+msgstr ""
+
+msgctxt "#30141"
+msgid "32:9"
+msgstr ""
+
+msgctxt "#30142"
+msgid "5:4"
+msgstr ""
+
+msgctxt "#30143"
+msgid "Multithreaded RSX"
+msgstr ""
+
+msgctxt "#30144"
+msgid "Moves part of the RSX work to a second thread. Off by default, as in RPCS3; it can help on CPUs with few fast cores, phones included."
+msgstr ""
+
+msgctxt "#30145"
+msgid "Asynchronous Texture Streaming"
+msgstr ""
+
+msgctxt "#30146"
+msgid "Enable asynchronous texture streaming."
+msgstr ""
+
+msgctxt "#30147"
+msgid "Allow Host GPU Labels"
+msgstr ""
+
+msgctxt "#30148"
+msgid "Lets the host GPU signal RSX labels itself instead of the CPU waiting on them. Faster in some games, unstable in others."
+msgstr ""
+
+msgctxt "#30149"
+msgid "Disable Blit Engine Upscaling"
+msgstr ""
+
+msgctxt "#30150"
+msgid "As in RPCS3: copies made by the RSX blit engine are left at the game's own resolution instead of the Resolution Scale. Fixes some games' effects at higher scales, at the cost of a blurrier picture where they are used."
+msgstr ""
+
+msgctxt "#30151"
+msgid "Disable Vertex Cache"
+msgstr ""
+
+msgctxt "#30152"
+msgid "Turn off the cache of vertex data, as in RPCS3. Slower; only for games that show broken or stale geometry with it."
+msgstr ""
+
+msgctxt "#30153"
+msgid "Emulate Special Depth Comparison"
+msgstr ""
+
+msgctxt "#30154"
+msgid "Emulates the depth comparison modes the PS3 has and the host GPU lacks. Fixes some shadows, at a cost in speed."
+msgstr ""
+
+msgctxt "#30155"
+msgid "Force Hardware MSAA Resolve"
+msgstr ""
+
+msgctxt "#30156"
+msgid "Resolves anti-aliased surfaces on the GPU's own hardware instead of a shader. Faster, but some games show artifacts with it."
+msgstr ""
+
+msgctxt "#30157"
+msgid "Handle RSX Memory Tiling"
+msgstr ""
+
+msgctxt "#30158"
+msgid "Emulates the RSX's tiled memory, for games that read their tiled surfaces back. Costs speed."
+msgstr ""
+
+msgctxt "#30159"
+msgid "Read Depth Buffers"
+msgstr ""
+
+msgctxt "#30160"
+msgid "Read depth buffers from main memory."
+msgstr ""
+
+msgctxt "#30161"
+msgid "Read Color Buffers"
+msgstr ""
+
+msgctxt "#30162"
+msgid "Read color buffers from main memory."
+msgstr ""
+
+msgctxt "#30163"
+msgid "Use Re-BAR Memory for GPU Uploads"
+msgstr ""
+
+msgctxt "#30164"
+msgid "Uploads to the GPU through resizable BAR memory where the Vulkan driver offers it, as in RPCS3 (on by default there too). Turn off if it causes problems."
+msgstr ""
+
+msgctxt "#30165"
+msgid "Write Depth Buffers"
+msgstr ""
+
+msgctxt "#30166"
+msgid "Write depth buffers to main memory."
+msgstr ""
+
+msgctxt "#30167"
+msgid "RSX FIFO Accuracy"
+msgstr ""
+
+msgctxt "#30168"
+msgid "RSX FIFO command accuracy level."
+msgstr ""
+
+msgctxt "#30169"
+msgid "Fast"
+msgstr ""
+
+msgctxt "#30170"
+msgid "Atomic"
+msgstr ""
+
+msgctxt "#30171"
+msgid "Ordered & Atomic"
+msgstr ""
+
+msgctxt "#30172"
+msgid "PS3"
+msgstr ""
+
+msgctxt "#30173"
+msgid "Driver Wake-Up Delay"
+msgstr ""
+
+msgctxt "#30174"
+msgid "Driver wake-up delay in microseconds. 0 by default, as in RPCS3; raise it only when a game needs it."
+msgstr ""
+
+msgctxt "#30175"
+msgid "0 (Default)"
+msgstr ""
+
+msgctxt "#30176"
+msgid "20"
+msgstr ""
+
+msgctxt "#30177"
+msgid "50"
+msgstr ""
+
+msgctxt "#30178"
+msgid "100"
+msgstr ""
+
+msgctxt "#30179"
+msgid "200"
+msgstr ""
+
+msgctxt "#30180"
+msgid "400"
+msgstr ""
+
+msgctxt "#30181"
+msgid "800"
+msgstr ""
+
+msgctxt "#30182"
+msgid "VBlank Frequency"
+msgstr ""
+
+msgctxt "#30183"
+msgid "The PS3's refresh rate in Hz. It is also the frame rate the core asks RetroArch for, which takes effect when content is loaded; games that can run above 60 FPS need a display that refreshes that fast. \"From List\" doubles Vblank rate for supported games listed in vblank_unlock.txt found in system/rpcs3. You may need to apply per-game patches."
+msgstr ""
+
+msgctxt "#30184"
+msgid "50 Hz (PAL)"
+msgstr ""
+
+msgctxt "#30185"
+msgid "60 Hz (NTSC)"
+msgstr ""
+
+msgctxt "#30186"
+msgid "120 Hz"
+msgstr ""
+
+msgctxt "#30187"
+msgid "144 Hz"
+msgstr ""
+
+msgctxt "#30188"
+msgid "240 Hz"
+msgstr ""
+
+msgctxt "#30189"
+msgid "From List"
+msgstr ""
+
+msgctxt "#30190"
+msgid "Scheduling"
+msgstr ""
+
+msgctxt "#30191"
+msgid "How the emulator's threads are scheduled, and how many it runs and compiles with: what a CPU with few cores, or a phone, may want changed."
+msgstr ""
+
+msgctxt "#30192"
+msgid "Thread Scheduler"
+msgstr ""
+
+msgctxt "#30193"
+msgid "Who places the emulator's threads on the CPU's cores, as in RPCS3. Operating System leaves it to the system; the RPCS3 schedulers pin PPU, SPU and RSX threads to cores of their own, laid out for a few desktop CPUs. Has no effect on Android, where the core cannot pin threads."
+msgstr ""
+
+msgctxt "#30194"
+msgid "Operating System"
+msgstr ""
+
+msgctxt "#30195"
+msgid "RPCS3 Scheduler"
+msgstr ""
+
+msgctxt "#30196"
+msgid "RPCS3 Alternative Scheduler"
+msgstr ""
+
+msgctxt "#30197"
+msgid "Preferred SPU Threads"
+msgstr ""
+
+msgctxt "#30198"
+msgid "Number of SPU threads. Auto recommended."
+msgstr ""
+
+msgctxt "#30199"
+msgid "1"
+msgstr ""
+
+msgctxt "#30200"
+msgid "2"
+msgstr ""
+
+msgctxt "#30201"
+msgid "3"
+msgstr ""
+
+msgctxt "#30202"
+msgid "4"
+msgstr ""
+
+msgctxt "#30203"
+msgid "5"
+msgstr ""
+
+msgctxt "#30204"
+msgid "6"
+msgstr ""
+
+msgctxt "#30205"
+msgid "Enable SPU Loop Detection"
+msgstr ""
+
+msgctxt "#30206"
+msgid "Detects SPU loops that only wait and skips through them. Faster, but some games break with it; off by default, as in RPCS3. Worth turning on for speed on phones."
+msgstr ""
+
+msgctxt "#30207"
+msgid "PPU/SPU LLVM Compiler Threads"
+msgstr ""
+
+msgctxt "#30208"
+msgid "How many threads compile PPU and SPU code with LLVM, as RPCS3's Max LLVM Compile Threads. Auto uses every core; fewer keeps a phone cooler and uses less memory while a game is compiled, and makes it take longer. On ARM CPUs with efficiency cores (most phones, some ARM laptops) the default leaves those out."
+msgstr ""
+
+msgctxt "#30209"
+msgid "8"
+msgstr ""
+
+msgctxt "#30210"
+msgid "Shader Compiler Threads"
+msgstr ""
+
+msgctxt "#30211"
+msgid "How many threads compile shaders. Auto lets RPCS3 decide from the CPU it sees. On ARM CPUs with efficiency cores (most phones, some ARM laptops) the default leaves those out."
+msgstr ""
+
+msgctxt "#30212"
+msgid "PPU Thread Count"
+msgstr ""
+
+msgctxt "#30213"
+msgid "How many PPU threads run at once, as in RPCS3. 2 is the default and what nearly every game wants."
+msgstr ""
+
+msgctxt "#30214"
+msgid "2 (Default)"
+msgstr ""
+
+msgctxt "#30215"
+msgid "7"
+msgstr ""
+
+msgctxt "#30216"
+msgid "Maximum Number of SPURS Threads"
+msgstr ""
+
+msgctxt "#30217"
+msgid "Maximum SPURS thread count. Lower may improve performance."
+msgstr ""
+
+msgctxt "#30218"
+msgid "Max Power Saving CPU-Preemptions"
+msgstr ""
+
+msgctxt "#30219"
+msgid "How many times a frame RPCS3 may pause the CPU threads to save power, as in RPCS3. 0 turns it off."
+msgstr ""
+
+msgctxt "#30220"
+msgid "0 (Disabled)"
+msgstr ""
+
+msgctxt "#30221"
+msgid "10"
+msgstr ""
+
+msgctxt "#30222"
+msgid "Network"
+msgstr ""
+
+msgctxt "#30223"
+msgid "Network, PSN and RPCN options."
+msgstr ""
+
+msgctxt "#30224"
+msgid "Network Enabled"
+msgstr ""
+
+msgctxt "#30225"
+msgid "Lets games reach the internet. Takes effect when content is loaded."
+msgstr ""
+
+msgctxt "#30226"
+msgid "PSN Status"
+msgstr ""
+
+msgctxt "#30227"
+msgid "What games see of the PlayStation Network. Simulated makes them believe they are signed in, which some need to get past their menus; RPCN connects to RPCS3's own server and needs Network Enabled and an RPCN account: the core cannot create one, so set it up in standalone RPCS3 and copy its rpcn.yml into system/rpcs3/ (system/rpcs3/config/ on Windows). Takes effect when content is loaded."
+msgstr ""
+
+msgctxt "#30228"
+msgid "Simulated"
+msgstr ""
+
+msgctxt "#30229"
+msgid "RPCN"
+msgstr ""
+
+msgctxt "#30230"
+msgid "UPnP"
+msgstr ""
+
+msgctxt "#30231"
+msgid "Enable UPnP for automatic port forwarding."
+msgstr ""
+
+msgctxt "#30232"
+msgid "Show RPCN Popups"
+msgstr ""
+
+msgctxt "#30233"
+msgid "Show RPCN notification popups."
+msgstr ""
+
+msgctxt "#30234"
+msgid "Show Trophy Popups"
+msgstr ""
+
+msgctxt "#30235"
+msgid "Show trophy unlock notifications."
+msgstr ""
+
+msgctxt "#30236"
+msgid "DNS Server"
+msgstr ""
+
+msgctxt "#30237"
+msgid "DNS server address."
+msgstr ""
+
+msgctxt "#30238"
+msgid "Google DNS"
+msgstr ""
+
+msgctxt "#30239"
+msgid "Cloudflare DNS"
+msgstr ""
+
+msgctxt "#30240"
+msgid "OpenDNS"
+msgstr ""
+
+msgctxt "#30241"
+msgid "Debug"
+msgstr ""
+
+msgctxt "#30242"
+msgid "Options from RPCS3's Debug tab: for diagnosing problems, rarely for playing."
+msgstr ""
+
+msgctxt "#30243"
+msgid "Disable FIFO Reordering"
+msgstr ""
+
+msgctxt "#30244"
+msgid "Turns off the reordering of RSX commands RPCS3 does for speed. For debugging."
+msgstr ""
+
+msgctxt "#30245"
+msgid "Disable Hardware Blending"
+msgstr ""
+
+msgctxt "#30246"
+msgid "Forces programmable blending on renderers that support it, as in RPCS3's Debug tab. Purely a debugging option."
+msgstr ""
+
+msgctxt "#30247"
+msgid "Disable Hardware ColorSpace Remapping"
+msgstr ""
+
+msgctxt "#30248"
+msgid "Remaps texture colour spaces in shaders instead of in the GPU's hardware. For debugging."
+msgstr ""
+
+msgctxt "#30249"
+msgid "Disable ZCull Occlusion Queries"
+msgstr ""
+
+msgctxt "#30250"
+msgid "Report occlusion queries as passed without running them. Faster; breaks games that rely on them (lens flares, visibility)."
+msgstr ""
+
+msgctxt "#30251"
+msgid "Force CPU Blit Emulation"
+msgstr ""
+
+msgctxt "#30252"
+msgid "Force CPU blit emulation for certain effects."
+msgstr ""
+
+msgctxt "#30253"
+msgid "Force GPU Texture Scaling"
+msgstr ""
+
+msgctxt "#30254"
+msgid "Scales textures on the GPU instead of the CPU. For debugging; can break games."
+msgstr ""
+
+msgctxt "#30255"
+msgid "Enable SPU Events Busy Loop"
+msgstr ""
+
+msgctxt "#30256"
+msgid "Lets SPU threads spin while they wait for events instead of sleeping. Can help a few games, costs CPU time."
+msgstr ""
+
+msgctxt "#30257"
+msgid "Hook Static Functions"
+msgstr ""
+
+msgctxt "#30258"
+msgid "Hook static functions for HLE."
+msgstr ""
+
+msgctxt "#30259"
+msgid "PPU Set DAZ and FTZ"
+msgstr ""
+
+msgctxt "#30260"
+msgid "Sets the denormals-are-zero and flush-to-zero CPU flags for the PPU. For debugging."
+msgstr ""
+
+msgctxt "#30261"
+msgid "Accurate PPU/SPU Cache Line Stores"
+msgstr ""
+
+msgctxt "#30262"
+msgid "Enable accurate cache line stores."
+msgstr ""
+
+msgctxt "#30263"
+msgid "Accurate PPU Float Condition Control"
+msgstr ""
+
+msgctxt "#30264"
+msgid "Accurately set PPU FPCC bits."
+msgstr ""
+
+msgctxt "#30265"
+msgid "Accurate PPU Saturation Bit"
+msgstr ""
+
+msgctxt "#30266"
+msgid "Accurately set PPU saturation bit."
+msgstr ""
+
+msgctxt "#30267"
+msgid "Accurate PPU Non-Java Mode"
+msgstr ""
+
+msgctxt "#30268"
+msgid "PPU non-Java mode handling."
+msgstr ""
+
+msgctxt "#30269"
+msgid "Accurate PPU Vector NaN Handling"
+msgstr ""
+
+msgctxt "#30270"
+msgid "More accurate vector NaN handling."
+msgstr ""
+
+msgctxt "#30271"
+msgid "Accurate PPU 128 Reservations"
+msgstr ""
+
+msgctxt "#30272"
+msgid "Processes 128-byte PPU reservation operations accurately: never, always, or for loops up to the given length. For debugging."
+msgstr ""
+
+msgctxt "#30273"
+msgid "Never (Default)"
+msgstr ""
+
+msgctxt "#30274"
+msgid "Always"
+msgstr ""
+
+msgctxt "#30275"
+msgid "9"
+msgstr ""
+
+msgctxt "#30276"
+msgid "11"
+msgstr ""
+
+msgctxt "#30277"
+msgid "12"
+msgstr ""
+
+msgctxt "#30278"
+msgid "13"
+msgstr ""
+
+msgctxt "#30279"
+msgid "14"
+msgstr ""
+
+msgctxt "#30280"
+msgid "Framebuffer Aliasing Heuristic Bias"
+msgstr ""
+
+msgctxt "#30281"
+msgid "Which way RPCS3 decides a surface used as both colour and depth. For debugging."
+msgstr ""
+
+msgctxt "#30282"
+msgid "Prefer Color"
+msgstr ""
+
+msgctxt "#30283"
+msgid "Prefer Depth"
+msgstr ""
+
+msgctxt "#30284"
+msgid "Core"
+msgstr ""
+
+msgctxt "#30285"
+msgid "Language, region, overlay, frame pacing, volume and other options of the core itself."
+msgstr ""
+
+msgctxt "#30286"
+msgid "Database Settings Override"
+msgstr ""
+
+msgctxt "#30287"
+msgid "Improves compatibility by automatically applying game-specific fixes: the settings RPCS3's database has for the game (as standalone RPCS3 applies them) take priority over the core options, global or per game, for the settings they name; every other setting stays as you set it. Off applies none of them. Takes effect the next time a game is started."
+msgstr ""
+
+msgctxt "#30288"
+msgid "Performance Overlay"
+msgstr ""
+
+msgctxt "#30289"
+msgid "RPCS3's own performance overlay, drawn over the game: the game's frame rate as RPCS3 counts it, and at higher detail levels frame times and CPU and GPU load."
+msgstr ""
+
+msgctxt "#30290"
+msgid "Frame rate only"
+msgstr ""
+
+msgctxt "#30291"
+msgid "Medium"
+msgstr ""
+
+msgctxt "#30292"
+msgid "Frame Pacing"
+msgstr ""
+
+msgctxt "#30293"
+msgid "What the game's frames are timed by. Emulator clock is RPCS3's own timer, as in standalone RPCS3. RetroArch gives the game one PS3 refresh per frame RetroArch shows, so fast-forward speeds the game up and the game runs at the VBlank Frequency when RetroArch shows that many frames a second."
+msgstr ""
+
+msgctxt "#30294"
+msgid "RetroArch"
+msgstr ""
+
+msgctxt "#30295"
+msgid "Emulator clock"
+msgstr ""
+
+msgctxt "#30296"
+msgid "Master Volume"
+msgstr ""
+
+msgctxt "#30297"
+msgid "Master audio volume percentage."
+msgstr ""
+
+msgctxt "#30298"
+msgid "0%"
+msgstr ""
+
+msgctxt "#30299"
+msgid "10%"
+msgstr ""
+
+msgctxt "#30300"
+msgid "20%"
+msgstr ""
+
+msgctxt "#30301"
+msgid "30%"
+msgstr ""
+
+msgctxt "#30302"
+msgid "40%"
+msgstr ""
+
+msgctxt "#30303"
+msgid "60%"
+msgstr ""
+
+msgctxt "#30304"
+msgid "70%"
+msgstr ""
+
+msgctxt "#30305"
+msgid "80%"
+msgstr ""
+
+msgctxt "#30306"
+msgid "90%"
+msgstr ""
+
+msgctxt "#30307"
+msgid "Audio Format"
+msgstr ""
+
+msgctxt "#30308"
+msgid "The speakers the PS3 tells games it has. Set it to RetroArch's Output Layout: a game picks its own stereo, 5.1 or 7.1 mix from what is offered, and a surround mix folded down by RetroArch does not always sound like the game's own stereo one. Needs a RetroArch with multi-channel audio; stereo otherwise. Takes effect when a game boots."
+msgstr ""
+
+msgctxt "#30309"
+msgid "Stereo"
+msgstr ""
+
+msgctxt "#30310"
+msgid "Surround 5.1"
+msgstr ""
+
+msgctxt "#30311"
+msgid "Surround 7.1"
+msgstr ""
+
+msgctxt "#30312"
+msgid "Disk Cache Size"
+msgstr ""
+
+msgctxt "#30313"
+msgid "Limits the cache games keep on dev_hdd1, which otherwise only grows. With a size, the games' caches used longest ago are deleted when a game is loaded or closed, until the rest fits. Wipe on Exit deletes all of it when a game is closed, as a PS3 does when it is switched off. A deleted cache is built again by its game, which can make that game's next start slower."
+msgstr ""
+
+msgctxt "#30314"
+msgid "Unlimited"
+msgstr ""
+
+msgctxt "#30315"
+msgid "1 GB"
+msgstr ""
+
+msgctxt "#30316"
+msgid "5 GB"
+msgstr ""
+
+msgctxt "#30317"
+msgid "Wipe on Exit"
+msgstr ""
+
+msgctxt "#30318"
+msgid "System Language"
+msgstr ""
+
+msgctxt "#30319"
+msgid "PS3 system language."
+msgstr ""
+
+msgctxt "#30320"
+msgid "English"
+msgstr ""
+
+msgctxt "#30321"
+msgid "Japanese"
+msgstr ""
+
+msgctxt "#30322"
+msgid "French"
+msgstr ""
+
+msgctxt "#30323"
+msgid "Spanish"
+msgstr ""
+
+msgctxt "#30324"
+msgid "German"
+msgstr ""
+
+msgctxt "#30325"
+msgid "Italian"
+msgstr ""
+
+msgctxt "#30326"
+msgid "Dutch"
+msgstr ""
+
+msgctxt "#30327"
+msgid "Portuguese"
+msgstr ""
+
+msgctxt "#30328"
+msgid "Russian"
+msgstr ""
+
+msgctxt "#30329"
+msgid "Korean"
+msgstr ""
+
+msgctxt "#30330"
+msgid "Chinese (Traditional)"
+msgstr ""
+
+msgctxt "#30331"
+msgid "Chinese (Simplified)"
+msgstr ""
+
+msgctxt "#30332"
+msgid "Console Region"
+msgstr ""
+
+msgctxt "#30333"
+msgid "PS3 license region."
+msgstr ""
+
+msgctxt "#30334"
+msgid "SCEA (Americas)"
+msgstr ""
+
+msgctxt "#30335"
+msgid "SCEE (Europe, Oceania)"
+msgstr ""
+
+msgctxt "#30336"
+msgid "SCEJ (Japan)"
+msgstr ""
+
+msgctxt "#30337"
+msgid "SCEH (Hong Kong, Southeast Asia)"
+msgstr ""
+
+msgctxt "#30338"
+msgid "SCEK (Korea)"
+msgstr ""
+
+msgctxt "#30339"
+msgid "SCH (China)"
+msgstr ""
+
+msgctxt "#30340"
+msgid "Enter Button Assignment"
+msgstr ""
+
+msgctxt "#30341"
+msgid "Button used for confirm actions."
+msgstr ""
+
+msgctxt "#30342"
+msgid "Cross (Western)"
+msgstr ""
+
+msgctxt "#30343"
+msgid "Circle (Japanese)"
+msgstr ""
+
+msgctxt "#30344"
+msgid "Arcade USIO Mode"
+msgstr ""
+
+msgctxt "#30345"
+msgid "For the Namco System 357/369 arcade games: how the arcade board's buttons are read, which the two kinds of game do differently. Fighting Games for Tekken, Dragon Ball Zenkai Battle and the like; Shooter Games for Deadstorm Pirates, Dark Escape and the like, aimed with a light gun or the mouse. Shooter games take RetroArch's ports 3 and 4 as players 1 and 2, so in that mode ports 1-2 and 3-4 trade places. Taiko no Tatsujin works in either. Changing it applies at once."
+msgstr ""
+
+msgctxt "#30346"
+msgid "Fighting Games"
+msgstr ""
+
+msgctxt "#30347"
+msgid "Shooter Games"
+msgstr ""
+
+msgctxt "#30348"
+msgid "Show PPU Compilation Hint"
+msgstr ""
+
+msgctxt "#30349"
+msgid "Show hint when PPU modules are being compiled."
+msgstr ""
+
+msgctxt "#30350"
+msgid "Show Shader Compilation Hint"
+msgstr ""
+
+msgctxt "#30351"
+msgid "Show hint when shaders are being compiled."
+msgstr ""
+
+msgctxt "#30352"
+msgid "Silence All Logs"
+msgstr ""
+
+msgctxt "#30353"
+msgid "Silence all log output for performance."
+msgstr ""
+
+msgctxt "#30354"
+msgid "SPU Cache"
+msgstr ""
+
+msgctxt "#30355"
+msgid "Enable SPU cache for faster subsequent loads."
+msgstr ""
+
+msgctxt "#30356"
+msgid "Accurate DFMA"
+msgstr ""
+
+msgctxt "#30357"
+msgid "Double-precision fused multiply-add done exactly, as in RPCS3 (on by default there too). Costs little on CPUs with FMA; turning it off can help on a slow phone, and breaks some games."
+msgstr ""
+
+msgctxt "#30358"
+msgid "SPU Verification"
+msgstr ""
+
+msgctxt "#30359"
+msgid "SPU code verification level."
+msgstr ""
+
+msgctxt "#30360"
+msgid "Driver Recovery Timeout"
+msgstr ""
+
+msgctxt "#30361"
+msgid "GPU driver recovery timeout in milliseconds."
+msgstr ""
+
+msgctxt "#30362"
+msgid "Disabled"
+msgstr ""
+
+msgctxt "#30363"
+msgid "1 second"
+msgstr ""
+
+msgctxt "#30364"
+msgid "2 seconds"
+msgstr ""
+
+msgctxt "#30365"
+msgid "5 seconds"
+msgstr ""
+
+msgctxt "#30366"
+msgid "10 seconds"
+msgstr ""
+
+msgctxt "#30367"
+msgid "MFC Commands Shuffling"
+msgstr ""
+
+msgctxt "#30368"
+msgid "Shuffle MFC commands for accuracy."
+msgstr ""
+
+msgctxt "#30369"
+msgid "SPU Delay Penalty"
+msgstr ""
+
+msgctxt "#30370"
+msgid "SPU delay penalty for scheduling."
+msgstr ""
+
+msgctxt "#30371"
+msgid "0"
+msgstr ""
+
+msgctxt "#30372"
+msgid "3 (Default)"
+msgstr ""
+
+msgctxt "#30373"
+msgid "VBlank NTSC Fixup"
+msgstr ""
+
+msgctxt "#30374"
+msgid "Run the VBlank Frequency at the NTSC rate (59.94 Hz for 60) instead of the round number. On by default, as in RPCS3."
+msgstr ""
+
+msgctxt "#30375"
+msgid "HLE lwmutex"
+msgstr ""
+
+msgctxt "#30376"
+msgid "Use HLE implementation for lwmutex."
+msgstr ""
