@@ -1,0 +1,66 @@
+Hand the frontend 1080p frames when docked
+
+The window the renderer composites to was always 1280x720, so a docked
+game, which a docked console shows at 1080p, was scaled down to 720p
+before the frontend got it. Size it when the game loads: 1920x1080
+docked, 1280x720 handheld.
+
+--- a/src/libretro_core/retro_core.cpp
++++ b/src/libretro_core/retro_core.cpp
+@@ -142,6 +142,11 @@
+ 
+ constexpr unsigned kFrameWidth = 1280;
+ constexpr unsigned kFrameHeight = 720;
++constexpr unsigned kDockedFrameWidth = 1920;
++constexpr unsigned kDockedFrameHeight = 1080;
++// What the console sends its screen, or the TV when docked
++unsigned g_output_width = kFrameWidth;
++unsigned g_output_height = kFrameHeight;
+ 
+ // Only valid while a game is loaded with frontend audio: the sink is chosen
+ // from that option at load, and the option is only read there.
+@@ -417,13 +422,11 @@
+ }
+ 
+ RETRO_API void retro_get_system_av_info(struct retro_system_av_info* info) {
+-    info->geometry.base_width = kFrameWidth;
+-    info->geometry.base_height = kFrameHeight;
+-    // Allow up to 4x so raising the internal resolution option doesn't get
+-    // clamped back down to 720p by the frontend. RetroArch sizes its texture
+-    // from max_*, and a core may deliver anything up to it.
+-    info->geometry.max_width = kFrameWidth * 4;
+-    info->geometry.max_height = kFrameHeight * 4;
++    info->geometry.base_width = g_output_width;
++    info->geometry.base_height = g_output_height;
++    // Frames are always the output size, whatever the internal resolution
++    info->geometry.max_width = kDockedFrameWidth;
++    info->geometry.max_height = kDockedFrameHeight;
+     info->geometry.aspect_ratio = static_cast<float>(kFrameWidth) / static_cast<float>(kFrameHeight);
+     info->timing.fps = 60.0;
+     info->timing.sample_rate = 48000.0;
+@@ -615,9 +618,10 @@
+             LOG_WARNING(Frontend, "libretro: frame {} - no rendered frame available, sending black",
+                         frame_counter);
+         }
+-        static const std::vector<u32> black_frame(
+-            static_cast<size_t>(kFrameWidth) * kFrameHeight, 0xFF000000);
+-        g_video_cb(black_frame.data(), kFrameWidth, kFrameHeight, kFrameWidth * sizeof(u32));
++        static std::vector<u32> black_frame;
++        black_frame.resize(static_cast<size_t>(g_output_width) * g_output_height, 0xFF000000);
++        g_video_cb(black_frame.data(), g_output_width, g_output_height,
++                   g_output_width * sizeof(u32));
+     }
+ }
+ 
+@@ -760,6 +764,11 @@
+                 std::string(var.value) == "Yes" ? Settings::ConsoleMode::Docked
+                                                 : Settings::ConsoleMode::Handheld);
+         }
++        const bool docked =
++            Settings::values.use_docked_mode.GetValue() == Settings::ConsoleMode::Docked;
++        g_output_width = docked ? kDockedFrameWidth : kFrameWidth;
++        g_output_height = docked ? kDockedFrameHeight : kFrameHeight;
++        g_emu_window->UpdateCurrentFramebufferLayout(g_output_width, g_output_height);
+         var.key = "suyu_cpu_accuracy";
+         var.value = nullptr;
+         if (g_environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value) {
