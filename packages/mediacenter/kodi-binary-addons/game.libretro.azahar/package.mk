@@ -3,7 +3,7 @@
 
 PKG_NAME="game.libretro.azahar"
 PKG_VERSION="2126.2.0"
-PKG_REV="2"
+PKG_REV="3"
 PKG_ARCH="any"
 PKG_LICENSE="GPL-2.0-or-later"
 PKG_SITE="https://github.com/azahar-emu/azahar"

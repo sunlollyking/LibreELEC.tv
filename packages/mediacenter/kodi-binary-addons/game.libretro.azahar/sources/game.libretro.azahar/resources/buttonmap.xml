@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <buttonmap version="2">
 	<!--
-	    Azahar reads Home from L3. The touchscreen isn't mapped: game.libretro
-	    only keeps absolute pointers for pointer devices, not for a joypad.
+	    Azahar reads Home from L3. It moves a touchscreen pointer with the
+	    right stick and touches with R3.
 	-->
 	<controller id="game.controller.3ds" type="RETRO_DEVICE_JOYPAD">
 		<feature name="a" mapto="RETRO_DEVICE_ID_JOYPAD_A"/>
@@ -22,5 +22,6 @@
 		<feature name="zr" mapto="RETRO_DEVICE_ID_JOYPAD_R2"/>
 		<feature name="circlepad" mapto="RETRO_DEVICE_INDEX_ANALOG_LEFT"/>
 		<feature name="cstick" mapto="RETRO_DEVICE_INDEX_ANALOG_RIGHT"/>
+		<feature name="touchscreen" mapto="RETRO_DEVICE_ID_JOYPAD_R3"/>
 	</controller>
 </buttonmap>
