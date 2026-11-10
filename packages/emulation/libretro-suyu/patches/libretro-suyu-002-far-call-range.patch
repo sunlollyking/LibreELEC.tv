@@ -1,0 +1,19 @@
+Treat call targets 2-4 GB above JIT code as far
+
+IsWithin2G accepted any distance that fits in 32 unsigned bits. A target
+2-4 GB above the code was then called with a rel32, which Xbyak refuses
+with "offset is too big", and a target just below the code always went
+through rax. Check the signed range, as xbyak_util.h and dynarmic's
+emit_x64.cpp do.
+
+--- a/src/common/x64/xbyak.h
++++ b/src/common/x64/xbyak.h
+@@ -264,7 +264,7 @@
+ 
+ constexpr bool IsWithin2G(uintptr_t ref, uintptr_t target) noexcept {
+     u64 const distance = target - (ref + 5);
+-    return (distance & 0xffff'ffff) == distance;
++    return !(distance >= 0x8000'0000ULL && distance <= ~0x8000'0000ULL);
+ }
+ 
+ template <typename T>
