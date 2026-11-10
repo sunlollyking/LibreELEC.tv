@@ -194,6 +194,68 @@ index 4ed2644c95..21ae51083f 100644
        m_bpp = sizeof(uint16_t);
        return true;
      }
+diff --git a/xbmc/cores/RetroPlayer/rendering/contexts/EGLClientContext.cpp b/xbmc/cores/RetroPlayer/rendering/contexts/EGLClientContext.cpp
+index c568d6bd30..0efdf01515 100644
+--- a/xbmc/cores/RetroPlayer/rendering/contexts/EGLClientContext.cpp
++++ b/xbmc/cores/RetroPlayer/rendering/contexts/EGLClientContext.cpp
+@@ -108,11 +108,13 @@ bool CEGLClientContext::RestoreCurrent()
+ 
+   if (m_prevAPI != m_api)
+     ReleaseCurrent();
++  // glvnd reports OpenGL ES for a thread that never bound an API, even when no driver supports
++  // it. With no previous context to restore, failing to bind that back leaves nothing wrong.
++  const bool apiRestored = m_egl.bindAPI(m_prevAPI) == EGL_TRUE;
+   const bool restored =
+-      m_egl.bindAPI(m_prevAPI) &&
+-      (m_prevContext != EGL_NO_CONTEXT
+-           ? m_egl.makeCurrent(m_prevDisplay, m_prevDraw, m_prevRead, m_prevContext)
+-           : m_egl.makeCurrent(m_display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT));
++      m_prevContext != EGL_NO_CONTEXT
++          ? apiRestored && m_egl.makeCurrent(m_prevDisplay, m_prevDraw, m_prevRead, m_prevContext)
++          : m_egl.makeCurrent(m_display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
+   if (!restored)
+   {
+     CLog::Log(LOGERROR, "RetroPlayer[RENDER]: Failed to restore EGL context (error {:#x})",
+diff --git a/xbmc/cores/RetroPlayer/rendering/test/TestHwRenderingContextEGL.cpp b/xbmc/cores/RetroPlayer/rendering/test/TestHwRenderingContextEGL.cpp
+index c07a664fb0..0138acc8f7 100644
+--- a/xbmc/cores/RetroPlayer/rendering/test/TestHwRenderingContextEGL.cpp
++++ b/xbmc/cores/RetroPlayer/rendering/test/TestHwRenderingContextEGL.cpp
+@@ -340,6 +340,7 @@ struct FakeEGL
+   EGLContext clientContext{reinterpret_cast<EGLContext>(6)};
+   bool failSurface{false}, failContext{false}, failBind{false}, failRestore{false};
+   bool failDestroy{false}, failUnbind{false};
++  EGLenum unsupportedAPI{EGL_NONE};
+   EGLConfig failSurfaceConfig{}, failContextConfig{};
+   int surfaces{0}, contexts{0}, releases{0};
+   std::vector<char> destroyed;
+@@ -352,6 +353,8 @@ struct FakeEGL
+         []() -> EGLenum { return current->api; },
+         [](EGLenum api) -> EGLBoolean
+         {
++          if (api == current->unsupportedAPI)
++            return EGL_FALSE;
+           current->api = api;
+           return EGL_TRUE;
+         },
+@@ -621,6 +624,18 @@ TEST_F(TestEGLClientContext, ThreadWithoutPreviousContextIsUnboundAfterRestore)
+   EXPECT_EQ(egl.api, EGL_OPENGL_API);
+ }
+ 
++TEST_F(TestEGLClientContext, UnsupportedDefaultAPIOfIdleThreadDoesNotFailRestore)
++{
++  egl.context = EGL_NO_CONTEXT;
++  egl.display = EGL_NO_DISPLAY;
++  egl.draw = egl.read = EGL_NO_SURFACE;
++  ASSERT_TRUE(Create());
++  egl.unsupportedAPI = EGL_OPENGL_API;
++  ASSERT_TRUE(client.MakeCurrent());
++  EXPECT_TRUE(client.RestoreCurrent());
++  EXPECT_EQ(egl.context, EGL_NO_CONTEXT);
++}
++
+ TEST_F(TestEGLClientContext, InvalidSharedContextNeverCreatesSurface)
+ {
+   const EGLint attributes[]{EGL_NONE};
 diff --git a/xbmc/cores/VideoPlayer/VideoPlayer.cpp b/xbmc/cores/VideoPlayer/VideoPlayer.cpp
 index e83e3d5159..046edd6861 100644
 --- a/xbmc/cores/VideoPlayer/VideoPlayer.cpp
