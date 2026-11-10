@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<addon id="game.libretro.azahar"
+		name="Nintendo - 3DS (Azahar)"
+		version="2126.2.0.1"
+		provider-name="Azahar Emulator Project">
+	<requires>
+		<import addon="game.libretro" version="1.0.0"/>
+		<import addon="game.controller.default" version="1.0.0"/>
+	</requires>
+	<extension point="kodi.gameclient"
+			library_@PLATFORM@="@LIBRARY_FILENAME@">
+		<platforms>Nintendo - 3DS</platforms>
+		<extensions>3ds|3dsx|app|axf|cci|cxi|elf|z3dsx|zcci|zcxi</extensions>
+		<supports_vfs>false</supports_vfs>
+		<supports_standalone>false</supports_standalone>
+		<supports_disc_control>false</supports_disc_control>
+		<requires_opengl>true</requires_opengl>
+		<libretro_core>azahar_libretro</libretro_core>
+	</extension>
+	<extension point="xbmc.addon.metadata">
+		<license>GPL-2.0-or-later</license>
+		<platform>@PLATFORM@</platform>
+		<source>https://github.com/azahar-emu/azahar</source>
+		<summary lang="en_GB">Nintendo - 3DS (Azahar)</summary>
+		<description lang="en_GB">Azahar is a Nintendo 3DS emulator, the successor of Citra.[CR][CR]Games must be decrypted, and it renders with OpenGL 4.3.</description>
+	</extension>
+</addon>
