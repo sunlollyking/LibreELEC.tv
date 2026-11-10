@@ -1,0 +1,30 @@
+# SPDX-License-Identifier: GPL-2.0-only
+# Copyright (C) 2026-present Team LibreELEC (https://libreelec.tv)
+
+PKG_NAME="libretro-cemu"
+PKG_VERSION="91fb753ab8f8fcd35a6ae16ecdb1a750a9240d6b"
+PKG_SHA256="e5e81f49616ab4f4ecfe24910291edd8f5fb33744e1d1e1056ae4c8d0d770d92"
+PKG_LICENSE="MPL-2.0"
+PKG_SITE="https://github.com/WizzardSK/cemu-libretro"
+# The core needs its ZArchive, Vulkan-Headers, imgui and cemu_graphic_packs submodules, which
+# this archive leaves out: put a tarball made from a recursive clone in sources/ instead.
+PKG_URL="https://github.com/WizzardSK/cemu-libretro/archive/${PKG_VERSION}.tar.gz"
+PKG_DEPENDS_TARGET="toolchain boost curl pugixml rapidjson libzip glslang spirv-tools zlib zstd openssl glm libfmt libpng ${OPENGL} libX11 libXrender"
+PKG_LONGDESC="Cemu is a Nintendo Wii U emulator."
+PKG_TOOLCHAIN="cmake"
+
+PKG_LIBNAME="cemu_libretro.so"
+PKG_LIBVAR="CEMU_LIB"
+
+# Xlib is needed for its headers only: the core looks GLX and Xlib up at run time and uses EGL
+# without them. Vulkan stays built in; Kodi refuses a Vulkan context and the core then takes
+# OpenGL 4.5.
+PKG_CMAKE_OPTS_TARGET="-DENABLE_VCPKG=OFF \
+                       -DENABLE_WAYLAND=OFF \
+                       -DENABLE_LIBUSB=OFF"
+
+makeinstall_target() {
+  mkdir -p ${SYSROOT_PREFIX}/usr/lib/cmake/${PKG_NAME}
+  cp ${PKG_BUILD}/bin/${PKG_LIBNAME} ${SYSROOT_PREFIX}/usr/lib/${PKG_LIBNAME}
+  echo "set(${PKG_LIBVAR} ${SYSROOT_PREFIX}/usr/lib/${PKG_LIBNAME})" >${SYSROOT_PREFIX}/usr/lib/cmake/${PKG_NAME}/${PKG_NAME}-config.cmake
+}
