@@ -2,7 +2,7 @@
 # Copyright (C) 2026-present Team LibreELEC (https://libreelec.tv)
 
 PKG_NAME="libretro-suyu"
-PKG_VERSION="a39dec674d2aba3b5221bee30c5822389243b299"
+PKG_VERSION="347fcf91d95cd39cb5c3db50f1b6d827ad699311"
 PKG_LICENSE="GPL-3.0-or-later"
 PKG_SITE="https://github.com/suyu-emu/suyu-main"
 PKG_URL=""
@@ -33,7 +33,8 @@ PKG_CMAKE_OPTS_TARGET="-DSUYU_BUILD_LIBRETRO_CORE=ON \
                        -DBoost_FORCE_BUNDLED=ON \
                        -DCPMUTIL_OFFLINE=ON"
 
-# Built from a local clone with its 27 submodules (letmp/stretch/suyu-src).
+# Built from a local clone of the v14.1.0 tag with its submodules (letmp/stretch/suyu-src); the
+# branch heads did not compile.
 unpack() {
   mkdir -p ${PKG_BUILD}
   cp -a /home/chris/letmp/stretch/suyu-src/. ${PKG_BUILD}/
