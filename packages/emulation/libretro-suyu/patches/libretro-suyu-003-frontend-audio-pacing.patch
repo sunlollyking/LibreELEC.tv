@@ -1,0 +1,316 @@
+Pace frontend audio like a host audio device
+
+The libretro sink pushed the renderer's output straight into a queue, as
+if it were stereo, and never counted its buffers, so nothing paced the
+emulated renderer. retro_run then handed the frontend whatever fit in
+one frame of that and dropped the rest, which sounded broken.
+
+Let the primary stream queue its buffers as host streams do, with their
+downmix and volume, and have retro_run take one frame per call through
+ProcessAudioOutAndRender, like a device callback. The renderer then runs
+only a few buffers ahead of the frontend. As nothing takes audio after
+the last retro_run, detach the streams before shutting down.
+
+--- a/src/audio_core/sink/libretro_sink.h
++++ b/src/audio_core/sink/libretro_sink.h
+@@ -3,7 +3,8 @@
+ 
+ #pragma once
+ 
+-#include <algorithm>
++#include <atomic>
++#include <cstddef>
+ #include <mutex>
+ #include <span>
+ #include <string_view>
+@@ -18,72 +19,27 @@
+ 
+ namespace AudioCore::Sink {
+ 
+-/**
+- * Sample queue shared between the emulated audio renderer (producer, running
+- * on suyu's audio thread) and the libretro frontend (consumer, draining once
+- * per retro_run on RetroArch's thread).
+- *
+- * A plain locked deque rather than a lock-free ring: the producer appends in
+- * large infrequent chunks and the consumer drains everything at 60Hz, so
+- * contention is negligible and the simplicity is worth more than the
+- * micro-optimisation.
+- */
+-class LibretroSampleQueue {
+-public:
+-    /// Defined in libretro_sink.cpp, not here: a header-inline static would
+-    /// give the producer and consumer separate copies of the queue.
+-    static LibretroSampleQueue& Instance();
+-
+-    void Push(std::span<const s16> samples) {
+-        std::scoped_lock lock{mutex};
+-        // Hard cap the backlog, and keep it short. The renderer hands us audio
+-        // in bursts rather than a steady stream (nothing paces it here the way
+-        // a real device would), so a large cap just turns into seconds of
+-        // latency delivered as one lump, which the frontend then drops. A
+-        // quarter second is enough to ride out the bursts while keeping audio
+-        // in step with video; anything older than that is stale and is dropped
+-        // oldest-first.
+-        constexpr size_t kMaxQueuedSamples = 48000 / 4 * 2; // 0.25s stereo
+-        if (queue.size() + samples.size() > kMaxQueuedSamples) {
+-            const size_t overflow = queue.size() + samples.size() - kMaxQueuedSamples;
+-            const size_t to_drop = std::min(overflow, queue.size());
+-            queue.erase(queue.begin(), queue.begin() + static_cast<ptrdiff_t>(to_drop));
+-        }
+-        queue.insert(queue.end(), samples.begin(), samples.end());
+-    }
+-
+-    /// Moves every queued sample into @p out, leaving the queue empty.
+-    void Drain(std::vector<s16>& out) {
+-        std::scoped_lock lock{mutex};
+-        out.assign(queue.begin(), queue.end());
+-        queue.clear();
+-    }
+-
+-    void Clear() {
+-        std::scoped_lock lock{mutex};
+-        queue.clear();
+-    }
+-
+-private:
+-    std::mutex mutex;
+-    std::vector<s16> queue;
+-};
+-
+ class LibretroSinkStreamImpl final : public SinkStream {
+ public:
+     explicit LibretroSinkStreamImpl(Core::System& system_, StreamType type_, bool is_primary_)
+         : SinkStream{system_, type_}, is_primary{is_primary_} {}
+     ~LibretroSinkStreamImpl() override = default;
+ 
+-    void AppendBuffer(SinkBuffer&, std::span<s16> samples) override {
+-        // Only the primary stream feeds the frontend. The renderer acquires
+-        // more than one output stream and they all carry the same mix, so
+-        // pushing every one produced audio at a multiple of real time, which
+-        // overran the queue and made it dump ~2s at once. Note the streams
+-        // arrive as StreamType::Render, not Out - filtering on Out matched
+-        // nothing at all, which is why the core was previously silent.
+-        if (is_primary && type != StreamType::In) {
+-            LibretroSampleQueue::Instance().Push(samples);
++    void Start(bool resume = false) override {
++        if (!detached) {
++            paused = false;
++        }
++    }
++
++    void Stop() override {
++        SignalPause();
++    }
++
++    void AppendBuffer(SinkBuffer& buffer, std::span<s16> samples) override {
++        // Only the primary stream feeds the frontend. The renderer acquires more than one output
++        // stream and they all carry the same mix, and nothing would release the others' buffers.
++        if (is_primary) {
++            SinkStream::AppendBuffer(buffer, samples);
+         }
+     }
+ 
+@@ -91,8 +47,19 @@
+         return {};
+     }
+ 
++    bool IsPrimary() const {
++        return is_primary;
++    }
++
++    /// Stops the renderer waiting for this stream to be played, for good.
++    void Detach() {
++        detached = true;
++        SignalPause();
++    }
++
+ private:
+     bool is_primary{false};
++    std::atomic<bool> detached{false};
+ };
+ 
+ /**
+@@ -106,6 +73,7 @@
+ 
+     SinkStream* AcquireSinkStream(Core::System& system, u32, const std::string&,
+                                   StreamType type) override {
++        std::scoped_lock lock{streams_mutex};
+         const bool primary = (type != StreamType::In) && !has_primary;
+         if (primary) {
+             has_primary = true;
+@@ -117,6 +85,7 @@
+     }
+ 
+     void CloseStream(SinkStream* stream) override {
++        std::scoped_lock lock{streams_mutex};
+         std::erase_if(streams, [stream](const SinkStreamPtr& s) { return s.get() == stream; });
+         if (streams.empty()) {
+             has_primary = false;
+@@ -124,10 +93,20 @@
+     }
+ 
+     void CloseStreams() override {
++        std::scoped_lock lock{streams_mutex};
+         streams.clear();
+         has_primary = false;
+     }
+ 
++    /**
++     * Fills @p out with @p frames stereo frames, as a host device's callback would. The emulated
++     * renderer only runs ahead of what has been taken by a few buffers, so this also paces it.
++     */
++    void Render(std::span<s16> out, std::size_t frames);
++
++    /// For when Render won't be called again, so the emulated system can still shut down.
++    void Detach();
++
+     f32 GetDeviceVolume() const override {
+         return volume;
+     }
+@@ -139,6 +118,7 @@
+     }
+ 
+ private:
++    std::mutex streams_mutex;
+     std::vector<SinkStreamPtr> streams;
+     bool has_primary{false};
+     f32 volume{1.0f};
+--- a/src/audio_core/sink/libretro_sink.cpp
++++ b/src/audio_core/sink/libretro_sink.cpp
+@@ -1,19 +1,29 @@
+ // SPDX-FileCopyrightText: Copyright 2026 suyu Emulator Project
+ // SPDX-License-Identifier: GPL-2.0-or-later
+ 
++#include <algorithm>
++
+ #include "audio_core/sink/libretro_sink.h"
+ 
+ namespace AudioCore::Sink {
+ 
+-// Defined out-of-line deliberately. As a function-local static inside an
+-// inline header function, the producer (audio_core) and the consumer
+-// (libretro_core) each ended up with their own copy of the queue, so samples
+-// were pushed into one instance and drained from another - the sink filled
+-// correctly while retro_run always saw an empty queue. A single definition in
+-// one translation unit is what guarantees both sides share it.
+-LibretroSampleQueue& LibretroSampleQueue::Instance() {
+-    static LibretroSampleQueue instance;
+-    return instance;
++void LibretroSink::Render(std::span<s16> out, std::size_t frames) {
++    std::scoped_lock lock{streams_mutex};
++    for (auto& stream : streams) {
++        auto& libretro_stream = static_cast<LibretroSinkStreamImpl&>(*stream);
++        if (libretro_stream.IsPrimary()) {
++            libretro_stream.ProcessAudioOutAndRender(out, frames);
++            return;
++        }
++    }
++    std::fill_n(out.begin(), frames * 2, s16{0});
++}
++
++void LibretroSink::Detach() {
++    std::scoped_lock lock{streams_mutex};
++    for (auto& stream : streams) {
++        static_cast<LibretroSinkStreamImpl&>(*stream).Detach();
++    }
+ }
+ 
+ } // namespace AudioCore::Sink
+--- a/src/libretro_core/retro_core.cpp
++++ b/src/libretro_core/retro_core.cpp
+@@ -16,8 +16,7 @@
+ //   - Audio: by default suyu opens a host audio device and plays directly,
+ //     which is what sounds correct. An "Audio Output" core option can instead
+ //     route samples through retro_audio_sample_batch via the
+-//     AudioEngine::Libretro sink - tidier in principle, but nothing paces the
+-//     emulated renderer here so it delivers in bursts.
++//     AudioEngine::Libretro sink, with retro_run taking the host device's part.
+ //   - Input: retro_input_state_cb is bridged into InputCommon's
+ //     VirtualGamepad (16 buttons + both analog sticks).
+ //   - Keys: prod/title/console.keys are picked up from the frontend's
+@@ -48,6 +47,7 @@
+ #ifdef SUYU_ANDROID_LIBRETRO
+ #include <sys/system_properties.h>
+ #endif
++#include "audio_core/audio_core.h"
+ #include "audio_core/sink/libretro_sink.h"
+ #include "common/fs/fs.h"
+ #include "common/fs/path_util.h"
+@@ -141,6 +141,12 @@
+ constexpr unsigned kFrameWidth = 1280;
+ constexpr unsigned kFrameHeight = 720;
+ 
++// Only valid while a game is loaded with frontend audio: the sink is chosen
++// from that option at load, and the option is only read there.
++AudioCore::Sink::LibretroSink& FrontendAudioSink() {
++    return static_cast<AudioCore::Sink::LibretroSink&>(g_system->AudioCore().GetOutputSink());
++}
++
+ // System::Initialize() may decrypt firmware metadata. Make the frontend's
+ // existing keys visible before that call, not after it has already tried to
+ // create crypto contexts with a missing key.
+@@ -564,37 +570,12 @@
+         fflush(stderr);
+     }
+ 
+-    // Hand over whatever the emulated audio renderer produced since the last
+-    // frame. upload_batch takes frames (L+R pairs), not individual samples.
+-    // Feed the frontend a steady ~1 frame of audio per call rather than
+-    // whatever has piled up. RetroArch resamples against its own clock and
+-    // expects roughly sample_rate/fps frames each retro_run; handing it a
+-    // quarter second in one lump and nothing for the next 15 calls is what
+-    // made the output screech. Anything beyond a small backlog is dropped so
+-    // latency can't creep up instead.
++    // Take one frame of audio from the emulated output, as a host device's callback would.
+     if (g_use_frontend_audio && g_audio_batch_cb && g_game_loaded) {
+         constexpr size_t kFramesPerCall = 48000 / 60;   // stereo frames
+-        constexpr size_t kMaxBacklogFrames = kFramesPerCall * 6;
+-
+-        static std::vector<s16> pending;   // interleaved L,R awaiting delivery
+-        std::vector<s16> drained;
+-        AudioCore::Sink::LibretroSampleQueue::Instance().Drain(drained);
+-        if (!drained.empty()) {
+-            pending.insert(pending.end(), drained.begin(), drained.end());
+-        }
+-
+-        // Trim from the front if we've fallen behind; stale audio is worse
+-        // than a short gap.
+-        if (pending.size() > kMaxBacklogFrames * 2) {
+-            const size_t excess = pending.size() - kMaxBacklogFrames * 2;
+-            pending.erase(pending.begin(), pending.begin() + static_cast<ptrdiff_t>(excess));
+-        }
+-
+-        const size_t frames = std::min(kFramesPerCall, pending.size() / 2);
+-        if (frames > 0) {
+-            g_audio_batch_cb(pending.data(), frames);
+-            pending.erase(pending.begin(), pending.begin() + static_cast<ptrdiff_t>(frames * 2));
+-        }
++        std::array<s16, kFramesPerCall * 2> samples{};
++        FrontendAudioSink().Render(samples, kFramesPerCall);
++        g_audio_batch_cb(samples.data(), kFramesPerCall);
+     }
+ 
+     if (g_video_cb && g_system && g_game_loaded) {
+@@ -982,6 +963,11 @@
+     g_sample_perf = false;
+     g_have_presented = false;
+     if (g_system && g_game_loaded) {
++        // Without retro_run taking audio, the emulated renderer would wait forever for it to be
++        // played, and shutting down waits for the renderer.
++        if (g_use_frontend_audio) {
++            FrontendAudioSink().Detach();
++        }
+         g_system->ShutdownMainProcess();
+     }
+     if (g_emu_window) {
+@@ -1009,9 +995,6 @@
+             member->Leave();
+         }
+     }
+-    // Drop any audio still queued from the game that just went away, so it
+-    // can't leak into the next one loaded in this session.
+-    AudioCore::Sink::LibretroSampleQueue::Instance().Clear();
+ }
+ 
+ RETRO_API unsigned retro_get_region() {
