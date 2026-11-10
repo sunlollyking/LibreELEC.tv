@@ -9,7 +9,7 @@ PKG_SITE="https://github.com/WizzardSK/cemu-libretro"
 # The core needs its ZArchive, Vulkan-Headers, imgui and cemu_graphic_packs submodules, which
 # this archive leaves out: put a tarball made from a recursive clone in sources/ instead.
 PKG_URL="https://github.com/WizzardSK/cemu-libretro/archive/${PKG_VERSION}.tar.gz"
-PKG_DEPENDS_TARGET="toolchain boost curl pugixml rapidjson libzip glslang spirv-tools zlib zstd openssl glm libfmt libpng ${OPENGL} libX11 libXrender"
+PKG_DEPENDS_TARGET="toolchain patchelf:host boost curl pugixml rapidjson libzip glslang spirv-tools zlib zstd openssl glm libfmt libpng ${OPENGL} libX11 libXrender"
 PKG_LONGDESC="Cemu is a Nintendo Wii U emulator."
 PKG_TOOLCHAIN="cmake"
 
@@ -26,5 +26,7 @@ PKG_CMAKE_OPTS_TARGET="-DENABLE_VCPKG=OFF \
 makeinstall_target() {
   mkdir -p ${SYSROOT_PREFIX}/usr/lib/cmake/${PKG_NAME}
   cp ${PKG_BUILD}/bin/${PKG_LIBNAME} ${SYSROOT_PREFIX}/usr/lib/${PKG_LIBNAME}
+  # The image has no glslang; game.libretro.cemu ships it beside the core.
+  patchelf --set-rpath '$ORIGIN' ${SYSROOT_PREFIX}/usr/lib/${PKG_LIBNAME}
   echo "set(${PKG_LIBVAR} ${SYSROOT_PREFIX}/usr/lib/${PKG_LIBNAME})" >${SYSROOT_PREFIX}/usr/lib/cmake/${PKG_NAME}/${PKG_NAME}-config.cmake
 }

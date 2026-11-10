@@ -14,3 +14,9 @@ PKG_LONGDESC="game.libretro.cemu: Cemu for Kodi"
 
 PKG_IS_ADDON="yes"
 PKG_ADDON_TYPE="kodi.gameclient"
+
+addon() {
+  install_binary_addon "${PKG_ADDON_ID}"
+  # The core needs glslang, which is not in the image; it finds it beside itself.
+  cp -L $(get_install_dir glslang)/usr/lib/libglslang.so.16 "${ADDON_BUILD}/${PKG_ADDON_ID}/"
+}
