@@ -5,7 +5,10 @@
 		provider-name="Cemu Project, WizzardSK">
 	<requires>
 		<import addon="game.libretro" version="1.0.0"/>
-		<import addon="game.controller.default" version="1.0.0"/>
+		<import addon="game.controller.wiiu.gamepad" version="1.0.0"/>
+		<import addon="game.controller.wiiu.pro" version="1.0.0"/>
+		<import addon="game.controller.wiimote" version="1.0.0"/>
+		<import addon="game.controller.wii.classic" version="1.0.0"/>
 	</requires>
 	<extension point="kodi.gameclient"
 			library_@PLATFORM@="@LIBRARY_FILENAME@">
