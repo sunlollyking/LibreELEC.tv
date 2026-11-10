@@ -11,6 +11,9 @@ PKG_URL="https://libzip.org/download/${PKG_NAME}-${PKG_VERSION}.tar.xz"
 PKG_DEPENDS_TARGET="toolchain zlib bzip2"
 PKG_LONGDESC="A C library for reading, creating, and modifying zip archives."
 
+# Linked into shared libraries too (Cemu's libretro core).
+PKG_BUILD_FLAGS="+pic"
+
 PKG_CMAKE_OPTS_TARGET="-DENABLE_COMMONCRYPTO=OFF \
                        -DENABLE_GNUTLS=OFF \
                        -DENABLE_MBEDTLS=OFF \
