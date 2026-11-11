@@ -2,8 +2,8 @@
 # Copyright (C) 2026-present Team LibreELEC (https://libreelec.tv)
 
 PKG_NAME="libretro-cemu"
-PKG_VERSION="6457cb4f3116a6a77f87a09e1f40ae4667a03186"
-PKG_SHA256="599486cff1d0c2be5c01e12d55f6b498cc65b2d8221d439255ba5df505b327a2"
+PKG_VERSION="15f19c1a3a77c7034a4489bbf43f4651ec54210a"
+PKG_SHA256="51619e1b33fbe6cde7b3907489b5b8871e522b9403756712bde024615e58aaa8"
 PKG_LICENSE="MPL-2.0"
 PKG_SITE="https://github.com/WizzardSK/cemu-libretro"
 # The core needs its ZArchive, Vulkan-Headers, imgui and cemu_graphic_packs submodules, which
