@@ -1,0 +1,31 @@
+From dcf67f5ac9c462b1d0416bcc7fbcc3181dd767e9 Mon Sep 17 00:00:00 2001
+From: Chris <meischris39@hotmail.com>
+Date: Wed, 11 Nov 2026 14:48:08 +0000
+Subject: [PATCH] libretro: Read an empty option value as unset
+
+Kodi answers GET_VARIABLE with an empty string for an option it doesn't
+know, and it doesn't pick up the graphic pack options declared when
+content loads. An empty value counted as not disabled, so in Kodi every
+pack for the title was enabled, cheats and HUD-removing mods included.
+---
+ src/libretro/CemuLibretro.cpp | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/src/libretro/CemuLibretro.cpp b/src/libretro/CemuLibretro.cpp
+index 8f399e2f..e6ef0e09 100644
+--- a/src/libretro/CemuLibretro.cpp
++++ b/src/libretro/CemuLibretro.cpp
+@@ -2261,6 +2261,10 @@ static const char* libretro_get_option_value(const char* key)
+ 	retro_variable var{key, nullptr};
+ 	if (!environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var))
+ 		return nullptr;
++	// Kodi answers an option it doesn't know with an empty string, and no
++	// option here has an empty value
++	if (var.value && !*var.value)
++		return nullptr;
+ 	return var.value;
+ }
+ 
+-- 
+2.53.0
+
