@@ -132,19 +132,6 @@ index 4cfd4fdd07..4586b388b6 100644
    // sRGB -> linear via LUT (IEC 61966-2-1 EOTF, replaces inline pow)
    vec3 linear = vec3(
      texture2D(u_lutDegamma, vec2(gui.r, 0.5)).r,
-diff --git a/xbmc/cores/AudioEngine/Engines/ActiveAE/ActiveAE.cpp b/xbmc/cores/AudioEngine/Engines/ActiveAE/ActiveAE.cpp
-index de0a69002d..a680180747 100644
---- a/xbmc/cores/AudioEngine/Engines/ActiveAE/ActiveAE.cpp
-+++ b/xbmc/cores/AudioEngine/Engines/ActiveAE/ActiveAE.cpp
-@@ -464,7 +464,7 @@ void CActiveAE::StateMachine(int signal, Protocol *port, Message *msg)
-           return;
-         case CActiveAEDataProtocol::FREESTREAM:
-           MsgStreamFree *msgStreamFree;
--          msgStreamFree = *(MsgStreamFree**)msg->data;
-+          msgStreamFree = reinterpret_cast<MsgStreamFree*>(msg->data);
-           DiscardStream(msgStreamFree->stream);
-           msg->Reply(CActiveAEDataProtocol::ACC);
-           return;
 diff --git a/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVOutputSettings.h b/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVOutputSettings.h
 index 55f1349925..dc02aa7572 100644
 --- a/xbmc/cores/VideoPlayer/DVDCodecs/Video/DVOutputSettings.h
