@@ -1,0 +1,98 @@
+From 5a231a584079fd5e0915ca72bb2980714c3eda96 Mon Sep 17 00:00:00 2001
+From: kd-11 <karokidii@gmail.com>
+Date: Tue, 6 Oct 2026 18:20:19 +0000
+Subject: [PATCH] vk: Pause the driver manager routine when capturing media
+
+- These are out-of-band events and should not be treated as 'real' sync points.
+
+(cherry picked from commit 5a4d5ce349cc3580c746f02417d14fbf5748e3ba,
+applied to this fork's capture block, which the libretro readback
+shares)
+---
+ rpcs3/Emu/RSX/VK/VKCommandStream.cpp | 11 +++++++++++
+ rpcs3/Emu/RSX/VK/VKCommandStream.h   |  4 ++++
+ rpcs3/Emu/RSX/VK/VKPresent.cpp       |  9 +++++++++
+ 3 files changed, 24 insertions(+)
+
+diff --git a/rpcs3/Emu/RSX/VK/VKCommandStream.cpp b/rpcs3/Emu/RSX/VK/VKCommandStream.cpp
+index c1f73cd..f991a97 100644
+--- a/rpcs3/Emu/RSX/VK/VKCommandStream.cpp
++++ b/rpcs3/Emu/RSX/VK/VKCommandStream.cpp
+@@ -107,6 +107,12 @@ namespace vk
+ 
+ 	void driver_manager_t::notify_completed(u64 eid)
+ 	{
++		if (!m_enabled)
++		{
++			// Do not wake
++			return;
++		}
++
+ 		m_eid_ctr.atomic_op([eid](u64& value)
+ 		{
+ 			value = std::max(value, eid);
+@@ -144,4 +150,9 @@ namespace vk
+ 			thread_ctrl::wait_on(m_completed_signal, completion_token);
+ 		}
+ 	}
++
++	void driver_manager_t::set_enabled(bool state)
++	{
++		m_enabled.store(state);
++	}
+ }
+diff --git a/rpcs3/Emu/RSX/VK/VKCommandStream.h b/rpcs3/Emu/RSX/VK/VKCommandStream.h
+index 72c0fee..444e161 100644
+--- a/rpcs3/Emu/RSX/VK/VKCommandStream.h
++++ b/rpcs3/Emu/RSX/VK/VKCommandStream.h
+@@ -56,12 +56,16 @@ namespace vk
+ 		void notify_completed(u64 eid);
+ 		void drain();
+ 
++		void set_enabled(bool state);
++
+ 	private:
+ 		atomic_t<u64> m_eid_ctr = 0ull;
+ 		atomic_t<u64> m_last_completed_eid = 0ull;
+ 
+ 		atomic_t<u32> m_wake_event = 0u;
+ 		atomic_t<u32> m_completed_signal = 0u;     //<- Works around atomic_engine's lack of 64-bit observables support
++
++		atomic_t<bool> m_enabled = true;
+ 	};
+ 
+ 	using driver_manager_thread = named_thread<driver_manager_t>;
+diff --git a/rpcs3/Emu/RSX/VK/VKPresent.cpp b/rpcs3/Emu/RSX/VK/VKPresent.cpp
+index 9972e64..efc0ca3 100644
+--- a/rpcs3/Emu/RSX/VK/VKPresent.cpp
++++ b/rpcs3/Emu/RSX/VK/VKPresent.cpp
+@@ -1,4 +1,5 @@
+ #include "stdafx.h"
++#include "VKCommandStream.h"
+ #include "VKGSRender.h"
+ #ifdef LIBRETRO_CORE
+ #include "VKLibretro.h"
+@@ -939,12 +940,20 @@ void VKGSRender::flip(const rsx::display_flip_info_t& info)
+ 		else
+ #endif
+ 		{
++			// We need to disable the driver manager temporarily as this next section is out of sequence.
++			// We're not supposed to be halting the GPU here and we certainly do not want to run driver management as we will end up deleting temp resources too early.
++			auto& driver_manager = g_fxo->get<vk::driver_manager_thread>();
++			driver_manager.set_enabled(false);
++
+ 			flush_command_queue(true);
+ 			const auto src = sshot_vkbuf.map(0, sshot_size);
+ 			std::vector<u8> sshot_frame(sshot_size);
+ 			memcpy(sshot_frame.data(), src, sshot_size);
+ 			sshot_vkbuf.unmap();
+ 
++			// Restore the driver manager state to keep things from crashing...
++			driver_manager.set_enabled(true);
++
+ 			const bool is_bgra = image_to_copy->format() == VK_FORMAT_B8G8R8A8_UNORM;
+ 
+ 			if (user_asked_for_screenshot)
+-- 
+2.53.0
+
