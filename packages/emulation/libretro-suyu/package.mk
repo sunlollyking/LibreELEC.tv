@@ -35,11 +35,11 @@ PKG_CMAKE_OPTS_TARGET="-DSUYU_BUILD_LIBRETRO_CORE=ON \
                        -DVulkanHeaders_FORCE_BUNDLED=ON \
                        -DCPMUTIL_OFFLINE=ON"
 
-# Built from a local clone of the v14.1.0 tag with its submodules (letmp/stretch/suyu-src); the
+# Built from a local copy of the v14.1.0 tag with its submodules (letmp/stretch/suyu-v14.1.0); the
 # branch heads did not compile.
 unpack() {
   mkdir -p ${PKG_BUILD}
-  cp -a /home/chris/letmp/stretch/suyu-src/. ${PKG_BUILD}/
+  cp -a /home/chris/letmp/stretch/suyu-v14.1.0/. ${PKG_BUILD}/
 }
 
 make_target() {

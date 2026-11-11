@@ -1,0 +1,26 @@
+diff -ru a/src/core/hle/kernel/kernel.cpp b/src/core/hle/kernel/kernel.cpp
+--- a/src/core/hle/kernel/kernel.cpp	2026-11-11 17:22:28.520232508 +0000
++++ b/src/core/hle/kernel/kernel.cpp	2026-11-11 17:22:28.543848826 +0000
+@@ -1106,6 +1106,10 @@
+ 
+     // Initialize the thread.
+     KThread* thread = KThread::Create(*this);
++    // Running holds a reference of its own, which termination releases
++    SCOPE_EXIT {
++        thread->Close(*this);
++    };
+     ASSERT(R_SUCCEEDED(KThread::InitializeServiceThread(
+         System(), thread, std::move(func), ServiceThreadPriority, ServiceThreadCore, process)));
+ 
+diff -ru a/src/core/hle/kernel/k_slab_heap.h b/src/core/hle/kernel/k_slab_heap.h
+--- a/src/core/hle/kernel/k_slab_heap.h	2026-11-11 17:22:28.523888277 +0000
++++ b/src/core/hle/kernel/k_slab_heap.h	2026-11-11 17:22:28.544053376 +0000
+@@ -204,6 +204,8 @@
+     }
+ 
+     void Free(T* obj) {
++        // Allocate constructed it, and its members may own host memory
++        std::destroy_at(obj);
+         BaseHeap::Free(obj);
+     }
+ 
