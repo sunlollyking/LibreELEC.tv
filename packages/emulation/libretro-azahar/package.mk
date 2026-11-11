@@ -21,6 +21,12 @@ PKG_CMAKE_OPTS_TARGET="-DENABLE_LIBRETRO=ON \
                        -DENABLE_TESTS=OFF \
                        -DENABLE_LTO=OFF"
 
+pre_configure_target() {
+  # GNU unique symbols, mostly Boost's serialization singletons, keep the core from ever being
+  # unloaded, so the next game would start in the last one's state
+  TARGET_CXXFLAGS+=" -fno-gnu-unique"
+}
+
 make_target() {
   cmake --build . --target citra_libretro
 }
