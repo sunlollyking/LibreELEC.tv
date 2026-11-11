@@ -2,8 +2,8 @@
 # Copyright (C) 2026-present Team LibreELEC (https://libreelec.tv)
 
 PKG_NAME="libretro-rpcs3"
-PKG_VERSION="8bafcb27ae9cbb708ed05b89d5b1a62fe87cd0ce"
-PKG_SHA256="287efcd15ccecf14eea06eca891771884e95667ab8f68c75fc96dc4a6b603f83"
+PKG_VERSION="cb8338f3215ee2d6c981c7240e49bcaf7fad4b6a"
+PKG_SHA256="1955ac420f81c7bf15f523ffcad5c824ae2e21af88f501b1be3d4c1896a34595"
 PKG_LICENSE="GPL-2.0-only"
 PKG_SITE="https://github.com/WizzardSK/rpcs3-libretro"
 # The core builds LLVM, glslang and most of its libraries from submodules, which this archive
