@@ -1,0 +1,29 @@
+diff --git a/xbmc/cores/RetroPlayer/RetroPlayer.cpp b/xbmc/cores/RetroPlayer/RetroPlayer.cpp
+index 0361cbe732..81a0c6ed7c 100644
+--- a/xbmc/cores/RetroPlayer/RetroPlayer.cpp
++++ b/xbmc/cores/RetroPlayer/RetroPlayer.cpp
+@@ -57,6 +57,10 @@
+ #include <memory>
+ #include <mutex>
+ 
++#if defined(__GLIBC__)
++#include <malloc.h>
++#endif
++
+ using namespace KODI;
+ using namespace GAME;
+ using namespace RETRO;
+@@ -287,6 +291,13 @@ bool CRetroPlayer::CloseFile(bool reopen /* = false */)
+   }
+   m_processInfo.reset();
+   m_displayClock.reset();
++
++#if defined(__GLIBC__)
++  // The game client freed most of its memory as it unloaded, and glibc keeps
++  // freed memory in its arenas instead of returning it to the system
++  malloc_trim(0);
++#endif
++
+   CLog::Log(LOGDEBUG, "RetroPlayer[PLAYER]: Playback stopped");
+   m_callback.OnPlayBackStopped();
+ 
