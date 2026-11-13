@@ -1,0 +1,100 @@
+diff -ru a/src/video_core/renderer_base.h b/src/video_core/renderer_base.h
+--- a/src/video_core/renderer_base.h	2026-11-13 20:21:38.960115995 +0000
++++ b/src/video_core/renderer_base.h	2026-11-13 20:21:39.113331317 +0000
+@@ -7,6 +7,7 @@
+ #include <functional>
+ #include <memory>
+ #include <mutex>
++#include <span>
+ #include <vector>
+ 
+ #include "common/common_funcs.h"
+@@ -50,9 +51,8 @@
+     [[nodiscard]] virtual std::string GetDeviceVendor() const = 0;
+ 
+     virtual bool IsHeadless() const { return false; }
+-    virtual const std::vector<u8>& GetLastRenderedFrame() const {
+-        static const std::vector<u8> empty;
+-        return empty;
++    virtual std::span<const u8> GetLastRenderedFrame() const {
++        return {};
+     }
+     /// Keeps the frame GetLastRenderedFrame() returns, and its size, from changing while held
+     [[nodiscard]] virtual std::unique_lock<std::mutex> LockLastRenderedFrame() {
+diff -ru a/src/video_core/renderer_vulkan/renderer_vulkan.cpp b/src/video_core/renderer_vulkan/renderer_vulkan.cpp
+--- a/src/video_core/renderer_vulkan/renderer_vulkan.cpp	2026-11-13 20:21:38.973561474 +0000
++++ b/src/video_core/renderer_vulkan/renderer_vulkan.cpp	2026-11-13 20:21:39.113545436 +0000
+@@ -282,20 +282,26 @@
+         HeadlessSlot& slot = headless_slots[index];
+         scheduler.GetMasterSemaphore().Wait(slot.tick);
+         slot.buffer.Invalidate();
++        size_t previous{};
+         {
++            // The frontend reads the frame under this lock, so the slot it reads from is only
++            // replaced between two of its reads
+             std::scoped_lock lock{headless_frame_mutex};
+-            const auto mapped = slot.buffer.Mapped();
+-            headless_frame_data.assign(mapped.begin(), mapped.begin() + slot.buffer_size);
++            previous = headless_frame_slot;
++            headless_frame_slot = index;
++            headless_frame = std::as_const(slot.buffer).Mapped().first(slot.buffer_size);
+             headless_width = slot.width;
+             headless_height = slot.height;
+             render_window.OnFrameDisplayed();
+         }
+ 
+-        {
+-            std::scoped_lock lock{headless_slot_mutex};
+-            slot.busy = false;
++        if (previous < headless_slots.size()) {
++            {
++                std::scoped_lock lock{headless_slot_mutex};
++                headless_slots[previous].busy = false;
++            }
++            headless_slot_cv.notify_all();
+         }
+-        headless_slot_cv.notify_all();
+     }
+ }
+ 
+diff -ru a/src/video_core/renderer_vulkan/renderer_vulkan.h b/src/video_core/renderer_vulkan/renderer_vulkan.h
+--- a/src/video_core/renderer_vulkan/renderer_vulkan.h	2026-11-13 20:21:38.966899027 +0000
++++ b/src/video_core/renderer_vulkan/renderer_vulkan.h	2026-11-13 20:21:39.113498949 +0000
+@@ -62,7 +62,7 @@
+     }
+ 
+     bool IsHeadless() const override { return is_headless; }
+-    const std::vector<u8>& GetLastRenderedFrame() const override { return headless_frame_data; }
++    std::span<const u8> GetLastRenderedFrame() const override { return headless_frame; }
+     std::unique_lock<std::mutex> LockLastRenderedFrame() override {
+         return std::unique_lock{headless_frame_mutex};
+     }
+@@ -73,7 +73,7 @@
+     void InitializePlatformSpecific();
+ 
+ private:
+-    /// A headless frame being drawn, copied back, or read by the readback thread
++    /// A headless frame being drawn, copied back, or held for the frontend to read
+     struct HeadlessSlot {
+         Frame frame{};
+         vk::Buffer buffer;
+@@ -83,7 +83,7 @@
+         u64 tick{};
+         bool busy{};
+     };
+-    static constexpr size_t NUM_HEADLESS_SLOTS = 3;
++    static constexpr size_t NUM_HEADLESS_SLOTS = 4;
+ 
+     void CompositeHeadless(std::span<const Tegra::FramebufferConfig> framebuffers);
+     void HeadlessReadbackLoop(std::stop_token stop_token);
+@@ -128,7 +128,9 @@
+     Frame applet_frame;
+ 
+     bool is_headless{false};
+-    std::vector<u8> headless_frame_data;
++    /// The newest finished frame, in its slot's mapped buffer
++    std::span<const u8> headless_frame;
++    size_t headless_frame_slot{NUM_HEADLESS_SLOTS};
+     u32 headless_width{1280};
+     u32 headless_height{720};
+     std::mutex headless_frame_mutex;
