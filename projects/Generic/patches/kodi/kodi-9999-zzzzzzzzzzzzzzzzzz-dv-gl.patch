@@ -2126,7 +2126,7 @@ index 0000000000..6cd08b7a6f
 +#endif
 +} // namespace KODI::WINDOWING::GBM
 diff --git a/xbmc/windowing/gbm/WinSystemGbmGLContext.cpp b/xbmc/windowing/gbm/WinSystemGbmGLContext.cpp
-index 4eb5eac280..82a80a4ea7 100644
+index 4eb5eac280..34b759e 100644
 --- a/xbmc/windowing/gbm/WinSystemGbmGLContext.cpp
 +++ b/xbmc/windowing/gbm/WinSystemGbmGLContext.cpp
 @@ -7,6 +7,14 @@
@@ -2913,7 +2913,7 @@ index 4eb5eac280..82a80a4ea7 100644
      m_guiFbo.Cleanup();
      m_guiFboWidth = 0;
      m_guiFboHeight = 0;
-@@ -240,8 +802,68 @@ bool CWinSystemGbmGLContext::SetGuiCompositing(int colorTransfer)
+@@ -240,8 +802,70 @@ bool CWinSystemGbmGLContext::SetGuiCompositing(int colorTransfer)
    return m_guiCompositing;
  }
  
@@ -2966,6 +2966,8 @@ index 4eb5eac280..82a80a4ea7 100644
 +    const auto& context = GetGfxContext();
 +    // libplacebo passes leave the scissor test off; the GUI's clipping needs it on.
 +    glEnable(GL_SCISSOR_TEST);
++    // They also leave no vertex array bound, and a core profile draws nothing without one.
++    glBindVertexArray(m_vertexArray);
 +    CRenderSystemGL::SetScissors(context.StereoCorrection(context.GetScissors()));
 +    if (report)
 +    {
@@ -2982,7 +2984,7 @@ index 4eb5eac280..82a80a4ea7 100644
    if (!m_guiCompositing)
      return false;
  
-@@ -250,6 +872,7 @@ bool CWinSystemGbmGLContext::BeginGuiComposite(bool guiWillRender)
+@@ -250,6 +874,7 @@ bool CWinSystemGbmGLContext::BeginGuiComposite(bool guiWillRender)
    int width = m_nWidth;
    int height = m_nHeight;
  
@@ -2990,7 +2992,7 @@ index 4eb5eac280..82a80a4ea7 100644
    if (!m_guiFbo.IsValid() || m_guiFboWidth != width || m_guiFboHeight != height)
    {
      m_guiFbo.Cleanup();
-@@ -270,7 +893,8 @@ bool CWinSystemGbmGLContext::BeginGuiComposite(bool guiWillRender)
+@@ -270,7 +895,8 @@ bool CWinSystemGbmGLContext::BeginGuiComposite(bool guiWillRender)
  
      if (!m_guiFbo.AttachDepthBuffer(width, height))
      {
@@ -3000,7 +3002,7 @@ index 4eb5eac280..82a80a4ea7 100644
                  width, height);
        m_guiFbo.Cleanup();
        return false;
-@@ -278,25 +902,44 @@ bool CWinSystemGbmGLContext::BeginGuiComposite(bool guiWillRender)
+@@ -278,25 +904,44 @@ bool CWinSystemGbmGLContext::BeginGuiComposite(bool guiWillRender)
  
      m_guiFboWidth = width;
      m_guiFboHeight = height;
@@ -3054,7 +3056,7 @@ index 4eb5eac280..82a80a4ea7 100644
    // Clear only when the FBO holds stale content; idle frames are already clean.
    if (!m_guiFboClean)
    {
-@@ -304,6 +947,11 @@ bool CWinSystemGbmGLContext::BeginGuiComposite(bool guiWillRender)
+@@ -304,6 +949,11 @@ bool CWinSystemGbmGLContext::BeginGuiComposite(bool guiWillRender)
      glClear(GL_COLOR_BUFFER_BIT);
      m_guiFboClean = true;
    }
@@ -3066,7 +3068,7 @@ index 4eb5eac280..82a80a4ea7 100644
  
    return true;
  }
-@@ -311,16 +959,31 @@ bool CWinSystemGbmGLContext::BeginGuiComposite(bool guiWillRender)
+@@ -311,16 +961,31 @@ bool CWinSystemGbmGLContext::BeginGuiComposite(bool guiWillRender)
  void CWinSystemGbmGLContext::EndGuiComposite()
  {
    if (m_guiWillRender)
@@ -3100,7 +3102,7 @@ index 4eb5eac280..82a80a4ea7 100644
    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
    glClear(GL_COLOR_BUFFER_BIT);
  }
-@@ -335,72 +998,1962 @@ void CWinSystemGbmGLContext::CompositeGui()
+@@ -335,72 +1000,1964 @@ void CWinSystemGbmGLContext::CompositeGui()
  
    // Only update m_guiFboClean when GUI render fired this frame; otherwise the
    // FBO is in the same state as the previous frame and the flag stays as-is.
@@ -3174,6 +3176,8 @@ index 4eb5eac280..82a80a4ea7 100644
 +    glGetIntegerv(GL_VIEWPORT, previousViewport);
 +    glBindFramebuffer(GL_FRAMEBUFFER, target);
 +    glViewport(0, 0, m_nWidth, m_nHeight);
++    // The movie's libplacebo passes leave no vertex array bound
++    glBindVertexArray(m_vertexArray);
 +  }
 +#endif
 +
