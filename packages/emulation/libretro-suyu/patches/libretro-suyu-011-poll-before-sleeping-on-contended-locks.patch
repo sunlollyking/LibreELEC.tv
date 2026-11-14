@@ -1,0 +1,169 @@
+diff -ruN a/src/common/adaptive_mutex.h b/src/common/adaptive_mutex.h
+--- a/src/common/adaptive_mutex.h
++++ b/src/common/adaptive_mutex.h
+@@ -0,0 +1,69 @@
++// SPDX-FileCopyrightText: Copyright 2026 suyu Emulator Project
++// SPDX-License-Identifier: GPL-3.0-or-later
++
++#pragma once
++
++#include <atomic>
++
++#if defined(__x86_64__) || defined(_M_X64)
++#include <immintrin.h>
++#endif
++
++namespace Common {
++
++/// A mutex that polls for a moment before it sleeps. For a lock that is held for microseconds at
++/// a time but handed over thousands of times a second, sleeping and being woken through the
++/// kernel costs both sides more than the wait itself.
++template <typename Mutex>
++class AdaptiveMutex {
++public:
++    void lock() {
++        if (mutex.try_lock()) {
++            Acquired();
++            return;
++        }
++        for (int i = 0; i < POLL_COUNT; ++i) {
++#if defined(__x86_64__) || defined(_M_X64)
++            _mm_pause();
++#endif
++            // Look before trying, so that waiting doesn't keep taking the holder's cache line
++            if (!busy.load(std::memory_order_relaxed) && mutex.try_lock()) {
++                Acquired();
++                return;
++            }
++        }
++        mutex.lock();
++        Acquired();
++    }
++
++    bool try_lock() {
++        if (!mutex.try_lock()) {
++            return false;
++        }
++        Acquired();
++        return true;
++    }
++
++    void unlock() {
++        if (--depth == 0) {
++            busy.store(false, std::memory_order_relaxed);
++        }
++        mutex.unlock();
++    }
++
++private:
++    static constexpr int POLL_COUNT = 2000;
++
++    void Acquired() {
++        if (depth++ == 0) {
++            busy.store(true, std::memory_order_relaxed);
++        }
++    }
++
++    Mutex mutex;
++    std::atomic<bool> busy{false};
++    /// Only touched while the mutex is held
++    int depth{0};
++};
++
++} // namespace Common
+diff -ruN a/src/common/CMakeLists.txt b/src/common/CMakeLists.txt
+--- a/src/common/CMakeLists.txt
++++ b/src/common/CMakeLists.txt
+@@ -21,6 +21,7 @@
+ 
+ add_library(
+     common STATIC
++    adaptive_mutex.h
+     address_space.cpp
+     address_space.h
+     algorithm.h
+diff -ruN a/src/core/hle/kernel/k_spin_lock.h b/src/core/hle/kernel/k_spin_lock.h
+--- a/src/core/hle/kernel/k_spin_lock.h
++++ b/src/core/hle/kernel/k_spin_lock.h
+@@ -5,6 +5,8 @@
+ 
+ #include <mutex>
+ 
++#include "common/adaptive_mutex.h"
++
+ #include "common/common_funcs.h"
+ #include "core/hle/kernel/k_scoped_lock.h"
+ 
+@@ -22,7 +24,7 @@
+     bool TryLock();
+ 
+ private:
+-    std::mutex m_lock;
++    Common::AdaptiveMutex<std::mutex> m_lock;
+ };
+ 
+ // TODO(bunnei): Alias for now, in case we want to implement these accurately in the future.
+diff -ruN a/src/video_core/buffer_cache/buffer_cache_base.h b/src/video_core/buffer_cache/buffer_cache_base.h
+--- a/src/video_core/buffer_cache/buffer_cache_base.h
++++ b/src/video_core/buffer_cache/buffer_cache_base.h
+@@ -20,6 +20,7 @@
+ #include <boost/container/static_vector.hpp>
+ #include <boost/container/small_vector.hpp>
+ 
++#include "common/adaptive_mutex.h"
+ #include "common/common_types.h"
+ #include "common/div_ceil.h"
+ #include "common/literals.h"
+@@ -321,7 +322,7 @@
+         } while (channel_state->has_deleted_buffers);
+     }
+ 
+-    std::recursive_mutex mutex;
++    Common::AdaptiveMutex<std::recursive_mutex> mutex;
+     Runtime& runtime;
+     bool any_buffer_uploaded = false;
+ 
+diff -ruN a/src/video_core/renderer_opengl/gl_rasterizer.cpp b/src/video_core/renderer_opengl/gl_rasterizer.cpp
+--- a/src/video_core/renderer_opengl/gl_rasterizer.cpp
++++ b/src/video_core/renderer_opengl/gl_rasterizer.cpp
+@@ -716,7 +716,7 @@
+     }
+     gpu_memory->WriteBlockUnsafe(address, memory.data(), copy_size);
+     {
+-        std::unique_lock<std::recursive_mutex> lock{buffer_cache.mutex};
++        std::unique_lock lock{buffer_cache.mutex};
+         if (!buffer_cache.InlineMemory(*cpu_addr, copy_size, memory)) {
+             buffer_cache.WriteMemory(*cpu_addr, copy_size);
+         }
+diff -ruN a/src/video_core/renderer_vulkan/vk_rasterizer.cpp b/src/video_core/renderer_vulkan/vk_rasterizer.cpp
+--- a/src/video_core/renderer_vulkan/vk_rasterizer.cpp
++++ b/src/video_core/renderer_vulkan/vk_rasterizer.cpp
+@@ -906,7 +906,7 @@
+     }
+     gpu_memory->WriteBlockUnsafe(address, memory.data(), copy_size);
+     {
+-        std::unique_lock<std::recursive_mutex> lock{buffer_cache.mutex};
++        std::unique_lock lock{buffer_cache.mutex};
+         if (!buffer_cache.InlineMemory(*cpu_addr, copy_size, memory)) {
+             buffer_cache.WriteMemory(*cpu_addr, copy_size);
+         }
+diff -ruN a/src/video_core/texture_cache/texture_cache_base.h b/src/video_core/texture_cache/texture_cache_base.h
+--- a/src/video_core/texture_cache/texture_cache_base.h
++++ b/src/video_core/texture_cache/texture_cache_base.h
+@@ -20,6 +20,7 @@
+ #include <boost/container/static_vector.hpp>
+ #include <queue>
+ 
++#include "common/adaptive_mutex.h"
+ #include "common/common_types.h"
+ #include "common/hash.h"
+ #include "common/literals.h"
+@@ -257,7 +258,7 @@
+     /// Prepare an image to be used
+     void PrepareImage(ImageId image_id, bool is_modification, bool invalidate);
+ 
+-    std::recursive_mutex mutex;
++    Common::AdaptiveMutex<std::recursive_mutex> mutex;
+ 
+ private:
+     /// Iterate over all page indices in a range
