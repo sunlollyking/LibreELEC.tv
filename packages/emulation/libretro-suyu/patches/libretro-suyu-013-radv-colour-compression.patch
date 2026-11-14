@@ -1,0 +1,874 @@
+diff -ruN a/src/video_core/compatible_formats.cpp b/src/video_core/compatible_formats.cpp
+--- a/src/video_core/compatible_formats.cpp	2026-11-14 17:37:02.803621096 +0000
++++ b/src/video_core/compatible_formats.cpp	2026-11-14 17:37:02.804628919 +0000
+@@ -2,6 +2,7 @@
+ // SPDX-License-Identifier: GPL-2.0-or-later
+ 
+ #include <array>
++#include <atomic>
+ #include <cstddef>
+ 
+ #include "common/common_types.h"
+@@ -268,8 +269,18 @@
+     EnableRange(copy, VIEW_CLASS_32_BITS);
+     return copy;
+ }
++
++std::atomic_bool separate_atomic_view_formats{false};
++
++constexpr bool AllowsAtomics(PixelFormat format) {
++    return format == PixelFormat::R32_UINT || format == PixelFormat::R32_SINT;
++}
+ } // Anonymous namespace
+ 
++void SeparateAtomicViewFormats(bool separate) {
++    separate_atomic_view_formats = separate;
++}
++
+ bool IsViewCompatible(PixelFormat format_a, PixelFormat format_b, bool broken_views,
+                       bool native_bgr) {
+     if (format_a == format_b) {
+@@ -279,6 +290,9 @@
+         // If format views are broken, only accept formats that are identical.
+         return format_a == format_b;
+     }
++    if (separate_atomic_view_formats && AllowsAtomics(format_a) != AllowsAtomics(format_b)) {
++        return false;
++    }
+     static constexpr Table BGR_TABLE = MakeNativeBgrViewTable();
+     static constexpr Table NO_BGR_TABLE = MakeNonNativeBgrViewTable();
+     return IsSupported(native_bgr ? BGR_TABLE : NO_BGR_TABLE, format_a, format_b);
+diff -ruN a/src/video_core/compatible_formats.h b/src/video_core/compatible_formats.h
+--- a/src/video_core/compatible_formats.h	2026-11-14 17:37:02.813687317 +0000
++++ b/src/video_core/compatible_formats.h	2026-11-14 17:37:02.814728631 +0000
+@@ -12,4 +12,7 @@
+ 
+ bool IsCopyCompatible(PixelFormat format_a, PixelFormat format_b, bool native_bgr);
+ 
++/// Makes the formats shaders can do atomic operations on view compatible with each other only
++void SeparateAtomicViewFormats(bool separate);
++
+ } // namespace VideoCore::Surface
+diff -ruN a/src/video_core/renderer_vulkan/vk_graphics_pipeline.cpp b/src/video_core/renderer_vulkan/vk_graphics_pipeline.cpp
+--- a/src/video_core/renderer_vulkan/vk_graphics_pipeline.cpp	2026-11-14 17:37:02.901739977 +0000
++++ b/src/video_core/renderer_vulkan/vk_graphics_pipeline.cpp	2026-11-14 17:37:02.902871973 +0000
+@@ -281,6 +281,11 @@
+         num_descriptor_entries += NumDescriptorEntries(*info);
+     }
+     fragment_has_color0_output = stage_infos[NUM_STAGES - 1].stores_frag_color[0];
++    for (size_t index = 0; index < Maxwell::NumRenderTargets; ++index) {
++        if (stage_infos[NUM_STAGES - 1].stores_frag_color[index]) {
++            fragment_color_outputs |= 1u << index;
++        }
++    }
+     auto func{[this, shader_notify, &render_pass_cache, &descriptor_pool, pipeline_statistics] {
+         const bool time_pipeline = PipelineTimingEnabled(key.Hash());
+         const auto setup_start = time_pipeline ? std::chrono::steady_clock::now()
+@@ -565,7 +570,15 @@
+ 
+ bool GraphicsPipeline::ConfigureDraw(const RescalingPushConstant& rescaling,
+                                      const RenderAreaPushConstant& render_area) {
+-    scheduler.RequestRenderpass(texture_cache.GetFramebuffer());
++    if (device.NeedsFeedbackLoopLayout()) {
++        // The driver leaves a color buffer the fragment shader has no output for as it is
++        const u32 written_targets = texture_cache.WrittenColorTargets() & fragment_color_outputs;
++        texture_cache.NoteFeedbackLoops(written_targets);
++        scheduler.RequestRenderpass(texture_cache.GetFramebuffer(),
++                                    texture_cache.SampledColorTargets(), written_targets);
++    } else {
++        scheduler.RequestRenderpass(texture_cache.GetFramebuffer());
++    }
+     if (!is_built.load(std::memory_order::acquire)) {
+         // Wait here rather than from a recorded command. The recorded wait ran
+         // on the scheduler thread after this draw had already been queued, so
+diff -ruN a/src/video_core/renderer_vulkan/vk_graphics_pipeline.h b/src/video_core/renderer_vulkan/vk_graphics_pipeline.h
+--- a/src/video_core/renderer_vulkan/vk_graphics_pipeline.h	2026-11-14 17:37:02.934036449 +0000
++++ b/src/video_core/renderer_vulkan/vk_graphics_pipeline.h	2026-11-14 17:37:02.935017316 +0000
+@@ -270,6 +270,8 @@
+     size_t num_image_elements{};
+     u32 num_textures{};
+     bool fragment_has_color0_output{};
++    /// Color targets the fragment shader has an output for, as a mask of their indices
++    u32 fragment_color_outputs{};
+     u64 layout_signature{};
+     bool precompile_only{};
+ 
+diff -ruN a/src/video_core/renderer_vulkan/vk_render_pass_cache.cpp b/src/video_core/renderer_vulkan/vk_render_pass_cache.cpp
+--- a/src/video_core/renderer_vulkan/vk_render_pass_cache.cpp	2026-11-14 17:37:02.911897810 +0000
++++ b/src/video_core/renderer_vulkan/vk_render_pass_cache.cpp	2026-11-14 17:37:02.912981785 +0000
+@@ -82,9 +82,11 @@
+     for (size_t index = 0; index < key.color_formats.size(); ++index) {
+         const PixelFormat format{key.color_formats[index]};
+         const bool is_valid{format != PixelFormat::Invalid};
++        const bool is_feedback_loop{((key.feedback_loop_mask >> index) & 1) != 0};
+         references[index] = VkAttachmentReference{
+             .attachment = is_valid ? num_colors : VK_ATTACHMENT_UNUSED,
+-            .layout = VK_IMAGE_LAYOUT_GENERAL,
++            .layout = is_feedback_loop ? VK_IMAGE_LAYOUT_ATTACHMENT_FEEDBACK_LOOP_OPTIMAL_EXT
++                                       : VK_IMAGE_LAYOUT_GENERAL,
+         };
+         if (is_valid) {
+             descriptions.push_back(AttachmentDescription(*device, format, key.samples));
+diff -ruN a/src/video_core/renderer_vulkan/vk_render_pass_cache.h b/src/video_core/renderer_vulkan/vk_render_pass_cache.h
+--- a/src/video_core/renderer_vulkan/vk_render_pass_cache.h	2026-11-14 17:37:02.879402990 +0000
++++ b/src/video_core/renderer_vulkan/vk_render_pass_cache.h	2026-11-14 17:37:02.880657749 +0000
+@@ -20,6 +20,8 @@
+     std::array<VideoCore::Surface::PixelFormat, 8> color_formats;
+     VideoCore::Surface::PixelFormat depth_format;
+     VkSampleCountFlagBits samples;
++    /// Color attachments that the draws of the pass also sample from
++    u32 feedback_loop_mask{};
+ };
+ 
+ } // namespace Vulkan
+@@ -30,6 +32,7 @@
+     [[nodiscard]] size_t operator()(const Vulkan::RenderPassKey& key) const noexcept {
+         size_t value = static_cast<size_t>(key.depth_format) << 48;
+         value ^= static_cast<size_t>(key.samples) << 52;
++        value ^= static_cast<size_t>(key.feedback_loop_mask) << 56;
+         for (size_t i = 0; i < key.color_formats.size(); ++i) {
+             value ^= static_cast<size_t>(key.color_formats[i]) << (i * 6);
+         }
+diff -ruN a/src/video_core/renderer_vulkan/vk_scheduler.cpp b/src/video_core/renderer_vulkan/vk_scheduler.cpp
+--- a/src/video_core/renderer_vulkan/vk_scheduler.cpp	2026-11-14 17:37:02.868754351 +0000
++++ b/src/video_core/renderer_vulkan/vk_scheduler.cpp	2026-11-14 17:37:02.869777870 +0000
+@@ -95,19 +95,28 @@
+     }
+ }
+ 
+-void Scheduler::RequestRenderpass(const Framebuffer* framebuffer) {
+-    const VkRenderPass renderpass = framebuffer->RenderPass();
++void Scheduler::RequestRenderpass(const Framebuffer* framebuffer, u32 sampled_targets,
++                                  u32 written_targets) {
+     const VkFramebuffer framebuffer_handle = framebuffer->Handle();
+     const VkExtent2D render_area = framebuffer->RenderArea();
+-    if (renderpass == state.renderpass && framebuffer_handle == state.framebuffer &&
++    // A color buffer can be sampled from once the writes to it are flushed, which ending the
++    // renderpass does, and written to at the same time only in the feedback loop layout
++    const u32 unsafe_reads =
++        sampled_targets & ~state.feedback_loops & (written_targets | state.written_targets);
++    if (state.renderpass && framebuffer_handle == state.framebuffer && unsafe_reads == 0 &&
+         render_area.width == state.render_area.width &&
+         render_area.height == state.render_area.height) {
++        state.written_targets |= written_targets;
+         return;
+     }
+     EndRenderPass();
++    const u32 feedback_loops = sampled_targets & written_targets;
++    const VkRenderPass renderpass = framebuffer->RenderPass(feedback_loops);
+     state.renderpass = renderpass;
+     state.framebuffer = framebuffer_handle;
+     state.render_area = render_area;
++    state.feedback_loops = feedback_loops;
++    state.written_targets = written_targets;
+ 
+     // Log render pass begin
+     if (GPU::Logging::IsActive() &&
+diff -ruN a/src/video_core/renderer_vulkan/vk_scheduler.h b/src/video_core/renderer_vulkan/vk_scheduler.h
+--- a/src/video_core/renderer_vulkan/vk_scheduler.h	2026-11-14 17:37:02.923241299 +0000
++++ b/src/video_core/renderer_vulkan/vk_scheduler.h	2026-11-14 17:37:02.924221188 +0000
+@@ -56,8 +56,10 @@
+     /// Sends currently recorded work to the worker thread.
+     void DispatchWork();
+ 
+-    /// Requests to begin a renderpass.
+-    void RequestRenderpass(const Framebuffer* framebuffer);
++    /// Requests to begin a renderpass. The draws that follow sample from the color buffers in
++    /// sampled_targets and may write to those in written_targets.
++    void RequestRenderpass(const Framebuffer* framebuffer, u32 sampled_targets = 0,
++                           u32 written_targets = ~0u);
+ 
+     /// Requests the current execution context to be able to execute operations only allowed outside
+     /// of a renderpass.
+@@ -245,6 +247,10 @@
+         VkRenderPass renderpass{};
+         VkFramebuffer framebuffer{};
+         VkExtent2D render_area = {0, 0};
++        /// Color buffers the renderpass has in the feedback loop layout
++        u32 feedback_loops = 0;
++        /// Color buffers that may have been written to since the renderpass began
++        u32 written_targets = 0;
+         GraphicsPipeline* graphics_pipeline = nullptr;
+         bool is_rescaling = false;
+         bool rescaling_defined = false;
+diff -ruN a/src/video_core/renderer_vulkan/vk_texture_cache.cpp b/src/video_core/renderer_vulkan/vk_texture_cache.cpp
+--- a/src/video_core/renderer_vulkan/vk_texture_cache.cpp	2026-11-14 17:37:02.858617174 +0000
++++ b/src/video_core/renderer_vulkan/vk_texture_cache.cpp	2026-11-14 17:37:02.859829442 +0000
+@@ -163,6 +163,10 @@
+     if (info.type == ImageType::e3D) {
+         flags |= VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT;
+     }
++    VkImageUsageFlags usage = ImageUsageFlags(format_info, info.format);
++    if (device.NeedsFeedbackLoopLayout() && (usage & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) != 0) {
++        usage |= VK_IMAGE_USAGE_ATTACHMENT_FEEDBACK_LOOP_BIT_EXT;
++    }
+     const auto [samples_x, samples_y] = VideoCommon::SamplesLog2(info.num_samples);
+     return VkImageCreateInfo{
+         .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+@@ -179,7 +183,7 @@
+         .arrayLayers = static_cast<u32>(info.resources.layers),
+         .samples = ConvertSampleCount(info.num_samples),
+         .tiling = VK_IMAGE_TILING_OPTIMAL,
+-        .usage = ImageUsageFlags(format_info, info.format),
++        .usage = usage,
+         .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
+         .queueFamilyIndexCount = 0,
+         .pQueueFamilyIndices = nullptr,
+@@ -189,7 +193,8 @@
+ 
+ [[nodiscard]] vk::Image MakeImage(const Device& device, const MemoryAllocator& allocator,
+                                   const ImageInfo& info, std::span<const VkFormat> view_formats,
+-                                  std::optional<VkFormat> format_override = {}) {
++                                  std::optional<VkFormat> format_override = {},
++                                  bool uncompressed = false) {
+     if (info.type == ImageType::Buffer) {
+         return vk::Image{};
+     }
+@@ -217,6 +222,16 @@
+             image_ci.pNext = &image_format_list;
+         }
+     }
++    VkImageCompressionControlEXT compression_control{
++        .sType = VK_STRUCTURE_TYPE_IMAGE_COMPRESSION_CONTROL_EXT,
++        .pNext = image_ci.pNext,
++        .flags = VK_IMAGE_COMPRESSION_DISABLED_EXT,
++        .compressionControlPlaneCount = 0,
++        .pFixedRateFlags = nullptr,
++    };
++    if (uncompressed) {
++        image_ci.pNext = &compression_control;
++    }
+     return allocator.CreateImage(image_ci);
+ }
+ 
+@@ -915,6 +930,10 @@
+     if (!device.IsKhrImageFormatListSupported()) {
+         return;
+     }
++    // RADV leaves delta color compression, and fast clears with it, off for a storage image whose
++    // format list holds a format that allows atomics. A compressed image needs the care that
++    // comes with the feedback loop layout when a draw samples from it while rendering to it.
++    VideoCore::Surface::SeparateAtomicViewFormats(device.NeedsFeedbackLoopLayout());
+     for (size_t index_a = 0; index_a < VideoCore::Surface::MaxPixelFormat; index_a++) {
+         const auto image_format = static_cast<PixelFormat>(index_a);
+         if (IsPixelFormatASTC(image_format) && !device.IsOptimalAstcSupported()) {
+@@ -1622,7 +1641,27 @@
+     return device.GetSamplerHeapBudget();
+ }
+ 
+-void TextureCacheRuntime::TickFrame() {}
++void TextureCacheRuntime::TickFrame() {
++    for (RetiredImage& retired : retired_images) {
++        --retired.frames_left;
++    }
++    std::erase_if(retired_images,
++                  [](const RetiredImage& retired) { return retired.frames_left == 0; });
++}
++
++bool TextureCacheRuntime::SetFeedbackLoopSafe(Image& image, bool safe) {
++    return image.SetCompression(!safe);
++}
++
++void TextureCacheRuntime::Retire(vk::Image image, std::vector<vk::ImageView> views) {
++    // Longer than the texture cache keeps the image views it replaces
++    static constexpr u32 FRAMES_TO_KEEP = 16;
++    retired_images.push_back(RetiredImage{
++        .image = std::move(image),
++        .views = std::move(views),
++        .frames_left = FRAMES_TO_KEEP,
++    });
++}
+ 
+ Image::Image(TextureCacheRuntime& runtime_, const ImageInfo& info_, GPUVAddr gpu_addr_,
+              VAddr cpu_addr_)
+@@ -2038,6 +2077,126 @@
+     return True(flags & ImageFlagBits::Rescaled);
+ }
+ 
++bool Image::SetCompression(bool compressed) {
++    const Device& device = runtime->device;
++    if (!device.NeedsFeedbackLoopLayout() || !device.IsExtImageCompressionControlSupported()) {
++        return false;
++    }
++    if (!original_image || scaled_image || scale_view || normal_view ||
++        (original_image.UsageFlags() & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) == 0) {
++        return false;
++    }
++    vk::Image replacement =
++        MakeImage(device, runtime->memory_allocator, info, runtime->ViewFormats(info.format),
++                  std::nullopt, !compressed);
++    if (initialized) {
++        const auto [samples_x, samples_y] = VideoCommon::SamplesLog2(info.num_samples);
++        const u32 width = info.size.width >> samples_x;
++        const u32 height = info.size.height >> samples_y;
++        const bool is_3d = info.type == ImageType::e3D;
++        boost::container::small_vector<VkImageCopy, 16> copies;
++        for (s32 level = 0; level < info.resources.levels; ++level) {
++            const VkImageSubresourceLayers subresource{
++                .aspectMask = aspect_mask,
++                .mipLevel = static_cast<u32>(level),
++                .baseArrayLayer = 0,
++                .layerCount = static_cast<u32>(info.resources.layers),
++            };
++            copies.push_back(VkImageCopy{
++                .srcSubresource = subresource,
++                .srcOffset{},
++                .dstSubresource = subresource,
++                .dstOffset{},
++                .extent{
++                    .width = (std::max)(width >> level, 1u),
++                    .height = (std::max)(height >> level, 1u),
++                    .depth = is_3d ? (std::max)(info.size.depth >> level, 1u) : 1u,
++                },
++            });
++        }
++        scheduler->RequestOutsideRenderPassOperationContext();
++        scheduler->Record([src = *original_image, dst = *replacement, aspect = aspect_mask,
++                           copies](vk::CommandBuffer cmdbuf) {
++            const VkImageSubresourceRange range{
++                .aspectMask = aspect,
++                .baseMipLevel = 0,
++                .levelCount = VK_REMAINING_MIP_LEVELS,
++                .baseArrayLayer = 0,
++                .layerCount = VK_REMAINING_ARRAY_LAYERS,
++            };
++            const std::array pre_barriers{
++                VkImageMemoryBarrier{
++                    .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
++                    .pNext = nullptr,
++                    .srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT |
++                                     VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
++                                     VK_ACCESS_TRANSFER_WRITE_BIT,
++                    .dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT,
++                    .oldLayout = VK_IMAGE_LAYOUT_GENERAL,
++                    .newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
++                    .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
++                    .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
++                    .image = src,
++                    .subresourceRange = range,
++                },
++                VkImageMemoryBarrier{
++                    .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
++                    .pNext = nullptr,
++                    .srcAccessMask = 0,
++                    .dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT,
++                    .oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
++                    .newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
++                    .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
++                    .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
++                    .image = dst,
++                    .subresourceRange = range,
++                },
++            };
++            const VkImageMemoryBarrier post_barrier{
++                .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
++                .pNext = nullptr,
++                .srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT,
++                .dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT |
++                                 VK_ACCESS_COLOR_ATTACHMENT_READ_BIT |
++                                 VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
++                                 VK_ACCESS_TRANSFER_READ_BIT | VK_ACCESS_TRANSFER_WRITE_BIT,
++                .oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
++                .newLayout = VK_IMAGE_LAYOUT_GENERAL,
++                .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
++                .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
++                .image = dst,
++                .subresourceRange = range,
++            };
++            cmdbuf.PipelineBarrier(VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT |
++                                       VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT |
++                                       VK_PIPELINE_STAGE_TRANSFER_BIT,
++                                   VK_PIPELINE_STAGE_TRANSFER_BIT, 0, nullptr, nullptr,
++                                   pre_barriers);
++            cmdbuf.CopyImage(src, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dst,
++                             VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
++                             VideoCommon::FixSmallVectorADL(copies));
++            cmdbuf.PipelineBarrier(VK_PIPELINE_STAGE_TRANSFER_BIT,
++                                   VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT |
++                                       VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT |
++                                       VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT |
++                                       VK_PIPELINE_STAGE_TRANSFER_BIT,
++                                   0, post_barrier);
++        });
++    }
++    std::vector<vk::ImageView> storage_views;
++    for (vk::ImageView& view : storage_image_views) {
++        if (view) {
++            storage_views.push_back(std::move(view));
++        }
++    }
++    runtime->Retire(std::move(original_image), std::move(storage_views));
++    original_image = std::move(replacement);
++    if (device.HasDebuggingToolAttached()) {
++        original_image.SetObjectNameEXT(VideoCommon::Name(*this).c_str());
++    }
++    return true;
++}
++
+ bool Image::ScaleUp(bool ignore) {
+     const auto& resolution = runtime->resolution;
+     if (!resolution.active) {
+@@ -2057,7 +2216,8 @@
+         scaled_info.size.width = scaled_width;
+         scaled_info.size.height = scaled_height;
+         scaled_image = MakeImage(runtime->device, runtime->memory_allocator, scaled_info,
+-                                 runtime->ViewFormats(info.format));
++                                 runtime->ViewFormats(info.format), std::nullopt,
++                                 True(flags & ImageFlagBits::FeedbackLoopSafe));
+         ignore = false;
+     }
+     current_image = &Image::scaled_image;
+@@ -2210,7 +2370,10 @@
+     }
+     const VkImageUsageFlags requested_view_usage = ImageUsageFlags(format_info, format);
+     const VkImageUsageFlags image_usage = image.UsageFlags();
+-    const VkImageUsageFlags clamped_view_usage = requested_view_usage & image_usage;
++    VkImageUsageFlags clamped_view_usage = requested_view_usage & image_usage;
++    if ((clamped_view_usage & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) != 0) {
++        clamped_view_usage |= image_usage & VK_IMAGE_USAGE_ATTACHMENT_FEEDBACK_LOOP_BIT_EXT;
++    }
+     const VkImageViewUsageCreateInfo image_view_usage{
+         .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_USAGE_CREATE_INFO,
+         .pNext = nullptr,
+@@ -2513,7 +2676,6 @@
+                                     std::span<ImageView*, NUM_RT> color_buffers,
+                                     ImageView* depth_buffer, bool is_rescaled_) {
+     boost::container::small_vector<VkImageView, NUM_RT + 1> attachments;
+-    RenderPassKey renderpass_key{};
+     s32 num_layers = 1;
+ 
+     is_rescaled = is_rescaled_;
+@@ -2562,6 +2724,9 @@
+     renderpass_key.samples = samples;
+ 
+     renderpass = runtime.render_pass_cache.Get(renderpass_key);
++    if (runtime.device.NeedsFeedbackLoopLayout()) {
++        render_pass_cache = &runtime.render_pass_cache;
++    }
+     render_area.width = (std::min)(render_area.width, width);
+     render_area.height = (std::min)(render_area.height, height);
+ 
+@@ -2579,6 +2744,19 @@
+     });
+ }
+ 
++VkRenderPass Framebuffer::RenderPass(u32 feedback_loop_mask) const {
++    if (feedback_loop_mask == 0 || !render_pass_cache) {
++        return renderpass;
++    }
++    if (feedback_loop_mask != feedback_loop_renderpass_mask) {
++        RenderPassKey key{renderpass_key};
++        key.feedback_loop_mask = feedback_loop_mask;
++        feedback_loop_renderpass = render_pass_cache->Get(key);
++        feedback_loop_renderpass_mask = feedback_loop_mask;
++    }
++    return feedback_loop_renderpass;
++}
++
+ void TextureCacheRuntime::AccelerateImageUpload(
+     Image& image, const StagingBufferRef& map,
+     std::span<const VideoCommon::SwizzleParameters> swizzles,
+diff -ruN a/src/video_core/renderer_vulkan/vk_texture_cache.h b/src/video_core/renderer_vulkan/vk_texture_cache.h
+--- a/src/video_core/renderer_vulkan/vk_texture_cache.h	2026-11-14 17:37:02.891513079 +0000
++++ b/src/video_core/renderer_vulkan/vk_texture_cache.h	2026-11-14 17:37:02.892463676 +0000
+@@ -12,6 +12,7 @@
+ 
+ #include "shader_recompiler/shader_info.h"
+ #include "video_core/renderer_vulkan/vk_compute_pass.h"
++#include "video_core/renderer_vulkan/vk_render_pass_cache.h"
+ #include "video_core/renderer_vulkan/vk_staging_buffer_pool.h"
+ #include "video_core/texture_cache/image_view_base.h"
+ #include "video_core/vulkan_common/vulkan_memory_allocator.h"
+@@ -116,6 +117,13 @@
+ 
+     void BarrierFeedbackLoop();
+ 
++    /// Makes it safe to sample from the image while it is bound as a render target, or undoes
++    /// that. Returns false if it cannot.
++    bool SetFeedbackLoopSafe(Image& image, bool safe);
++
++    /// Keeps an image that was replaced, and views of it, until the commands using them have run
++    void Retire(vk::Image image, std::vector<vk::ImageView> views);
++
+     bool IsFormatDitherable(VideoCore::Surface::PixelFormat format);
+     bool IsFormatScalable(VideoCore::Surface::PixelFormat format);
+ 
+@@ -136,6 +144,13 @@
+ 
+     static constexpr size_t indexing_slots = 8 * sizeof(size_t);
+     std::array<vk::Buffer, indexing_slots> buffers{};
++
++    struct RetiredImage {
++        vk::Image image;
++        std::vector<vk::ImageView> views;
++        u32 frames_left;
++    };
++    std::vector<RetiredImage> retired_images;
+ };
+ 
+ class Framebuffer {
+@@ -166,6 +181,9 @@
+         return renderpass;
+     }
+ 
++    /// Render pass for draws that sample from the color buffers in the mask
++    [[nodiscard]] VkRenderPass RenderPass(u32 feedback_loop_mask) const;
++
+     [[nodiscard]] VkExtent2D RenderArea() const noexcept {
+         return render_area;
+     }
+@@ -209,6 +227,10 @@
+ private:
+     vk::Framebuffer framebuffer;
+     VkRenderPass renderpass{};
++    RenderPassCache* render_pass_cache{};
++    RenderPassKey renderpass_key{};
++    mutable VkRenderPass feedback_loop_renderpass{};
++    mutable u32 feedback_loop_renderpass_mask{};
+     VkExtent2D render_area{};
+     VkSampleCountFlagBits samples = VK_SAMPLE_COUNT_1_BIT;
+     u32 num_color_buffers = 0;
+@@ -277,6 +299,10 @@
+ 
+     bool ScaleDown(bool ignore = false);
+ 
++    /// Replaces the image with one of the same contents that the driver may compress, or may
++    /// not. Returns false if it cannot.
++    bool SetCompression(bool compressed);
++
+     u64 allocation_tick;
+ 
+     friend class BlockLinearUnswizzle3DPass;
+diff -ruN a/src/video_core/texture_cache/image_base.h b/src/video_core/texture_cache/image_base.h
+--- a/src/video_core/texture_cache/image_base.h	2026-11-14 17:37:02.826190748 +0000
++++ b/src/video_core/texture_cache/image_base.h	2026-11-14 17:37:02.827185253 +0000
+@@ -42,6 +42,8 @@
+ 
+     AsynchronousDecode = 1 << 16,
+     IsDecoding = 1 << 17, ///< Is currently being decoded asynchronously.
++
++    FeedbackLoopSafe = 1 << 18, ///< Sampling from it while drawing to it needs no care
+ };
+ DECLARE_ENUM_FLAG_OPERATORS(ImageFlagBits)
+ 
+@@ -104,6 +106,11 @@
+     u64 modification_tick = 0;
+     size_t lru_index = SIZE_MAX;
+ 
++    /// The frame after the last one in which a draw sampled from it and wrote to it
++    u64 feedback_loop_tick = 0;
++    /// Goes up with the frames in which that happens and down with those in which it does not
++    u32 feedback_loop_score = 0;
++
+     std::array<u32, MAX_MIP_LEVELS> mip_level_offsets{};
+ 
+     std::vector<ImageViewInfo> image_view_infos;
+diff -ruN a/src/video_core/texture_cache/texture_cache_base.h b/src/video_core/texture_cache/texture_cache_base.h
+--- a/src/video_core/texture_cache/texture_cache_base.h	2026-11-14 17:37:02.836119870 +0000
++++ b/src/video_core/texture_cache/texture_cache_base.h	2026-11-14 17:37:02.837196104 +0000
+@@ -170,9 +170,27 @@
+     /// Fill image_view_ids with the graphics/compute images in indices
+     void FillImageViews(std::span<ImageViewInOut> views, bool compute, bool blacklist = true);
+ 
++    /// An image is made safe to sample from while it is drawn to when its score reaches this:
++    /// it gains two in a frame in which that happens and loses one in a frame in which it does
++    /// not
++    static constexpr u32 FEEDBACK_LOOP_SCORE_TO_SETTLE = 8;
++    /// Frames without it after which the image goes back to how it was
++    static constexpr u64 FEEDBACK_LOOP_FRAMES_TO_FORGET = 600;
++
+     /// Handle feedback loops during draws.
+     void CheckFeedbackLoop(std::span<const ImageViewInOut> views);
+ 
++    /// Color targets the draw last checked samples from, as a mask of their indices
++    [[nodiscard]] u32 SampledColorTargets() const noexcept {
++        return sampled_color_targets;
++    }
++
++    /// Takes note of the draw last checked writing to these color targets
++    void NoteFeedbackLoops(u32 written_targets);
++
++    /// Color targets the current state writes to, as a mask of their indices
++    [[nodiscard]] u32 WrittenColorTargets() const noexcept;
++
+     /// Get the sampler from the graphics/compute descriptor table in the specified index
+     Sampler* GetSampler(u32 index, bool compute);
+ 
+@@ -443,6 +461,13 @@
+     u64 last_feedback_loop_serial = 0;
+     u64 last_feedback_texture_serial = 0;
+     bool last_feedback_loop_result = false;
++    u32 sampled_color_targets = 0;
++    /// The same of images that are safe to sample from while they are drawn to
++    u32 sampled_safe_color_targets = 0;
++    /// Images to make safe to sample from as render targets when the frame ends, and those
++    /// that have been
++    std::vector<ImageId> feedback_loop_images;
++    std::vector<ImageId> feedback_loop_safe_images;
+     FramebufferId last_framebuffer_id{};
+     u64 last_framebuffer_serial = 0;
+ 
+diff -ruN a/src/video_core/texture_cache/texture_cache.h b/src/video_core/texture_cache/texture_cache.h
+--- a/src/video_core/texture_cache/texture_cache.h	2026-11-14 17:37:02.847250332 +0000
++++ b/src/video_core/texture_cache/texture_cache.h	2026-11-14 17:37:02.848408147 +0000
+@@ -176,6 +176,31 @@
+     if (total_used_memory > minimum_memory) {
+         RunGarbageCollector();
+     }
++    if constexpr (requires { runtime.SetFeedbackLoopSafe(slot_images[ImageId{}], true); }) {
++        for (const ImageId image_id : feedback_loop_images) {
++            Image& image = slot_images[image_id];
++            if (runtime.SetFeedbackLoopSafe(image, true)) {
++                image.flags |= ImageFlagBits::FeedbackLoopSafe;
++                feedback_loop_safe_images.push_back(image_id);
++                // Its views are of the image it had
++                InvalidateScale(image);
++            }
++        }
++        if ((frame_tick & 63) == 0) {
++            std::erase_if(feedback_loop_safe_images, [this](ImageId image_id) {
++                Image& image = slot_images[image_id];
++                if (frame_tick < image.feedback_loop_tick + FEEDBACK_LOOP_FRAMES_TO_FORGET ||
++                    !runtime.SetFeedbackLoopSafe(image, false)) {
++                    return false;
++                }
++                image.flags &= ~ImageFlagBits::FeedbackLoopSafe;
++                image.feedback_loop_score = 0;
++                InvalidateScale(image);
++                return true;
++            });
++        }
++    }
++    feedback_loop_images.clear();
+     sentenced_images.Tick();
+     sentenced_framebuffers.Tick();
+     sentenced_image_view.Tick();
+@@ -239,66 +264,115 @@
+ 
+ template <class P>
+ void TextureCache<P>::CheckFeedbackLoop(std::span<const ImageViewInOut> views) {
+-    if (!Settings::values.barrier_feedback_loops.GetValue()) {
+-        return;
+-    }
++    const bool use_barriers = Settings::values.barrier_feedback_loops.GetValue();
+ 
+     if (render_targets_serial == last_feedback_loop_serial &&
+         texture_bindings_serial == last_feedback_texture_serial) {
+-        if (last_feedback_loop_result) {
++        if (use_barriers && last_feedback_loop_result) {
+             runtime.BarrierFeedbackLoop();
+         }
+         return;
+     }
++    last_feedback_loop_serial = render_targets_serial;
++    last_feedback_texture_serial = texture_bindings_serial;
++    last_feedback_loop_result = false;
++    sampled_color_targets = 0;
++    sampled_safe_color_targets = 0;
+ 
+     if (rt_active_mask == 0) {
+-        last_feedback_loop_serial = render_targets_serial;
+-        last_feedback_texture_serial = texture_bindings_serial;
+-        last_feedback_loop_result = false;
+         return;
+     }
+     const u32 depth_bit = 1u << NUM_RT;
+     const bool depth_active = (rt_active_mask & depth_bit) != 0;
+ 
+-    const bool requires_barrier = [&] {
+-        for (const auto& view : views) {
+-            if (!view.id) {
+-                continue;
+-            }
++    for (const auto& view : views) {
++        if (!view.id) {
++            continue;
++        }
++        const ImageViewBase& image_view = slot_image_views[view.id];
++        const ImageId view_image_id = image_view.image_id;
+ 
+-            {
+-                bool is_continue = false;
+-                for (size_t i = 0; i < 8; ++i)
+-                    is_continue |= (rt_active_mask & (1u << i)) && view.id == render_targets.color_buffer_ids[i];
+-                if (is_continue)
+-                    continue;
++        bool is_color_target = false;
++        for (size_t i = 0; i < NUM_RT; ++i) {
++            if ((rt_active_mask & (1u << i)) == 0 || view_image_id != rt_image_id[i]) {
++                continue;
+             }
+-
+-            if (depth_active && view.id == render_targets.depth_buffer_id)
++            is_color_target = true;
++            const ImageBase& image = slot_images[view_image_id];
++            // Sampling other levels or layers of the image than the ones drawn to is no loop.
++            // A view of a 3D image covers every slice, whatever its layers say.
++            const SubresourceRange& sampled = image_view.range;
++            const SubresourceRange& target =
++                slot_image_views[render_targets.color_buffer_ids[i]].range;
++            const bool shares_levels =
++                sampled.base.level < target.base.level + target.extent.levels &&
++                target.base.level < sampled.base.level + sampled.extent.levels;
++            const bool shares_layers =
++                image.info.type == ImageType::e3D ||
++                (sampled.base.layer < target.base.layer + target.extent.layers &&
++                 target.base.layer < sampled.base.layer + sampled.extent.layers);
++            if (!shares_levels || !shares_layers) {
+                 continue;
+-
+-            const ImageId view_image_id = slot_image_views[view.id].image_id;
+-            {
+-                bool is_continue = false;
+-                for (size_t i = 0; i < 8; ++i)
+-                    is_continue |= (rt_active_mask & (1u << i)) && view_image_id == rt_image_id[i];
+-                if (is_continue)
+-                    continue;
+             }
+-            if (depth_active && view_image_id == rt_depth_image_id) {
+-                return true;
++            if (True(image.flags & ImageFlagBits::FeedbackLoopSafe)) {
++                sampled_safe_color_targets |= 1u << i;
++            } else {
++                sampled_color_targets |= 1u << i;
+             }
+         }
++        if (is_color_target) {
++            continue;
++        }
++        if (depth_active && view.id != render_targets.depth_buffer_id &&
++            view_image_id == rt_depth_image_id) {
++            last_feedback_loop_result = true;
++        }
++    }
++    if (use_barriers && last_feedback_loop_result) {
++        runtime.BarrierFeedbackLoop();
++    }
++}
+ 
+-        return false;
+-    }();
++template <class P>
++void TextureCache<P>::NoteFeedbackLoops(u32 written_targets) {
++    const u32 loops = (sampled_color_targets | sampled_safe_color_targets) & written_targets;
++    for (size_t i = 0; (loops >> i) != 0; ++i) {
++        if (((loops >> i) & 1) == 0) {
++            continue;
++        }
++        const ImageId image_id = rt_image_id[i];
++        ImageBase& image = slot_images[image_id];
++        if (image.feedback_loop_tick == frame_tick + 1) {
++            // Not the first time in this frame
++            continue;
++        }
++        const u64 quiet_frames = image.feedback_loop_tick == 0
++                                     ? FEEDBACK_LOOP_SCORE_TO_SETTLE
++                                     : frame_tick - image.feedback_loop_tick;
++        const u32 old_score = image.feedback_loop_score;
++        const u32 score =
++            (std::min)(static_cast<u32>(old_score > quiet_frames ? old_score - quiet_frames : 0) + 2,
++                       FEEDBACK_LOOP_SCORE_TO_SETTLE * 2);
++        image.feedback_loop_score = score;
++        image.feedback_loop_tick = frame_tick + 1;
++        if (False(image.flags & ImageFlagBits::FeedbackLoopSafe) &&
++            old_score < FEEDBACK_LOOP_SCORE_TO_SETTLE && score >= FEEDBACK_LOOP_SCORE_TO_SETTLE) {
++            feedback_loop_images.push_back(image_id);
++        }
++    }
++}
+ 
+-    last_feedback_loop_serial = render_targets_serial;
+-    last_feedback_texture_serial = texture_bindings_serial;
+-    last_feedback_loop_result = requires_barrier;
+-    if (requires_barrier) {
+-        runtime.BarrierFeedbackLoop();
++template <class P>
++u32 TextureCache<P>::WrittenColorTargets() const noexcept {
++    const auto& regs = maxwell3d->regs;
++    u32 written = 0;
++    for (size_t i = 0; i < NUM_RT; ++i) {
++        const auto& mask = regs.color_mask[regs.color_mask_common ? 0 : i];
++        if (mask.R || mask.G || mask.B || mask.A) {
++            written |= 1u << i;
++        }
+     }
++    return written;
+ }
+ 
+ template <class P>
+@@ -2388,6 +2462,8 @@
+ template <class P>
+ void TextureCache<P>::DeleteImage(ImageId image_id, bool immediate_delete) {
+     ImageBase& image = slot_images[image_id];
++    std::erase(feedback_loop_images, image_id);
++    std::erase(feedback_loop_safe_images, image_id);
+     if (image.HasScaled()) {
+         total_used_memory -= GetScaledImageSizeBytes(image);
+     }
+diff -ruN a/src/video_core/vulkan_common/vulkan_device.cpp b/src/video_core/vulkan_common/vulkan_device.cpp
+--- a/src/video_core/vulkan_common/vulkan_device.cpp	2026-11-14 17:37:02.943539297 +0000
++++ b/src/video_core/vulkan_common/vulkan_device.cpp	2026-11-14 17:37:02.944631358 +0000
+@@ -1237,6 +1237,20 @@
+                                        features.border_color_swizzle,
+                                        VK_EXT_BORDER_COLOR_SWIZZLE_EXTENSION_NAME);
+ 
++    // VK_EXT_attachment_feedback_loop_layout
++    extensions.attachment_feedback_loop_layout =
++        features.attachment_feedback_loop_layout.attachmentFeedbackLoopLayout;
++    RemoveExtensionFeatureIfUnsuitable(extensions.attachment_feedback_loop_layout,
++                                       features.attachment_feedback_loop_layout,
++                                       VK_EXT_ATTACHMENT_FEEDBACK_LOOP_LAYOUT_EXTENSION_NAME);
++
++    // VK_EXT_image_compression_control
++    extensions.image_compression_control =
++        features.image_compression_control.imageCompressionControl;
++    RemoveExtensionFeatureIfUnsuitable(extensions.image_compression_control,
++                                       features.image_compression_control,
++                                       VK_EXT_IMAGE_COMPRESSION_CONTROL_EXTENSION_NAME);
++
+     // VK_EXT_depth_bias_control
+     extensions.depth_bias_control =
+         features.depth_bias_control.depthBiasControl &&
+diff -ruN a/src/video_core/vulkan_common/vulkan_device.h b/src/video_core/vulkan_common/vulkan_device.h
+--- a/src/video_core/vulkan_common/vulkan_device.h	2026-11-14 17:37:02.953690107 +0000
++++ b/src/video_core/vulkan_common/vulkan_device.h	2026-11-14 17:37:02.954714771 +0000
+@@ -50,6 +50,8 @@
+ 
+ // Define all features which may be used by the implementation and require an extension here.
+ #define FOR_EACH_VK_FEATURE_EXT(FEATURE)                                                           \
++    FEATURE(EXT, AttachmentFeedbackLoopLayout, ATTACHMENT_FEEDBACK_LOOP_LAYOUT,                    \
++            attachment_feedback_loop_layout)                                                       \
+     FEATURE(EXT, BorderColorSwizzle, BORDER_COLOR_SWIZZLE, border_color_swizzle)                   \
+     FEATURE(EXT, ColorWriteEnable, COLOR_WRITE_ENABLE, color_write_enable)                         \
+     FEATURE(EXT, CustomBorderColor, CUSTOM_BORDER_COLOR, custom_border_color)                      \
+@@ -60,6 +62,8 @@
+     FEATURE(EXT, ExtendedDynamicState3, EXTENDED_DYNAMIC_STATE_3, extended_dynamic_state3)         \
+     FEATURE(EXT, GraphicsPipelineLibrary, GRAPHICS_PIPELINE_LIBRARY, graphics_pipeline_library)   \
+     FEATURE(EXT, 4444Formats, 4444_FORMATS, format_a4b4g4r4)                                       \
++    FEATURE(EXT, ImageCompressionControl, IMAGE_COMPRESSION_CONTROL,                               \
++            image_compression_control)                                                             \
+     FEATURE(EXT, IndexTypeUint8, INDEX_TYPE_UINT8, index_type_uint8)                               \
+     FEATURE(EXT, LineRasterization, LINE_RASTERIZATION, line_rasterization)                        \
+     FEATURE(EXT, PrimitiveTopologyListRestart, PRIMITIVE_TOPOLOGY_LIST_RESTART,                    \
+@@ -557,6 +561,21 @@
+         return extensions.depth_range_unrestricted;
+     }
+ 
++    /// Returns true if draws that sample from one of their color buffers need care: the writes
++    /// made to it have to be flushed first, and a draw that also writes to it needs it in the
++    /// feedback loop layout.
++    bool NeedsFeedbackLoopLayout() const {
++        // RADV keeps color images compressed in the general layout, and what it samples from a
++        // compressed image it is rendering to is garbage
++        return extensions.attachment_feedback_loop_layout &&
++               GetDriverID() == VK_DRIVER_ID_MESA_RADV;
++    }
++
++    /// Returns true if the device supports VK_EXT_image_compression_control.
++    bool IsExtImageCompressionControlSupported() const {
++        return extensions.image_compression_control;
++    }
++
+     /// Returns true if the device supports VK_EXT_depth_clip_control.
+     bool IsExtDepthClipControlSupported() const {
+         return extensions.depth_clip_control;
