@@ -42,6 +42,19 @@ unpack() {
   cp -a /home/chris/letmp/stretch/suyu-v14.1.0/. ${PKG_BUILD}/
 }
 
+# Profile-guided optimisation. profile.tar.xz holds the .gcda files of an instrumented build of this
+# source and patch set, recorded on a box playing Tears of the Kingdom; record it again when either
+# changes. Each file is named after its object's path in the build directory.
+pre_configure_target() {
+  local profile=${PKG_BUILD}/.profile
+  mkdir -p ${profile}
+  tar -xJf ${PKG_DIR}/profile.tar.xz -C ${profile}
+  local pgo="-fprofile-use=${profile} -fprofile-prefix-path=${PKG_BUILD}/.${TARGET_NAME} \
+             -fprofile-partial-training -fprofile-correction -Wno-missing-profile -Wno-coverage-mismatch"
+  export CFLAGS+=" ${pgo}"
+  export CXXFLAGS+=" ${pgo}"
+}
+
 make_target() {
   cmake --build . --target suyu_libretro
 }
