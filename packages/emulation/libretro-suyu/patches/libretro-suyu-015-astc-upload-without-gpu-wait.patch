@@ -1,0 +1,11 @@
+diff -ruN a/src/video_core/renderer_vulkan/vk_compute_pass.cpp b/src/video_core/renderer_vulkan/vk_compute_pass.cpp
+--- a/src/video_core/renderer_vulkan/vk_compute_pass.cpp	2026-11-15 13:31:20.401013616 +0000
++++ b/src/video_core/renderer_vulkan/vk_compute_pass.cpp	2026-11-15 13:31:20.402031821 +0000
+@@ -651,7 +651,6 @@
+         cmdbuf.PipelineBarrier(VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                        vk::PIPELINE_STAGE_GRAPHICS_COMPUTE, 0, image_barrier);
+     });
+-    scheduler.Finish();
+ }
+ 
+ constexpr u32 BL3D_BINDING_INPUT_BUFFER  = 0;
