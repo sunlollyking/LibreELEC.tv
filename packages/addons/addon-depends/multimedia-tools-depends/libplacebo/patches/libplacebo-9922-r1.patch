@@ -1,0 +1,376 @@
+diff --git a/src/include/libplacebo/renderer.h b/src/include/libplacebo/renderer.h
+index 0db0012..6e18a12 100644
+--- a/src/include/libplacebo/renderer.h
++++ b/src/include/libplacebo/renderer.h
+@@ -382,6 +382,10 @@ struct pl_render_params {
+     // Per-picture integer reference. Null preserves existing composition.
+     const struct pl_cb1_dovi_reference *cb1_dovi_reference;
+ 
++#define PL_HAVE_CB1_LLDV_HOST 1
++    // Optional coherent RGBA32F storage output for a full 4K player-led image.
++    pl_buf cb1_lldv_host;
++
+ 
+     // If this is true, all shaders will be generated as "dynamic" shaders,
+     // with any compile-time constants being replaced by runtime-adjustable
+diff --git a/src/opengl/gpu.c b/src/opengl/gpu.c
+index d153f04..9eb37f0 100644
+--- a/src/opengl/gpu.c
++++ b/src/opengl/gpu.c
+@@ -198,17 +198,18 @@ pl_gpu pl_gpu_create_gl(pl_log log, pl_opengl pl_gl, const struct pl_opengl_para
+     limits->thread_safe = params->make_current;
+     limits->callbacks = gl_test_ext(gpu, "GL_ARB_sync", 32, 30);
+     limits->align_vertex_stride = 1;
+-    if (gl_test_ext(gpu, "GL_ARB_pixel_buffer_object", 31, 0)) {
++    if (gl_test_ext(gpu, "GL_ARB_pixel_buffer_object", 31, 30)) {
+         limits->max_buf_size = SIZE_MAX; // no restriction imposed by GL
+-        if (gl_test_ext(gpu, "GL_ARB_uniform_buffer_object", 31, 0))
++        if (gl_test_ext(gpu, "GL_ARB_uniform_buffer_object", 31, 30))
+             get(GL_MAX_UNIFORM_BLOCK_SIZE, &limits->max_ubo_size);
+-        if (gl_test_ext(gpu, "GL_ARB_shader_storage_buffer_object", 43, 0) &&
++        if (gl_test_ext(gpu, "GL_ARB_shader_storage_buffer_object", 43, 31) &&
+             gpu->glsl.version >= 140)
+         {
+             get(GL_MAX_SHADER_STORAGE_BLOCK_SIZE, &limits->max_ssbo_size);
+         }
+         limits->max_vbo_size = limits->max_buf_size; // No additional restrictions
+-        if (gl_test_ext(gpu, "GL_ARB_buffer_storage", 44, 0)) {
++        if (gl_test_ext(gpu, "GL_ARB_buffer_storage", 44, 0) ||
++            gl_test_ext(gpu, "GL_EXT_buffer_storage", 0, 0)) {
+             limits->max_mapped_size = limits->max_buf_size;
+             limits->max_mapped_vram = limits->max_buf_size;
+             limits->host_cached = strcmp(vendor, "AMD") == 0 ||
+@@ -387,7 +388,17 @@ pl_buf gl_buf_create(pl_gpu gpu, const struct pl_buf_params *params)
+     gl->GenBuffers(1, &buf_gl->buffer);
+     gl->BindBuffer(target, buf_gl->buffer);
+ 
+-    if (gl_test_ext(gpu, "GL_ARB_buffer_storage", 44, 0) && !import) {
++    PFNGLBUFFERSTORAGEPROC storage=NULL;
++    if (gl_test_ext(gpu,"GL_ARB_buffer_storage",44,0)) {
++        storage=gl->BufferStorage;
++    } else if (gl_test_ext(gpu,"GL_EXT_buffer_storage",0,0)) {
++        const struct gl_ctx *ctx=PL_PRIV(p->gl);
++        if (ctx->params.get_proc_addr_ex)
++            storage=(PFNGLBUFFERSTORAGEPROC)ctx->params.get_proc_addr_ex(ctx->params.proc_ctx,"glBufferStorageEXT");
++        else if (ctx->params.get_proc_addr)
++            storage=(PFNGLBUFFERSTORAGEPROC)ctx->params.get_proc_addr("glBufferStorageEXT");
++    }
++    if (storage && !import) {
+ 
+         GLbitfield mapflags = 0, storflags = 0;
+         if (params->host_writable)
+@@ -399,7 +410,7 @@ pl_buf gl_buf_create(pl_gpu gpu, const struct pl_buf_params *params)
+         if (params->memory_type == PL_BUF_MEM_HOST)
+             storflags |= GL_CLIENT_STORAGE_BIT; // hopefully this works
+ 
+-        gl->BufferStorage(target, total_size, data, storflags | mapflags);
++        storage(target, total_size, data, storflags | mapflags);
+ 
+         if (params->host_mapped) {
+             buf_gl->mapped = true;
+diff --git a/src/opengl/gpu_pass.c b/src/opengl/gpu_pass.c
+index c5bcf52..2569494 100644
+--- a/src/opengl/gpu_pass.c
++++ b/src/opengl/gpu_pass.c
+@@ -305,6 +305,8 @@ pl_pass gl_pass_create(pl_gpu gpu, const struct pl_pass_params *params)
+             break;
+         }
+         case PL_DESC_BUF_STORAGE: {
++            if (p->gles_ver)
++                break; // GLSL ES specifies the binding in the shader.
+             GLuint idx = gl->GetProgramResourceIndex(pass_gl->program,
+                                                      GL_SHADER_STORAGE_BLOCK,
+                                                      desc->name);
+diff --git a/src/renderer.c b/src/renderer.c
+index ae4b8e8..27d4c17 100644
+--- a/src/renderer.c
++++ b/src/renderer.c
+@@ -1647,7 +1647,7 @@ static bool prepare_reference_el(struct pass_state *pass, const struct pl_frame
+         if (!fmt) return false;
+         pl_tex vertical = get_fbo(pass, c ? w/2 : w, c ? h : h*2, fmt, c ? 2 : 1, PL_DEBUG_TAG);
+         pl_shader sh = pl_dispatch_begin(rr->dp);
+-        bool ok = vertical && sh_dovi_fel_vertical(sh, el, depth, c) &&
++        bool ok = vertical && sh_dovi_fel_vertical(sh, el, depth, c, false) &&
+             pl_dispatch_finish(rr->dp, pl_dispatch_params(.shader=&sh, .target=vertical));
+         pl_dispatch_abort(rr->dp, &sh);
+         if (!ok) return false;
+@@ -1808,11 +1808,11 @@ unsigned pl_cb1_fel_filter_abi(void)
+     return PL_CB1_FEL_FILTER_API;
+ }
+ 
+-static bool skip_reference_chroma_rows(struct pass_state *pass, pl_shader sh)
++static bool skip_reference_rows(struct pass_state *pass, pl_shader sh, int divisor)
+ {
+     if (pass->cb1_active_rows[1]<=pass->cb1_active_rows[0]) return true;
+-    float bounds[2]={floorf(pass->cb1_active_rows[0]/2)-4,
+-                     ceilf(pass->cb1_active_rows[1]/2)+4};
++    float bounds[2]={floorf(pass->cb1_active_rows[0]/divisor)-4,
++                     ceilf(pass->cb1_active_rows[1]/divisor)+4};
+     enum pl_shader_sig signature=sh->output;
+     if (!sh_require(sh,signature,0,0)) return false;
+     sh->output=signature;
+@@ -1836,7 +1836,7 @@ static bool pass_read_dovi_reference(struct pass_state *pass)
+                               PL_FMT_CAP_RENDERABLE|PL_FMT_CAP_SAMPLEABLE|PL_FMT_CAP_LINEAR);
+         pl_tex chroma=fmt?get_fbo(pass,w/2,h/2,fmt,2,PL_DEBUG_TAG):NULL;
+         pl_shader sh=pl_dispatch_begin(pass->rr->dp);
+-        bool ok=chroma && skip_reference_chroma_rows(pass,sh) &&
++        bool ok=chroma && skip_reference_rows(pass,sh,2) &&
+             sh_dovi_p5_fast_grid(sh,data,image,true) &&
+             pl_dispatch_finish(pass->rr->dp,pl_dispatch_params(.shader=&sh,.target=chroma));
+         pl_dispatch_abort(pass->rr->dp,&sh);
+@@ -1877,11 +1877,17 @@ static bool pass_read_dovi_reference(struct pass_state *pass)
+         if (!fmt) return false;
+         pl_tex vertical=NULL;
+         if (resize) {
+-            /* FP32 stores every rounded 16-bit intermediate exactly. */
+-            vertical=get_fbo(pass,c?w/4:w/2,c?h/2:h,fmt,c?2:1,PL_DEBUG_TAG);
++            const struct pl_bit_encoding bits=el->repr.bits;
++            int storage=bits.sample_depth?bits.sample_depth:data->el_depth;
++            // Bound all possible storage words, including out-of-range padding.
++            bool packed_rows=data->contract==2 && bits.bit_shift>=0 && bits.bit_shift<storage &&
++                storage-bits.bit_shift<=10;
++            int height=(c?h/2:h)/(packed_rows?2:1);
++            vertical=get_fbo(pass,c?w/4:w/2,height,fmt,c?2:1,PL_DEBUG_TAG);
+             pl_shader sh=pl_dispatch_begin(pass->rr->dp);
+-            bool rows=c?skip_reference_chroma_rows(pass,sh):skip_inactive_rows(pass,sh,h,false);
+-            bool ok=vertical && rows && sh_dovi_reference_el_vertical(sh,data,image,c) &&
++            bool rows=packed_rows?skip_reference_rows(pass,sh,c?4:2):
++                c?skip_reference_rows(pass,sh,2):skip_inactive_rows(pass,sh,h,false);
++            bool ok=vertical && rows && sh_dovi_reference_el_vertical(sh,data,image,c,packed_rows) &&
+                 pl_dispatch_finish(pass->rr->dp,pl_dispatch_params(.shader=&sh,.target=vertical));
+             pl_dispatch_abort(pass->rr->dp,&sh);
+             if (!ok) return false;
+@@ -1895,7 +1901,7 @@ static bool pass_read_dovi_reference(struct pass_state *pass)
+         if(!fmt)return false;
+         planes[c]=get_fbo(pass,c?w/2:w,c?h/2:h,fmt,data->contract==2?1:c?2:1,PL_DEBUG_TAG);
+         pl_shader sh=pl_dispatch_begin(pass->rr->dp);
+-        bool ok=planes[c] && skip_reference_chroma_rows(pass,sh) &&
++        bool ok=planes[c] && skip_reference_rows(pass,sh,2) &&
+             sh_dovi_reference_grid(sh,data,image,c,vertical,&pass->rr->cb1_mmr_state) &&
+             pl_dispatch_finish(pass->rr->dp,pl_dispatch_params(.shader=&sh,.target=planes[c]));
+         pl_dispatch_abort(pass->rr->dp,&sh);
+@@ -1910,7 +1916,7 @@ static bool pass_read_dovi_reference(struct pass_state *pass)
+     if (!fmt) return false;
+     pl_tex chroma=get_fbo(pass,w/2,paired?h/2:h,fmt,2,PL_DEBUG_TAG);
+     pl_shader sh=pl_dispatch_begin(pass->rr->dp);
+-    bool ok=chroma && (paired?skip_reference_chroma_rows(pass,sh):skip_inactive_rows(pass,sh,h,false)) &&
++    bool ok=chroma && (paired?skip_reference_rows(pass,sh,2):skip_inactive_rows(pass,sh,h,false)) &&
+         sh_dovi_reference_chroma(sh,planes[1],data->output_depth,top_left,paired) &&
+         pl_dispatch_finish(pass->rr->dp,pl_dispatch_params(.shader=&sh,.target=chroma));
+     pl_dispatch_abort(pass->rr->dp,&sh);
+@@ -3019,6 +3025,30 @@ static void translate_srgb_color(float out_color[3], const float in_color[3],
+     pl_color_delinearize(csp, out_color);
+ }
+ 
++static bool cb1_dispatch_host_frame(pl_renderer rr, pl_shader *mapped, pl_tex target,
++                                    pl_buf buffer)
++{
++    int w=target->params.w,h=target->params.h;
++    pl_shader sh=pl_dispatch_begin_ex(rr->dp,true);
++    if(!sh_require(sh,PL_SHADER_SIG_NONE,0,0)){
++        pl_dispatch_abort(rr->dp,&sh);
++        return false;
++    }
++    struct pl_buffer_var data={.var=pl_var_vec4("cb1_linear")};
++    data.var.dim_a=w*h;
++    data.layout=pl_std430_layout(0,&data.var);
++    ident_t bind=sh_desc(sh,(struct pl_shader_desc){
++        .desc={.name="cb1_frame_data",.type=PL_DESC_BUF_STORAGE,.access=PL_DESC_ACCESS_WRITEONLY},
++        .binding={.object=buffer},.buffer_vars=&data,.num_buffer_vars=1});
++    ident_t pixel=sh_subpass(sh,*mapped);
++    pl_dispatch_abort(rr->dp,mapped);
++    if(!bind || !pixel){pl_dispatch_abort(rr->dp,&sh);return false;}
++    sh->output=PL_SHADER_SIG_COLOR;
++    GLSL("ivec2 pos=ivec2(gl_FragCoord.xy);cb1_linear[pos.y*%d+pos.x]="$"();"
++         "vec4 color=vec4(0.0);\n",w,pixel);
++    return pl_dispatch_finish(rr->dp,pl_dispatch_params(.shader=&sh,.target=target));
++}
++
+ static bool pass_output_target(struct pass_state *pass)
+ {
+     const struct pl_render_params *params = pass->params;
+@@ -3030,6 +3060,16 @@ static bool pass_output_target(struct pass_state *pass)
+     struct img *img = &pass->img;
+ 
+     bool need_clear = pl_frame_is_cropped(target);
++    if (params->cb1_lldv_host) {
++        const pl_buf buf = params->cb1_lldv_host;
++        const pl_tex tex = target->planes[0].texture;
++        if (!params->cb1_dovi_reference || target->num_planes != 1 ||
++            !tex || tex->params.w != 3840 || tex->params.h != 2160 ||
++            target->planes[0].flipped || target->num_overlays || need_clear ||
++            pass->rotation || params->blend_params || !buf->params.storable ||
++            !buf->data || buf->params.size < 3840ULL * 2160 * 16)
++            return false;
++    }
+     pl_tex border_tex = NULL;
+     if (need_clear && params->border == PL_CLEAR_BLUR &&
+         !(rr->errors & PL_RENDER_ERR_BLUR))
+@@ -3358,7 +3398,7 @@ static bool pass_output_target(struct pass_state *pass)
+         const int sample_depth = PL_DEF(target->repr.bits.sample_depth,
+                                         target->repr.bits.color_depth);
+ 
+-        if (sample_depth && type != PL_FMT_FLOAT) {
++        if (!params->cb1_lldv_host && sample_depth && type != PL_FMT_FLOAT) {
+             const char *comps = params->blend_params ? "rgb" : "rgba";
+             const int bit_shift = target->repr.bits.bit_shift;
+ 
+@@ -3395,12 +3435,14 @@ static bool pass_output_target(struct pass_state *pass)
+             tscale.c[1] += plane->texture->params.h;
+         }
+ 
+-        bool ok = pl_dispatch_finish(rr->dp, pl_dispatch_params(
+-            .shader = &sh,
+-            .target = plane->texture,
+-            .blend_params = params->blend_params,
+-            .rect = plane_rect,
+-        ));
++        bool ok = params->cb1_lldv_host ?
++            cb1_dispatch_host_frame(rr, &sh, plane->texture, params->cb1_lldv_host) :
++            pl_dispatch_finish(rr->dp, pl_dispatch_params(
++                .shader = &sh,
++                .target = plane->texture,
++                .blend_params = params->blend_params,
++                .rect = plane_rect,
++            ));
+ 
+         if (!ok)
+             return false;
+diff --git a/src/shaders.h b/src/shaders.h
+index 96cd2b0..d1dad62 100644
+--- a/src/shaders.h
++++ b/src/shaders.h
+@@ -245,8 +245,9 @@ struct pl_dovi_metadata;
+ struct pl_cb1_dovi_reference;
+ struct pl_frame;
+ bool sh_dovi_reference_el_vertical(pl_shader sh, const struct pl_cb1_dovi_reference *data,
+-    const struct pl_frame *image, bool chroma);
+-bool sh_dovi_fel_vertical(pl_shader sh,const struct pl_frame *el,unsigned depth,bool chroma);
++    const struct pl_frame *image, bool chroma, bool packed_rows);
++bool sh_dovi_fel_vertical(pl_shader sh,const struct pl_frame *el,unsigned depth,
++                          bool chroma,bool packed_rows);
+ bool sh_dovi_fel_horizontal(pl_shader sh,pl_tex vertical,unsigned depth,bool chroma);
+ bool sh_dovi_reference_grid(pl_shader sh, const struct pl_cb1_dovi_reference *data,
+     const struct pl_frame *image, bool chroma, pl_tex vertical,
+diff --git a/src/shaders/dovi_reference.c b/src/shaders/dovi_reference.c
+index 39e3cb6..39900d5 100644
+--- a/src/shaders/dovi_reference.c
++++ b/src/shaders/dovi_reference.c
+@@ -310,49 +310,76 @@ static bool reference_planes(pl_shader sh, const struct pl_frame *frame,
+     return raw[0] && raw[1] && raw[2];
+ }
+ 
+-static ident_t reference_el_vertical(pl_shader sh, ident_t raw, bool chroma)
++static ident_t reference_el_vertical(pl_shader sh, ident_t raw, bool chroma, bool packed_rows)
+ {
+-    ident_t vertical = sh_fresh(sh,"ref_el_vertical");
+-    if (chroma) {
+-        GLSLH("int "$"(ivec2 p){int y=p.y/2;int s=(p.y&1)==0?"
+-              "64*"$"(ivec2(p.x,y-1))+192*"$"(ivec2(p.x,y)):"
+-              "192*"$"(ivec2(p.x,y))+64*"$"(ivec2(p.x,y+1));"
+-              "return clamp((s+128)>>8,0,65535);}\n",vertical,raw,raw,raw,raw);
++    static const int luma[2][5]={{-3,29,111,-9,0},{0,-9,111,29,-3}};
++    static const int uv[2][5]={{0,64,192,0,0},{0,0,192,64,0}};
++    const int (*weights)[5]=chroma?uv:luma;
++    const int shift=chroma?8:7, bias=1<<(shift-1);
++    ident_t vertical=sh_fresh(sh,"ref_el_vertical");
++    GLSLH("int "$"(ivec2 p){\n",vertical);
++    if (packed_rows) {
++        // Read each shared tap once and store the two phases exactly in FP32.
++        // For 10-bit samples the luma peak is (140 * 1023 + 64) >> 7 = 1119.
++        for (int i=0;i<5;i++)
++            if (weights[0][i] || weights[1][i])
++                GLSLH("int t%d="$"(p+ivec2(0,%d));\n",i,raw,i-2);
++        GLSLH("int s[2];\n");
++        for (int phase=0;phase<2;phase++) {
++            GLSLH("s[%d]=max(0,(%d",phase,bias);
++            for (int i=0;i<5;i++)
++                if (weights[phase][i]) GLSLH("+(%d)*t%d",weights[phase][i],i);
++            GLSLH(")>>%d);\n",shift);
++        }
++        GLSLH("return s[0]|(s[1]<<11);}\n");
+     } else {
+-        GLSLH("int "$"(ivec2 p){int y=p.y/2;int s=(p.y&1)==0?"
+-              "-3*"$"(ivec2(p.x,y-2))+29*"$"(ivec2(p.x,y-1))+111*"$"(ivec2(p.x,y))-9*"$"(ivec2(p.x,y+1)):"
+-              "-9*"$"(ivec2(p.x,y-1))+111*"$"(ivec2(p.x,y))+29*"$"(ivec2(p.x,y+1))-3*"$"(ivec2(p.x,y+2));"
+-              "return clamp((s+64)>>7,0,65535);}\n",vertical,raw,raw,raw,raw,raw,raw,raw,raw);
++        GLSLH("int y=p.y/2;int s=(p.y&1)==0?");
++        for (int phase=0;phase<2;phase++) {
++            GLSLH("%s(%d",phase?":":"",bias);
++            for (int i=0;i<5;i++)
++                if (weights[phase][i])
++                    GLSLH("+(%d)*"$"(ivec2(p.x,y+%d))",weights[phase][i],raw,i-2);
++            GLSLH(")");
++        }
++        GLSLH(";return clamp(s>>%d,0,65535);}\n",shift);
+     }
+     return vertical;
+ }
+ 
+ bool sh_dovi_reference_el_vertical(pl_shader sh, const struct pl_cb1_dovi_reference *data,
+-                                   const struct pl_frame *image, bool chroma)
++                                   const struct pl_frame *image, bool chroma, bool packed_rows)
+ {
+     return data && data->residual && image && image->enhancement_layer &&
+-        sh_dovi_fel_vertical(sh,image->enhancement_layer,data->el_depth,chroma);
++        sh_dovi_fel_vertical(sh,image->enhancement_layer,data->el_depth,chroma,packed_rows);
+ }
+ 
+-bool sh_dovi_fel_vertical(pl_shader sh,const struct pl_frame *el,unsigned depth,bool chroma)
++bool sh_dovi_fel_vertical(pl_shader sh,const struct pl_frame *el,unsigned depth,
++                          bool chroma,bool packed_rows)
+ {
+     if (!el || !sh_require(sh,PL_SHADER_SIG_NONE,0,0)) return false;
+     ident_t raw[3]={0};
+     if (!reference_planes(sh,el,depth,raw,false)) return false;
+     GLSL("vec4 color=vec4(0.0,0.0,0.0,1.0);\n");
+     for (int c=chroma?1:0;c<(chroma?3:1);c++) {
+-        ident_t vertical=reference_el_vertical(sh,raw[c],chroma);
++        ident_t vertical=reference_el_vertical(sh,raw[c],chroma,packed_rows);
+         GLSL("color[%d]=float("$"(ivec2(gl_FragCoord.xy)));\n",chroma?c-1:0,vertical);
+     }
+     return true;
+ }
+ 
+-static ident_t reference_el_horizontal(pl_shader sh, pl_tex texture, ident_t sampler, int lane, bool paired)
++static ident_t reference_el_horizontal(pl_shader sh, pl_tex texture, ident_t sampler, int lane, bool paired, bool packed_rows)
+ {
+     ident_t vertical=sh_fresh(sh,"ref_el_cached");
+-    GLSLH("int "$"(ivec2 p){p=clamp(p,ivec2(0),ivec2(%d,%d));"
+-          "return int(texelFetch("$",p,0)[%d]);}\n",
+-          vertical,texture->params.w-1,texture->params.h-1,sampler,lane);
++    if (packed_rows) {
++        GLSLH("int "$"(ivec2 p){p=clamp(p,ivec2(0),ivec2(%d,%d));"
++              "uint codes=uint(texelFetch("$",ivec2(p.x,p.y>>1),0)[%d]);"
++              "return int((codes>>uint(11*(p.y&1)))&2047u);}\n",
++              vertical,texture->params.w-1,2*texture->params.h-1,sampler,lane);
++    } else {
++        GLSLH("int "$"(ivec2 p){p=clamp(p,ivec2(0),ivec2(%d,%d));"
++              "return int(texelFetch("$",p,0)[%d]);}\n",
++              vertical,texture->params.w-1,texture->params.h-1,sampler,lane);
++    }
+     ident_t horizontal = sh_fresh(sh,"ref_el_horizontal");
+     GLSLH("int "$"(ivec2 p){int x=p.x/2;if((p.x&1)==0)return "$"(ivec2(x,p.y));int s=0;\n",horizontal,vertical);
+     const int weights[8] = {22,94,-524,2456,2456,-524,94,22};
+@@ -373,7 +400,7 @@ bool sh_dovi_fel_horizontal(pl_shader sh,pl_tex vertical,unsigned depth,bool chr
+     if (!sampler) return false;
+     GLSL("vec4 color=vec4(0.0,0.0,0.0,1.0);\n");
+     for(int c=0;c<(chroma?2:1);c++){
+-        ident_t sample=reference_el_horizontal(sh,vertical,sampler,c,false);
++        ident_t sample=reference_el_horizontal(sh,vertical,sampler,c,false,false);
+         GLSL("color[%d]=float("$"(ivec2(gl_FragCoord.xy)))/%u.0;\n",c,sample,(1u<<depth)-1);
+     }
+     return true;
+@@ -450,8 +477,11 @@ static bool reference_grid(pl_shader sh, const struct pl_cb1_dovi_reference *dat
+             ident_t sampler=sh_bind(sh,vertical,PL_TEX_ADDRESS_CLAMP,PL_TEX_SAMPLE_NEAREST,
+                                     "ref_el_vertical",NULL,NULL,NULL);
+             if (!sampler) return false;
++            // A texture at source height stores both row phases in each texel.
++            bool packed_rows=vertical->params.h==enhancement->crop.y1/(chroma?2:1);
+             for (int c=chroma?1:0;c<(chroma?3:1);c++) {
+-                el[c]=reference_el_horizontal(sh,vertical,sampler,chroma?c-1:0,data->contract==2);
++                el[c]=reference_el_horizontal(sh,vertical,sampler,chroma?c-1:0,
++                                               data->contract==2,packed_rows);
+             }
+         }
+     }
