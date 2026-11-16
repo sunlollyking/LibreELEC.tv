@@ -1,0 +1,22 @@
+diff --git a/xbmc/cores/VideoPlayer/VideoRenderers/DVBridgeGLES.cpp b/xbmc/cores/VideoPlayer/VideoRenderers/DVBridgeGLES.cpp
+index 2e986e4e00..aca40229e2 100644
+--- a/xbmc/cores/VideoPlayer/VideoRenderers/DVBridgeGLES.cpp
++++ b/xbmc/cores/VideoPlayer/VideoRenderers/DVBridgeGLES.cpp
+@@ -2656,6 +2656,17 @@ bool CDVBridgeGLES::ReadScreenshot(KODI::RENDERING::CAPTURE::ReadbackBuffer& out
+   else if (master)
+   {
+     dvbridge_color mapped{};
++    if (pixels.format==AV_PIX_FMT_BGRA)
++    {
++      // Desktop GL reads the XRGB8888 scanout back as BGRA.
++      const size_t row=std::abs(pixels.stride);
++      for (unsigned y=0; y<pixels.height; ++y)
++      {
++        uint8_t* p=pixels.pixels.get()+y*row;
++        for (unsigned x=0; x<pixels.width; ++x, p+=4) std::swap(p[0],p[2]);
++      }
++      pixels.format=AV_PIX_FMT_RGBA;
++    }
+     if (pixels.format!=AV_PIX_FMT_RGBA) return failed("unsupported-format",int(pixels.format));
+     if (!dvbridge_map_color(&mapped,
+         m_pendingMetadata.Data(),m_pendingMetadata.Size(),(m_pendingInfo&CDVPlaybackInfo::FEL)!=0))
