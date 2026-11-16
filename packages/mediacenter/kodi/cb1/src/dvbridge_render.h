@@ -12,7 +12,7 @@ struct dvbridge_native_overlay;
 
 struct cb1_ai_result;
 #define DVBRIDGE_L2_TRIMS_API 1
-/* Next-picture authored Standard/Master output only (default false).
+/* Next-picture Standard/Master metadata and offline player-led mapping.
  * Reconstruction still consumes the original metadata. Adaptive/AI clears it. */
 void dvbridge_renderer_set_l2_trims_disabled(struct dvbridge_renderer *renderer,bool disabled);
 #define DVBRIDGE_CMV40_API 1
@@ -37,6 +37,44 @@ enum cb1_master_status dvbridge_render_master_reference(struct dvbridge_renderer
     const struct pl_frame *source,const void *metadata,size_t bytes,double pts,double el_pts,
     struct dvbridge_geometry geometry,pl_tex target,bool flip_y,
     const struct dvbridge_native_overlay *overlay);
+/* Offline source-size RGBA32F. RGB is linear in the target gamut, with
+ * 1.0 at policy->tv.peak_nits. L5 masks the source raster without changing
+ * its size or placement. Pixels and applied metadata are usable only on
+ * CB1_MASTER_READY. CM4 and L2 options affect mapping only. Use a dedicated
+ * renderer and reset it after a GPU failure. */
+enum cb1_master_status dvbridge_render_player_led(struct dvbridge_renderer *renderer,
+    const struct dvbridge_policy *policy,const struct pl_frame *source,
+    const void *metadata,size_t bytes,double pts,double el_pts,pl_tex target,
+    struct dvbridge_creative_plan *applied);
+/* As above, with a full-raster SDR GUI in Kodi framebuffer orientation.
+ * The caller retains the borrowed GUI and EOTF textures until GPU completion.
+ * The GUI is composed in display-linear RGB before HDMI packing. */
+enum cb1_master_status dvbridge_render_player_led_gui(struct dvbridge_renderer *renderer,
+    const struct dvbridge_policy *policy,const struct pl_frame *source,const void *metadata,
+    size_t bytes,double pts,double el_pts,pl_tex target,const struct dvbridge_native_overlay *gui,
+    struct dvbridge_creative_plan *applied);
+/* The same full-raster render to a coherent RGBA32F host buffer.
+ * scratch is a 4K RGBA8 render target. The caller fences before reading host. */
+enum cb1_master_status dvbridge_render_player_led_host(struct dvbridge_renderer *renderer,
+    const struct dvbridge_policy *policy,const struct pl_frame *source,const void *metadata,
+    size_t bytes,double pts,double el_pts,pl_tex scratch,pl_buf host,struct dvbridge_creative_plan *applied,
+    unsigned active_rows[2]);
+/* Fit the linear movie into the final raster, returning source on identity.
+ * The caller owns the optional fitted texture. */
+pl_tex dvbridge_fit_player_led(struct dvbridge_renderer *renderer, pl_tex source,
+    pl_tex *fitted, struct dvbridge_geometry geometry);
+/* Offline byte carrier. The input must be the successful linear mapping for
+ * this policy, fitted to the final even-width raster. The output is a separate
+ * linear RGBA8 texture with 12-bit fields and 10 or 12 useful bits. Both
+ * surfaces are GLES 2D textures on the renderer's current context. GLES
+ * 3.1 with an immutable carrier allows paired compute packing. No RPU,
+ * presentation state or HDMI signalling is generated. Use only on success. */
+bool dvbridge_resolve_player_led_rgb10(struct dvbridge_renderer *renderer,
+    const struct dvbridge_policy *policy, pl_tex linear, pl_tex rgb10, bool flip_y);
+
+bool dvbridge_pack_player_led_422(struct dvbridge_renderer *renderer,
+    const struct dvbridge_policy *policy, pl_tex linear, pl_tex carrier,
+    unsigned bits, bool flip_y);
 #define CB1_AI_OVERLAY_API 1
 #define CB1_HDR10_AI_RENDER_API 1
 /* Borrowed intermediate. DV preparation may still need its existing poll;
@@ -196,6 +234,21 @@ bool dvbridge_render_hdr10_policy_rgb(struct dvbridge_renderer *renderer,
     const struct dvbridge_policy *policy, const struct dvbridge_identity *identity,
     const struct pl_frame *source, const void *metadata, size_t bytes,
     double pts, double el_pts, struct dvbridge_geometry geometry);
+/* SDR shares the policy output/resolve/commit/cancel owner. Metadata absent:
+ * original PQ HDR10/HDR10+; metadata present: original DV including required EL.
+ * No HDR/DV output metadata is generated. Resolve accepts native 8..16-bit RGB. */
+bool dvbridge_render_sdr_policy_rgb(struct dvbridge_renderer *renderer,
+    const struct dvbridge_policy *policy,const struct dvbridge_identity *identity,
+    const struct pl_frame *source,const void *metadata,size_t bytes,
+    double pts,double el_pts,struct dvbridge_geometry geometry);
+bool dvbridge_render_sdr_policy_resolve(struct dvbridge_renderer *renderer,
+    pl_tex target,bool flip_y,bool limited,unsigned bits);
+/* Read-only structural eligibility, not source provenance or retirement.
+ * The native caller still owns the original-source binding and GPU lifetime. */
+bool dvbridge_render_sdr_policy_direct_eligible(const struct dvbridge_renderer *renderer,
+    const struct dvbridge_policy *policy,const struct dvbridge_identity *identity,
+    const struct pl_frame *source,const void *metadata,size_t bytes,double pts,double el_pts,
+    struct dvbridge_geometry geometry,pl_tex target,unsigned bits);
 /* Raw-video final target path: render and quantize in one FP32-precision pass.
  * Basic session and Expert policy remain separate mapping contracts. */
 bool dvbridge_render_hdr10_direct(struct dvbridge_renderer *renderer,
@@ -221,6 +274,9 @@ enum dvbridge_dv_policy_status dvbridge_render_dv_policy_prepare(
     struct dvbridge_renderer *renderer,const struct dvbridge_policy *policy,
     const struct dvbridge_identity *identity,const struct pl_frame *source,
     const void *metadata,size_t bytes,double pts,double el_pts,struct dvbridge_geometry geometry);
+/* Vertical origin for unscaled full-width placement in the UHD carrier, or -1. */
+int dvbridge_adaptive_placed_rows(struct dvbridge_geometry geometry);
+
 #define DVBRIDGE_ENHANCED_PACKED_API 1
 /* Same pixel/metadata contract with native packing and optional subtitles.
  * Both prepare entry points may return Pending; resolve only after Ready. */

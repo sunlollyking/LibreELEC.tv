@@ -15,7 +15,7 @@
 #else
 #include <GLES3/gl31.h>
 #endif
-extern enum cb1_ai_status cb1_hdr10_statistics_queue_pending(struct cb1_hdr10_statistics *,pl_tex,pl_tex,struct cb1_ai_identity);
+extern enum cb1_ai_status cb1_hdr10_statistics_queue_pending(struct cb1_hdr10_statistics *,pl_tex,pl_tex,struct cb1_ai_identity,bool);
 extern enum cb1_ai_status cb1_hdr10_quantiles_queue_pending(struct cb1_hdr10_quantiles *,pl_tex,pl_tex,struct cb1_ai_identity);
 
 struct cb1_hdr10_ai {
@@ -150,6 +150,7 @@ enum cb1_ai_status cb1_hdr10_ai_submit(struct cb1_hdr10_ai *c,const struct pl_fr
     ++c->metrics.gpu_submissions;
     status=cb1_hdr10_ingress_validate(frame);if(status!=CB1_AI_READY)goto submit_fail;
     const bool source_analysis=
+        frame->color.transfer==PL_COLOR_TRC_PQ &&
         frame->planes[1].texture->params.w==frame->planes[0].texture->params.w/2 &&
         frame->planes[1].texture->params.h==frame->planes[0].texture->params.h/2;
     if(!source_analysis){
@@ -161,7 +162,7 @@ enum cb1_ai_status cb1_hdr10_ai_submit(struct cb1_hdr10_ai *c,const struct pl_fr
     pl_tex bounds=cb1_hdr10_extrema_pending(c->extrema,id);
     /* Only the frozen prefix consumes full model features; scene tracking uses L1 and motion. */
     status=source_analysis?cb1_hdr10_statistics_queue_source(c->statistics,frame,bounds,id,calibration):
-        cb1_hdr10_statistics_queue_pending(c->statistics,c->rgb,bounds,id);
+        cb1_hdr10_statistics_queue_pending(c->statistics,c->rgb,bounds,id,calibration);
     if(status!=CB1_AI_PENDING)goto submit_fail;
     if(calibration){
         status=source_analysis?cb1_hdr10_quantiles_queue_source(c->quantiles,frame,bounds,id):
@@ -169,7 +170,10 @@ enum cb1_ai_status cb1_hdr10_ai_submit(struct cb1_hdr10_ai *c,const struct pl_fr
         if(status!=CB1_AI_PENDING)goto submit_fail;
     }else memset(c->quantile_values,0,sizeof(c->quantile_values));
     pl_tex small;
-    status=cb1_hdr10_ingress_preview_u16(c->ingress,frame,&small);if(status!=CB1_AI_READY)goto submit_fail;
+    status=frame->color.transfer==PL_COLOR_TRC_HLG?
+        cb1_hdr10_ingress_hlg_preview(c->ingress,c->rgb,&small):
+        cb1_hdr10_ingress_preview_u16(c->ingress,frame,&small);
+    if(status!=CB1_AI_READY)goto submit_fail;
     status=calibration?cb1_hdr10_spatial_submit(c->spatial,small,id):
         cb1_hdr10_spatial_submit_motion(c->spatial,small,id);
     if(status!=CB1_AI_PENDING)goto submit_fail;

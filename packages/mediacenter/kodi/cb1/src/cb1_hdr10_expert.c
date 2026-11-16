@@ -11,6 +11,17 @@ static double nits(unsigned code)
     return 10000*pow(fmax(v-3424.0/4096,0)/(2413.0/128-(2392.0/128)*v),16384.0/2610);
 }
 
+struct pl_raw_primaries cb1_display_primaries(const struct dvbridge_policy *policy)
+{
+    if(policy->lldv_edid_version){
+        const double *xy=policy->lldv_primaries;
+        return (struct pl_raw_primaries){.red={xy[0],xy[1]},.green={xy[2],xy[3]},
+            .blue={xy[4],xy[5]},.white={.3127,.3290}};
+    }
+    return *pl_raw_primaries_get(policy->tv.gamut==DVBRIDGE_GAMUT_BT709?PL_COLOR_PRIM_BT_709:
+        policy->tv.gamut==DVBRIDGE_GAMUT_P3_D65?PL_COLOR_PRIM_DISPLAY_P3:PL_COLOR_PRIM_BT_2020);
+}
+
 float cb1_hdr10_expert_ceiling(const struct dvbridge_policy *policy)
 {
     double v=pow(policy->tv.peak_nits/10000,2610.0/16384);
@@ -24,7 +35,24 @@ float cb1_hdr10_expert_ceiling(const struct dvbridge_policy *policy)
     return result>ceiling?nextafterf(result,0):result;
 }
 
-bool cb1_hdr10_expert_prepare(struct cb1_hdr10_expert_plan *out,
+static void player_led_trims(struct dvbridge_creative_plan *p,
+                             struct dvbridge_cm4_coefficients *cm4)
+{
+    *cm4=(struct dvbridge_cm4_coefficients){0};
+    if(!dvbridge_creative_cm4_coefficients(cm4,p))return;
+    p->status=DVBRIDGE_CREATIVE_READY;
+    p->backend=DVBRIDGE_CREATIVE_CM4;
+    p->reason=cm4->detail_mix ? DVBRIDGE_CREATIVE_SPATIAL_UNQUALIFIED : DVBRIDGE_CREATIVE_OK;
+    p->applied_levels=(p->applied_levels&~(1u<<2))|(1u<<8);
+    p->l2_coverage.applied=0;
+    p->l2_coverage.preserved=p->l2_coverage.present;
+    /* Pointwise HDR controls: slope through saturation, mid contrast and clip. */
+    p->l8_coverage.applied=p->l8_coverage.present&0xdfu;
+    p->l8_coverage.preserved=p->l8_coverage.present&~p->l8_coverage.applied;
+    for(unsigned i=0;i<5;i++)p->codes[i]=2048;
+}
+
+static bool prepare(struct cb1_hdr10_expert_plan *out,struct dvbridge_cm4_coefficients *cm4,
     const struct dvbridge_policy *policy,const void *metadata,size_t bytes,bool paired)
 {
     if(!out || !policy || policy->mode!=DVBRIDGE_MODE_HDR10_EXPERT ||
@@ -46,15 +74,24 @@ bool cb1_hdr10_expert_prepare(struct cb1_hdr10_expert_plan *out,
     const AVDOVIDmData *l1=av_dovi_find_level(metadata,1);
     bool analysis=l1 && l1->l1.min_pq<=l1->l1.avg_pq &&
         l1->l1.avg_pq<=l1->l1.max_pq && l1->l1.max_pq<=4095;
-    unsigned maximum=analysis?l1->l1.max_pq:color->source_max_pq;
-    p.creative.analysis[0]=analysis?l1->l1.min_pq:0;
-    p.creative.analysis[1]=analysis?l1->l1.max_pq:0;
-    p.creative.analysis[2]=analysis?l1->l1.avg_pq:0;
-    p.creative.l1_present=analysis;p.creative.l3_present=false;
+    if(cm4 && p.creative.analysis_valid)analysis=true;
+    else{
+        p.creative.analysis[0]=analysis?l1->l1.min_pq:0;
+        p.creative.analysis[1]=analysis?l1->l1.max_pq:0;
+        p.creative.analysis[2]=analysis?l1->l1.avg_pq:0;
+        p.creative.analysis_valid=analysis;
+        if(!cm4)p.creative.l3_present=false;
+    }
+    unsigned maximum=analysis?p.creative.analysis[1]:color->source_max_pq;
+    p.creative.l1_present=analysis;
     p.creative.applied_levels&=~((1u<<1)|(1u<<3)|(1u<<8));
-    if(analysis)p.creative.applied_levels|=1u<<1;
-    p.creative.l8_coverage.applied=0;
-    p.creative.l8_coverage.preserved=p.creative.l8_coverage.present;
+    if(analysis){
+        p.creative.applied_levels|=1u<<1;
+        if(p.creative.l3_present &&
+           (p.creative.analysis[1]!=l1->l1.max_pq || p.creative.analysis[2]!=l1->l1.avg_pq))
+            p.creative.applied_levels|=1u<<3;
+    }
+    if(cm4)player_led_trims(&p.creative,cm4);
     for(unsigned i=0;i<3;i++)p.tone_shape[i]=(p.creative.codes[i]-2048)/2048;
     if(!analysis)p.creative.reason=l1?DVBRIDGE_CREATIVE_STATIC_UNUSABLE_L1:DVBRIDGE_CREATIVE_STATIC_MISSING_L1;
     else if(p.creative.reason==DVBRIDGE_CREATIVE_STATIC_UNUSABLE_L1 ||
@@ -71,7 +108,7 @@ bool cb1_hdr10_expert_prepare(struct cb1_hdr10_expert_plan *out,
          * authored source minimum metadata. As compression vanishes, the
          * rational therefore tends to the same max(L,B) as native clip. */
         .input_min=black_pq,.input_max=fmaxf(maximum/4095.0f,target_pq),
-        .input_avg=analysis?l1->l1.avg_pq/4095.0f:0,
+        .input_avg=analysis?p.creative.analysis[2]/4095.0f:0,
         .output_min=black_pq,
         .output_max=target_pq,.lut_size=nits(maximum)<=peak?4096:1024};
     p.source.color.hdr.min_luma=PL_COLOR_HDR_BLACK;
@@ -83,12 +120,30 @@ bool cb1_hdr10_expert_prepare(struct cb1_hdr10_expert_plan *out,
     enum pl_color_primaries prim=policy->tv.gamut==DVBRIDGE_GAMUT_BT709?PL_COLOR_PRIM_BT_709:
         policy->tv.gamut==DVBRIDGE_GAMUT_P3_D65?PL_COLOR_PRIM_DISPLAY_P3:PL_COLOR_PRIM_BT_2020;
     p.target=(struct pl_color_space){.primaries=prim,.transfer=PL_COLOR_TRC_LINEAR,
-        .hdr={.min_luma=PL_COLOR_HDR_BLACK,.max_luma=peak,.prim=*pl_raw_primaries_get(prim)}};
+        .hdr={.min_luma=PL_COLOR_HDR_BLACK,.max_luma=peak,.prim=cb1_display_primaries(policy)}};
     /* Descriptor of the virtual rendering reference, not measured MaxCLL/FALL. */
     p.signal=(struct dvbridge_hdr10_metadata){.max_luminance=(unsigned)ceil(peak),
         .min_luminance=(unsigned)llround(black*10000)};
     *out=p;out->source.repr.dovi=&out->source.dovi;
     return true;
+}
+
+bool cb1_hdr10_expert_prepare(struct cb1_hdr10_expert_plan *out,
+    const struct dvbridge_policy *policy,const void *metadata,size_t bytes,bool paired)
+{
+    return prepare(out,NULL,policy,metadata,bytes,paired);
+}
+
+bool cb1_player_led_prepare(struct cb1_hdr10_expert_plan *out,
+    struct dvbridge_cm4_coefficients *cm4,const struct dvbridge_policy *policy,
+    const void *metadata,size_t bytes,bool paired)
+{
+    if(!cm4 || !policy)return false;
+    if(policy->mode!=DVBRIDGE_MODE_PLAYER_LED)
+        return prepare(out,cm4,policy,metadata,bytes,paired);
+    struct dvbridge_policy mapping=*policy;
+    mapping.mode=DVBRIDGE_MODE_HDR10_EXPERT;
+    return prepare(out,cm4,&mapping,metadata,bytes,paired);
 }
 
 bool cb1_hdr10_expert_trim(pl_shader shader,const struct dvbridge_creative_plan *plan,
@@ -97,7 +152,9 @@ bool cb1_hdr10_expert_trim(pl_shader shader,const struct dvbridge_creative_plan 
     if(!shader || !plan || plan->policy.mode!=DVBRIDGE_MODE_HDR10_EXPERT ||
        dvbridge_policy_validate(&plan->policy)!=DVBRIDGE_POLICY_VALID)return false;
     float chroma[2]={plan->codes[3]/4096-.5,plan->codes[4]/4096-.5};
-    pl_matrix3x3 xyz=pl_get_rgb2xyz_matrix(pl_raw_primaries_get(primaries));
+    const struct pl_raw_primaries display=plan->policy.lldv_edid_version ?
+        cb1_display_primaries(&plan->policy) : *pl_raw_primaries_get(primaries);
+    pl_matrix3x3 xyz=pl_get_rgb2xyz_matrix(&display);
     float luma[3]={xyz.m[1][0],xyz.m[1][1],xyz.m[1][2]};
     float cap=plan->policy.tv.peak_nits/203;
     if((double)cap*203>plan->policy.tv.peak_nits)cap=nextafterf(cap,0);

@@ -9,10 +9,6 @@
 #include "dvbridge_gl_api.h"
 #else
 #include <GLES3/gl3.h>
-#endif
-#if defined(DVBRIDGE_DESKTOP_GL)
-#include "dvbridge_gl_api.h"
-#else
 #include <GLES2/gl2ext.h>
 #endif
 #include <drm_fourcc.h>

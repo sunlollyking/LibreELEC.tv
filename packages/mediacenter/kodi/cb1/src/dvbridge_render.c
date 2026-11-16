@@ -28,19 +28,12 @@
 #include <libplacebo/dispatch.h>
 #include <libplacebo/opengl.h>
 #if defined(DVBRIDGE_DESKTOP_GL)
+#include "dvbridge_gl_api.h"
 #define DVBRIDGE_BUFFER_STORAGE "glBufferStorage"
 #else
-#define DVBRIDGE_BUFFER_STORAGE "glBufferStorageEXT"
-#endif
-#if defined(DVBRIDGE_DESKTOP_GL)
-#include "dvbridge_gl_api.h"
-#else
 #include <GLES3/gl31.h>
-#endif
-#if defined(DVBRIDGE_DESKTOP_GL)
-#include "dvbridge_gl_api.h"
-#else
 #include <GLES2/gl2ext.h>
+#define DVBRIDGE_BUFFER_STORAGE "glBufferStorageEXT"
 #endif
 #include <EGL/egl.h>
 #include <math.h>
@@ -95,16 +88,41 @@ struct direct_output {
     pl_tex texture;
     bool flip, custom_quantize, limited;
     unsigned bits;
+    const struct pl_color_space *sdr_target;
+    float sdr_gamma[3];
+    bool custom_gamma;
     struct reference_resolve quantize;
     struct pl_hook hook;
 };
 static struct pl_hook_res reference_quantize(void *priv, const struct pl_hook_params *p);
+static struct pl_hook_res sdr_gamma(void *priv,const struct pl_hook_params *p);
+static void sdr_final_params(struct pl_render_params *params);
+static struct pl_hook_res sdr_intermediate(void *priv,const struct pl_hook_params *p)
+{
+    (void)priv;
+    bool ok=pl_shader_custom(p->sh,&(struct pl_custom_shader){
+        .input=PL_SHADER_SIG_COLOR,.output=PL_SHADER_SIG_COLOR,
+        .body="color.rgb=clamp(color.rgb,0.0,1.0);"});
+    return (struct pl_hook_res){.failed=!ok,.output=PL_HOOK_SIG_NONE};
+}
+static bool render_sdr_direct(struct dvbridge_renderer *r,
+    const struct dvbridge_policy *policy,const struct dvbridge_identity *id,
+    const struct pl_frame *source,const void *metadata,size_t bytes,double pts,double el_pts,
+    struct dvbridge_geometry geometry,pl_tex target,bool flip,bool limited,unsigned bits);
 
 #include "cb1_processing.h"
+
+struct player_led_compute {
+    GLuint program, sampler;
+    GLint matrix, scale, flip, padding;
+    bool tried;
+};
 
 struct dvbridge_renderer {
     pl_gpu gpu;
     pl_renderer renderer;
+    pl_dispatch player_led_dispatch;
+    struct player_led_compute player_led_compute;
     int target_width, target_height;
     bool target_identity;
     dvbridge_spatial_fit spatial_fit;
@@ -114,6 +132,7 @@ struct dvbridge_renderer {
     struct dvbridge_context *context;
     struct dvbridge_candidate *pending;
     bool ready, direct_output, overlay_visible;
+    bool sdr_reconstruction; /* Call-scoped: no DV transport candidate for SDR. */
     bool l2_trims_disabled;
     struct cb1_cmv40_options cmv40;
     enum cb1_cmv40_status cmv40_status;
@@ -123,6 +142,7 @@ struct dvbridge_renderer {
     unsigned enhanced_margins[4];
     bool enhanced_analytic_pq, enhanced_authored, enhanced_skip_aux, enhanced_authored_curve;
     bool enhanced_prepack, ai_enhanced_fused, ai_fusion_failed;
+    int enhanced_placed_y;
     unsigned enhanced_program_key;
     bool ai_enhanced_prepack;
     GLuint ai_enhanced_stats_texture;
@@ -140,7 +160,7 @@ struct dvbridge_renderer {
     struct dvbridge_dv_slot dv, retired_packed;
     struct dvbridge_analysis_storage analysis_storage;
     bool reuse_authored_storage;
-    bool authored_p5_analytic;
+    bool authored_analytic_pq;
     bool authored_fel_lookup;
     bool master_ipt_compact;
 #ifdef CB1_TEST_LEGACY_ANALYSIS
@@ -161,6 +181,9 @@ struct dvbridge_renderer {
 };
 
 static void renderer_free(struct dvbridge_renderer *r);
+static bool ai_render_pixels(struct dvbridge_renderer *r,const struct pl_frame *source,
+    struct dvbridge_geometry g,pl_tex packed,bool flip,const struct dvbridge_native_overlay *overlay,
+    struct direct_output *sdr);
 static bool dve_requirements(pl_gpu gpu);
 static double dv_ideal_pq(double nits);
 static enum dvbridge_dv_policy_status dv_retire(struct dvbridge_renderer *r);
@@ -255,13 +278,16 @@ bool dvbridge_creative_cm4_shader(pl_shader sh,const struct dvbridge_cm4_coeffic
             "vec3 delta=n*cb1_cm4_expm1((16384.0/2610.0)*(cb1_cm4_log1p(-dw/max(vec3(a)-w,vec3(1e-30)))-cb1_cm4_log1p(b*dw/(vec3(a)+b*w))));"
             "return CB1_CM4_FMA(cm4_lms_rgb[2],vec3(delta.b),CB1_CM4_FMA(cm4_lms_rgb[1],vec3(delta.g),CB1_CM4_FMA(cm4_lms_rgb[0],vec3(delta.r),rgb+cm4_basis_residual*rgb)));}\n",
         .body="{vec3 rgb=color.rgb*203.0;float peak=cm4_sop.w;\n"
-            "if(cm4_flags.x!=0.0)rgb=peak*pow(clamp(rgb/peak*cm4_sop.x+cm4_sop.y,0.0,1.0),vec3(cm4_sop.z));\n"
-            "bool gray=rgb.r==rgb.g && rgb.g==rgb.b;float Y=gray?rgb.r:dot(rgb,cm4_luma);\n"
-            "if(Y>0.0 && cm4_flags.y!=0.0){float x=clamp(Y/peak,0.0,1.0);"
-            "float a=pow(x,cm4_shape.x),b=pow(1.0-x,cm4_shape.x),v=peak*a/(a+b);rgb=gray?vec3(v):rgb*(v/Y);}\n"
-            "Y=gray?rgb.r:dot(rgb,cm4_luma);\n"
-            "if(Y>0.0 && cm4_flags.z!=0.0){float x=clamp(Y/peak,0.0,1.0),t=clamp((x-0.5)/0.5,0.0,1.0);"
-            "float v=peak*clamp(x+cm4_shape.y*x*t*t*(3.0-2.0*t),0.0,1.0);rgb=gray?vec3(v):rgb*(v/Y);}\n"
+            "if(cm4_flags.x!=0.0){vec3 x=clamp(rgb/peak*cm4_sop.x+cm4_sop.y,0.0,1.0);"
+            "if(cm4_sop.z!=1.0)x=pow(x,vec3(cm4_sop.z));rgb=peak*x;}\n"
+            "if(cm4_flags.y!=0.0 || cm4_flags.z!=0.0){\n"
+            "bool gray=rgb.r==rgb.g && rgb.g==rgb.b;\n"
+            "if(cm4_flags.y!=0.0){float Y=gray?rgb.r:dot(rgb,cm4_luma);"
+            "if(Y>0.0){float x=clamp(Y/peak,0.0,1.0);"
+            "float a=pow(x,cm4_shape.x),b=pow(1.0-x,cm4_shape.x),v=peak*a/(a+b);rgb=gray?vec3(v):rgb*(v/Y);}}\n"
+            "if(cm4_flags.z!=0.0){float Y=gray?rgb.r:dot(rgb,cm4_luma);"
+            "if(Y>0.0){float x=clamp(Y/peak,0.0,1.0),t=clamp((x-0.5)/0.5,0.0,1.0);"
+            "float v=peak*clamp(x+cm4_shape.y*x*t*t*(3.0-2.0*t),0.0,1.0);rgb=gray?vec3(v):rgb*(v/Y);}}}\n"
             "if(cm4_flags.w!=0.0 && max(rgb.r,max(rgb.g,rgb.b))-min(rgb.r,min(rgb.g,rgb.b))>1e-12){\n"
             "vec3 lms,q,u;vec3 ipt=cb1_cm4_ipt(rgb,lms,q,u);vec2 authored=ipt.yz;\n"
             "if(length(ipt.yz)>=1e-7){float z=clamp(ipt.x/cb1_cm4_pq(vec3(peak)).x,0.0,1.0);"
@@ -810,8 +836,8 @@ struct dvbridge_renderer *dvbridge_renderer_create(pl_gpu gpu)
         const bool intel=vendor && !strcmp(vendor,"Intel");
         /* Retain storage/overlap only on the driver with a measured gain. */
         r->reuse_authored_storage=intel;
-        /* Analytic P5 expansion saves work on Intel; radeonsi retains its LUT. */
-        r->authored_p5_analytic=intel;
+        /* Intel benefits from analytic PQ for full-raster P5 and unscaled placed output. */
+        r->authored_analytic_pq=intel;
         /* Authored FEL expansion reuses the measured radeonsi lookup recipe. */
         r->authored_fel_lookup=renderer && strstr(renderer,"radeonsi");
         /* Scalar tables retain exact samples; use them only on radeonsi. */
@@ -941,6 +967,10 @@ static void renderer_free(struct dvbridge_renderer *r)
     pl_tex_destroy(r->gpu, &r->ai_rgb);
     pl_tex_destroy(r->gpu, &r->enhanced_input);
     dve_release_images(r);
+    glDeleteProgram(r->player_led_compute.program);
+    if (r->player_led_compute.sampler)
+        glDeleteSamplers(1, &r->player_led_compute.sampler);
+    pl_dispatch_destroy(&r->player_led_dispatch);
     pl_renderer_destroy(&r->renderer);
     pl_shader_obj_destroy(&r->creative_state);
     free(r);
@@ -1191,6 +1221,7 @@ static bool render_picture(struct dvbridge_renderer *r, const struct pl_frame *s
         target.repr.bits.sample_depth=direct->bits;
         target.repr.bits.color_depth=direct->bits;
     }
+    if(direct && direct->sdr_target)target.color=*direct->sdr_target;
     struct pl_render_params params = pl_render_default_params;
     params.cb1_dovi_reference=master;
     params.cb1_fast_chroma = master ? p5_standard : true;
@@ -1276,6 +1307,7 @@ static bool render_picture(struct dvbridge_renderer *r, const struct pl_frame *s
     if(direct && !direct->custom_quantize)params.dither_params=&pl_dither_default_params;
     params.frame_mixer = NULL;
     params.skip_caching_single_frame = true;
+    if(direct && direct->sdr_target)sdr_final_params(&params);
     // Own exact PQ-zero borders below. Do not translate an sRGB clear color
     // through the output transfer function or clear a full-raster frame twice.
     params.border = PL_CLEAR_SKIP;
@@ -1430,7 +1462,7 @@ static bool render_picture(struct dvbridge_renderer *r, const struct pl_frame *s
     if(enhanced_reconstruction && r->enhanced_input)
         params.min_fbo_precision=r->enhanced_input->params.format->component_depth[0];
     params.cb1_exact_scaler_cache=mask.source_domain && r->exact_scaler_cache;
-    if(!session && !policy) {
+    if(!session && !policy && !r->sdr_reconstruction) {
         r->pending=prepare_picture_candidate(r,metadata,bytes,pts,geometry,
             paired && mapped.dovi.nlq_active,force_refresh,master!=NULL,source_transport,ipt!=NULL,
             !enhanced_reconstruction && r->l2_trims_disabled);
@@ -1512,6 +1544,8 @@ static bool render_picture(struct dvbridge_renderer *r, const struct pl_frame *s
         params.num_hooks=1;
     }
     const struct pl_hook *direct_hooks[4];
+    const struct pl_hook sdr_intermediate_hook={.stages=PL_HOOK_SCALED,.input=PL_HOOK_SIG_COLOR,
+        .hook=sdr_intermediate,.signature=0x4342315344520002ULL};
     if (direct) {
         unsigned count=0;
         if(policy) {
@@ -1519,7 +1553,9 @@ static bool render_picture(struct dvbridge_renderer *r, const struct pl_frame *s
         } else {
             direct_hooks[count++]=&hook;
         }
+        if(direct->sdr_target)direct_hooks[count++]=&sdr_intermediate_hook;
         if(direct->custom_quantize)direct_hooks[count++]=&direct->hook;
+        if(direct->custom_gamma)direct_hooks[count++]=&direct->hook;
         params.hooks=direct_hooks;
         params.num_hooks=count;
     }
@@ -1682,6 +1718,36 @@ static bool overlay_valid(const struct dvbridge_native_overlay *overlay,int widt
         overlay->rect[1]<=overlay->rect[3] && !fmodf(overlay->rect[0],2) && !fmodf(overlay->rect[2],2);
 }
 
+/* The GUI's write state must never alter a byte of either DV carrier. */
+static const GLenum transport_caps[] = {
+    GL_BLEND, GL_DEPTH_TEST, GL_STENCIL_TEST, GL_SCISSOR_TEST, GL_DITHER,
+    GL_CULL_FACE, GL_RASTERIZER_DISCARD, GL_SAMPLE_ALPHA_TO_COVERAGE, GL_SAMPLE_COVERAGE,
+};
+struct transport_write_state {
+    GLboolean enabled[sizeof(transport_caps) / sizeof(*transport_caps)], mask[4];
+};
+
+static void transport_write_begin(struct transport_write_state *state)
+{
+    glGetBooleanv(GL_COLOR_WRITEMASK, state->mask);
+    for (size_t i = 0; i < sizeof(state->enabled) / sizeof(*state->enabled); i++) {
+        state->enabled[i] = glIsEnabled(transport_caps[i]);
+        glDisable(transport_caps[i]);
+    }
+    glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+}
+
+static void transport_write_end(const struct transport_write_state *state)
+{
+    glColorMask(state->mask[0], state->mask[1], state->mask[2], state->mask[3]);
+    for (size_t i = 0; i < sizeof(state->enabled) / sizeof(*state->enabled); i++) {
+        if (state->enabled[i])
+            glEnable(transport_caps[i]);
+        else
+            glDisable(transport_caps[i]);
+    }
+}
+
 static bool render_packed_overlay(struct dvbridge_renderer *r,const struct pl_frame *source,
     const void *metadata,size_t bytes,double pts,double el_pts,struct dvbridge_geometry geometry,
     pl_tex target,bool flip,const struct dvbridge_native_overlay *overlay,bool force_refresh,
@@ -1700,23 +1766,11 @@ static bool render_packed_overlay(struct dvbridge_renderer *r,const struct pl_fr
     // enable state, just as the separate transport packer does.
     if (glGetError() != GL_NO_ERROR)
         return false;
-    const GLenum caps[] = {GL_BLEND, GL_DEPTH_TEST, GL_STENCIL_TEST, GL_SCISSOR_TEST,
-        GL_DITHER, GL_CULL_FACE, GL_RASTERIZER_DISCARD, GL_SAMPLE_ALPHA_TO_COVERAGE,
-        GL_SAMPLE_COVERAGE};
-    GLboolean enabled[sizeof(caps)/sizeof(*caps)], mask[4];
-    glGetBooleanv(GL_COLOR_WRITEMASK, mask);
-    for (unsigned i=0; i<sizeof(caps)/sizeof(*caps); ++i) {
-        enabled[i] = glIsEnabled(caps[i]);
-        glDisable(caps[i]);
-    }
-    glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+    struct transport_write_state state;
+    transport_write_begin(&state);
     bool ok = render(r, source, metadata, bytes, pts, el_pts, geometry, target, flip, NULL, NULL, overlay,force_refresh,NULL,false,master,p5_standard,ipt);
     ok = glGetError() == GL_NO_ERROR && ok;
-    glColorMask(mask[0], mask[1], mask[2], mask[3]);
-    for (unsigned i=0; i<sizeof(caps)/sizeof(*caps); ++i) {
-        if (enabled[i]) glEnable(caps[i]);
-        else glDisable(caps[i]);
-    }
+    transport_write_end(&state);
     r->ready = ok && glGetError() == GL_NO_ERROR;
     return r->ready;
 }
@@ -1808,6 +1862,653 @@ enum cb1_master_status dvbridge_render_master_reference_ipt(struct dvbridge_rend
     return render_master_reference(r,source,metadata,bytes,pts,el_pts,geometry,target,flip,overlay,true);
 }
 
+static const uint64_t player_led_hook_signature=0x434231504c440001ULL;
+
+struct player_led_render {
+    struct cb1_hdr10_expert_plan plan;
+    struct dvbridge_cm4_coefficients cm4;
+    float area[4];
+    pl_shader_obj *state;
+    unsigned depth;
+    const struct dvbridge_native_overlay *gui;
+    bool masked, rendered;
+};
+
+static bool player_led_convert(pl_shader shader,const struct pl_raw_primaries *from,
+                               const struct pl_raw_primaries *to)
+{
+    const pl_matrix3x3 m=pl_get_color_mapping_matrix(from,to,PL_INTENT_RELATIVE_COLORIMETRIC);
+    float columns[3][3];
+    for(int i=0;i<3;i++)for(int j=0;j<3;j++)columns[j][i]=m.m[i][j];
+    const struct pl_shader_var matrix={.var=pl_var_mat3("player_led_basis"),
+        .data=columns,.dynamic=true};
+    return pl_shader_custom(shader,&(struct pl_custom_shader){.input=PL_SHADER_SIG_COLOR,
+        .output=PL_SHADER_SIG_COLOR,.variables=&matrix,.num_variables=1,
+        .body="color.rgb=player_led_basis*color.rgb;\n",.description="LLDV linear RGB basis"});
+}
+
+static bool player_led_gui(pl_shader shader, const struct player_led_render *r)
+{
+    const struct dvbridge_policy *policy = &r->plan.creative.policy;
+    const struct pl_raw_primaries gamut = cb1_display_primaries(policy);
+    const pl_matrix3x3 matrix = pl_get_color_mapping_matrix(
+        pl_raw_primaries_get(PL_COLOR_PRIM_BT_709), &gamut, PL_INTENT_RELATIVE_COLORIMETRIC);
+    float columns[3][3];
+    for (int row=0; row<3; row++)
+        for (int column=0; column<3; column++)
+            columns[column][row] = matrix.m[row][column];
+    const float scale = 203.0f / policy->tv.peak_nits;
+    const struct pl_shader_var vars[] = {
+        {.var=pl_var_mat3("ll_gui_matrix"), .data=columns, .dynamic=true},
+        {.var=pl_var_float("ll_gui_scale"), .data=&scale, .dynamic=true},
+    };
+    const struct pl_shader_desc desc[] = {
+        {.desc={.name="ll_gui_input",.type=PL_DESC_SAMPLED_TEX},
+         .binding={.object=r->gui->texture,.sample_mode=PL_TEX_SAMPLE_NEAREST}},
+        {.desc={.name="ll_gui_degamma",.type=PL_DESC_SAMPLED_TEX},
+         .binding={.object=r->gui->degamma,.sample_mode=PL_TEX_SAMPLE_LINEAR}},
+    };
+    return pl_shader_custom(shader,&(struct pl_custom_shader){
+        .input=PL_SHADER_SIG_COLOR,.output=PL_SHADER_SIG_COLOR,
+        .variables=vars,.num_variables=2,.descriptors=desc,.num_descriptors=2,
+        .description="Blend Kodi GUI in display-linear RGB",
+        .header="vec4 ll_gui_blend(vec4 video,ivec2 pix){\n"
+                "  pix.y=textureSize(ll_gui_input,0).y-1-pix.y;\n"
+                "  vec4 ui=texelFetch(ll_gui_input,pix,0);\n"
+                "  if(ui.a==0.0)return video;\n"
+                "  float red=textureLod(ll_gui_degamma,vec2(ui.r,.5),0.0).r;\n"
+                "  vec3 rgb=vec3(red);\n"
+                "  if(ui.r!=ui.g || ui.r!=ui.b){\n"
+                "    rgb.g=textureLod(ll_gui_degamma,vec2(ui.g,.5),0.0).r;\n"
+                "    rgb.b=textureLod(ll_gui_degamma,vec2(ui.b,.5),0.0).r;\n"
+                "  }\n"
+                "  rgb=clamp(ll_gui_matrix*rgb*ll_gui_scale,0.0,1.0);\n"
+                "  return vec4(mix(clamp(video.rgb,0.0,1.0),rgb,ui.a),video.a);\n"
+                "}\n"
+                "#define CB1_LLDV_FINISH(color) ll_gui_blend((color),ivec2(gl_FragCoord.xy))\n",
+    });
+}
+
+static struct pl_hook_res player_led_map(void *priv,const struct pl_hook_params *p)
+{
+    struct player_led_render *render=priv;
+    const struct pl_custom_shader without_gui = {
+        .input=PL_SHADER_SIG_COLOR,.output=PL_SHADER_SIG_COLOR,
+        .prelude="#define CB1_LLDV_FINISH(color) (color)\n",
+    };
+    if (!(render->gui ? player_led_gui(p->sh,render) : pl_shader_custom(p->sh,&without_gui)))
+        return (struct pl_hook_res){.failed=true};
+    if(render->masked){
+        const struct pl_shader_var area={.var=pl_var_vec4("player_led_area"),
+            .data=render->area,.dynamic=true};
+        const struct pl_custom_shader mask={.input=PL_SHADER_SIG_COLOR,.output=PL_SHADER_SIG_COLOR,
+            .variables=&area,.num_variables=1,
+            .body="vec2 pos=gl_FragCoord.xy;\n"
+                  "if(any(lessThan(pos,player_led_area.xy)) || "
+                  "any(greaterThanEqual(pos,player_led_area.zw)))"
+                  "return CB1_LLDV_FINISH(vec4(0.0,0.0,0.0,1.0));\n",
+            .description="Blank outside the Dolby Vision active picture"};
+        if(!pl_shader_custom(p->sh,&mask))return (struct pl_hook_res){.failed=true};
+    }
+    const struct cb1_hdr10_expert_plan *plan=&render->plan;
+    struct pl_dovi_metadata dovi=plan->source.dovi;
+    struct pl_color_repr repr={.sys=PL_COLOR_SYSTEM_DOLBYVISION,.levels=PL_COLOR_LEVELS_FULL,
+        .bits={.sample_depth=render->depth,.color_depth=render->depth},.dovi=&dovi};
+    /* Raw storage is code/(2^depth-1). RPU matrices work in code/2^depth,
+     * and libplacebo normally scales RPU offsets to the storage domain. */
+    float scale=1-ldexpf(1,-(int)render->depth);
+    for(int i=0;i<3;i++){
+        dovi.comp[i].num_pivots=0;
+        dovi.nonlinear_offset[i]*=scale;
+    }
+    dovi.nlq_active=false;
+    struct pl_shader_var storage={.var=pl_var_float("player_led_scale"),.data=&scale,.dynamic=true};
+    const struct pl_custom_shader normalize={.input=PL_SHADER_SIG_COLOR,.output=PL_SHADER_SIG_COLOR,
+        .variables=&storage,.num_variables=1,.body="color.rgb*=player_led_scale;\n",
+        .description="Normalize reconstructed Dolby Vision codes"};
+    if(!pl_shader_custom(p->sh,&normalize))return (struct pl_hook_res){.failed=true};
+    pl_shader_decode_color_ex(p->sh,&(struct pl_color_decode_args){.repr=&repr,.cb1_dovi_linear=true});
+    const bool preserve_black=!plan->tone.output_min;
+    const bool lift_black=plan->creative.backend==DVBRIDGE_CREATIVE_CM4 && render->cm4.sop[1]>0;
+    /* Exact signal black only needs the mapper when a calibrated floor is set.
+     * A positive CM4 offset still needs its creative stage on that pixel. */
+    const struct pl_custom_shader capture={.input=PL_SHADER_SIG_COLOR,.output=PL_SHADER_SIG_COLOR,
+        .header=lift_black?"bool player_led_black;\n":NULL,
+        .body=lift_black?"player_led_black=all(lessThanEqual(color.rgb,vec3(0.0)));\n":
+            "if(all(lessThanEqual(color.rgb,vec3(0.0))))"
+            "return CB1_LLDV_FINISH(vec4(0.0,0.0,0.0,1.0));\n",
+        .description="Preserve exact signal black"};
+    if(preserve_black && !pl_shader_custom(p->sh,&capture))return (struct pl_hook_res){.failed=true};
+    struct pl_color_map_params mapper=pl_color_map_default_params;
+    mapper.metadata=PL_HDR_METADATA_HDR10;
+    mapper.gamut_expansion=false;
+    mapper.force_tone_mapping_lut=true;
+    mapper.lut_size=plan->tone.lut_size;
+    mapper.cb1_fp32_tone_lut=true;
+    pl_shader_color_map_ex(p->sh,&mapper,pl_color_map_args(.src=plan->source.color,.dst=plan->target,
+        .state=render->state,.prelinearized=true,.cb1_tone_map=&plan->tone,
+        .cb1_tone_shape={plan->tone_shape[0],plan->tone_shape[1],plan->tone_shape[2]}));
+    const struct pl_custom_shader zero={.input=PL_SHADER_SIG_COLOR,.output=PL_SHADER_SIG_COLOR,
+        .body="if(player_led_black)color.rgb=vec3(0.0);\n",
+        .description="Restore signal black before creative grading"};
+    if(preserve_black && lift_black && !pl_shader_custom(p->sh,&zero))
+        return (struct pl_hook_res){.failed=true};
+    const bool edid=plan->creative.policy.lldv_edid_version;
+    const struct pl_raw_primaries *basis=pl_raw_primaries_get(plan->target.primaries);
+    const struct pl_raw_primaries *target=&plan->target.hdr.prim;
+    if(edid && !player_led_convert(p->sh,basis,target))return (struct pl_hook_res){.failed=true};
+    if(plan->creative.backend==DVBRIDGE_CREATIVE_CM4){
+        const struct pl_raw_primaries *trim=&plan->creative.cm4_output.primaries;
+        if((edid && !player_led_convert(p->sh,target,trim)) ||
+           !dvbridge_creative_cm4_shader(p->sh,&render->cm4) ||
+           (edid && !player_led_convert(p->sh,trim,target)))return (struct pl_hook_res){.failed=true};
+    }
+    /* libplacebo's final plane swizzle clips to [0,1], even on float targets. */
+    float relative=PL_COLOR_SDR_WHITE/plan->creative.policy.tv.peak_nits;
+    struct pl_shader_var output_scale={.var=pl_var_float("player_led_relative"),.data=&relative,.dynamic=true};
+    const struct pl_custom_shader output={.input=PL_SHADER_SIG_COLOR,.output=PL_SHADER_SIG_COLOR,
+        .variables=&output_scale,.num_variables=1,
+        .body="color.rgb*=player_led_relative;\n"
+              "color=CB1_LLDV_FINISH(color);\n",
+        .description="Store linear RGB relative to target peak"};
+    render->rendered=cb1_hdr10_expert_trim(p->sh,&plan->creative,plan->target.primaries) &&
+        pl_shader_custom(p->sh,&output);
+    return (struct pl_hook_res){.failed=!render->rendered,.output=PL_HOOK_SIG_NONE};
+}
+
+static bool player_led_options(struct player_led_render *render,struct dvbridge_renderer *r,
+    const struct dvbridge_policy *policy,const void *metadata,size_t bytes,bool paired)
+{
+    if(!r->cmv40.mode && !r->l2_trims_disabled)return true;
+    struct cb1_cmv40_options options=r->cmv40;
+    options.tv_peak=policy->tv.peak_nits;
+    struct dvbridge_creative_plan *creative=&render->plan.creative;
+    const uint64_t source_hash=creative->source_hash;
+    const uint32_t source_levels=creative->preserved_levels;
+    bool rejected=false;
+    for(;;){
+        AVDOVIMetadata *effective=NULL;
+        size_t effective_bytes=0;
+        enum cb1_cmv40_status decision;
+        bool ok=cb1_cmv40_output(&options,metadata,bytes,r->l2_trims_disabled,
+                                 &effective,&effective_bytes,&decision);
+        if(ok && effective)
+            ok=cb1_player_led_prepare(&render->plan,&render->cm4,policy,effective,effective_bytes,paired);
+        av_free(effective);
+        if(ok){
+            creative->source_hash=source_hash;
+            creative->source_bytes=bytes;
+            creative->preserved_levels=source_levels;
+            creative->cmv40_status=rejected?CB1_CMV40_REJECTED:decision;
+            return true;
+        }
+        if(!r->l2_trims_disabled){
+            creative->cmv40_status=CB1_CMV40_REJECTED;
+            return true;
+        }
+        if(!options.mode)return false;
+        /* A rejected optional append must not restore explicitly disabled L2. */
+        options=(struct cb1_cmv40_options){0};
+        rejected=true;
+    }
+}
+
+static enum cb1_master_status render_player_led(struct dvbridge_renderer *r,
+    const struct dvbridge_policy *policy,const struct pl_frame *source,const void *metadata,
+    size_t bytes,double pts,double el_pts,pl_tex target,pl_buf host,struct dvbridge_creative_plan *applied,
+    unsigned rendered_rows[2],const struct dvbridge_native_overlay *gui)
+{
+    if(!r || !source || !target)return CB1_MASTER_INVALID;
+    if(gui && (!gui->texture || !gui->degamma || gui->input_pq ||
+        gui->texture->params.w != target->params.w || gui->texture->params.h != target->params.h))
+        return CB1_MASTER_UNSUPPORTED;
+    struct player_led_render render={.state=&r->creative_state,.gui=gui};
+    const bool paired=source->enhancement_layer && pts==el_pts;
+    const int w=target->params.w,h=target->params.h;
+    const struct dvbridge_geometry geometry={w,h,0,0,w,h,w,h};
+    if(!cb1_player_led_prepare(&render.plan,&render.cm4,policy,metadata,bytes,paired) ||
+       !reference_area(render.area,metadata,geometry) ||
+       !player_led_options(&render,r,policy,metadata,bytes,paired))
+        return CB1_MASTER_INVALID;
+    const float *area=render.area;
+    render.masked=area[0]!=0 || area[1]!=0 || area[2]!=w || area[3]!=h;
+    render.depth=av_dovi_get_header(metadata)->vdr_bit_depth;
+    const struct pl_hook hook={.stages=PL_HOOK_OUTPUT,.input=PL_HOOK_SIG_COLOR,
+        .priv=&render,.hook=player_led_map,
+        .signature=player_led_hook_signature+(gui?2:0)};
+    const int active_rows[]={area[1],area[3]};
+    enum cb1_master_status status=cb1_master_reconstruct(r->renderer,source,metadata,bytes,
+        pts,el_pts,target,&hook,gui?NULL:active_rows,host);
+    if(status!=CB1_MASTER_READY)return status;
+    if(!render.rendered)return CB1_MASTER_FAILED;
+    if(applied)*applied=render.plan.creative;
+    if(rendered_rows){
+        rendered_rows[0]=active_rows[0];
+        rendered_rows[1]=active_rows[1];
+    }
+    return CB1_MASTER_READY;
+}
+
+enum cb1_master_status dvbridge_render_player_led(struct dvbridge_renderer *r,
+    const struct dvbridge_policy *policy,const struct pl_frame *source,const void *metadata,
+    size_t bytes,double pts,double el_pts,pl_tex target,struct dvbridge_creative_plan *applied)
+{
+    return render_player_led(r,policy,source,metadata,bytes,pts,el_pts,target,NULL,applied,NULL,NULL);
+}
+
+enum cb1_master_status dvbridge_render_player_led_gui(struct dvbridge_renderer *r,
+    const struct dvbridge_policy *policy,const struct pl_frame *source,const void *metadata,
+    size_t bytes,double pts,double el_pts,pl_tex target,const struct dvbridge_native_overlay *gui,
+    struct dvbridge_creative_plan *applied)
+{
+    return render_player_led(r,policy,source,metadata,bytes,pts,el_pts,target,NULL,applied,NULL,gui);
+}
+
+enum cb1_master_status dvbridge_render_player_led_host(struct dvbridge_renderer *r,
+    const struct dvbridge_policy *policy,const struct pl_frame *source,const void *metadata,
+    size_t bytes,double pts,double el_pts,pl_tex scratch,pl_buf host,struct dvbridge_creative_plan *applied,
+    unsigned active_rows[2])
+{
+    if(!host)return CB1_MASTER_INVALID;
+    return render_player_led(r,policy,source,metadata,bytes,pts,el_pts,scratch,host,applied,active_rows,NULL);
+}
+
+pl_tex dvbridge_fit_player_led(struct dvbridge_renderer *r, pl_tex source,
+    pl_tex *fitted, struct dvbridge_geometry geometry)
+{
+    int width,height;
+    pl_rect2df crop;
+    struct active_mask mask={.exact_reference=true};
+    if(!r || !fitted || !picture_crop(&crop,geometry,source) ||
+       !dvbridge_geometry_raster(geometry,&width,&height) ||
+       !dvbridge_geometry_destination(geometry,mask.rect))return NULL;
+    if(source->params.w==width && source->params.h==height &&
+       !crop.x0 && !crop.y0 && crop.x1==width && crop.y1==height &&
+       !mask.rect[0] && !mask.rect[1] && mask.rect[2]==width && mask.rect[3]==height)return source;
+    if(!pl_tex_recreate(r->gpu,fitted,pl_tex_params(.w=width,.h=height,
+        .format=source->params.format,.sampleable=true,.renderable=true)))return NULL;
+    struct pl_frame image={.num_planes=1,
+        .planes={{.texture=source,.components=4,.component_mapping={0,1,2,3}}},
+        .repr=pl_color_repr_rgb,.color=pl_color_space_srgb,.crop=crop};
+    image.color.transfer=PL_COLOR_TRC_LINEAR;
+    struct pl_frame target=image;
+    target.planes[0].texture=*fitted;
+    target.crop=(pl_rect2df){0,0,width,height};
+    const struct pl_hook blank={.stages=PL_HOOK_OUTPUT,.input=PL_HOOK_SIG_COLOR,
+        .priv=&mask,.hook=mask_active_area,.signature=0x434231504c440002ULL};
+    const struct pl_hook *hooks[]={&blank};
+    struct pl_render_params params=pl_render_default_params;
+    params.min_fbo_precision=32;
+    params.peak_detect_params=NULL;
+    params.dither_params=NULL;
+    params.sigmoid_params=NULL;
+    params.skip_caching_single_frame=true;
+    params.hooks=hooks;
+    params.num_hooks=1;
+    return render_image(r,&image,&target,&params,&mask,NULL,false)?*fitted:NULL;
+}
+
+#define PLAYER_LED_COLOR_GLSL \
+    CB1_CARRIER_GLSL \
+    "const vec3 lldv_luma=vec3(.2627,.6780,.0593);\n" \
+    "vec2 lldv_chroma(vec3 left,vec3 center,vec3 right){\n" \
+    "    vec3 rgb=(left+2.0*center+right)*.25;\n" \
+    "    float y=dot(rgb,lldv_luma);\n" \
+    "    return vec2((rgb.b-y)/1.8814,(rgb.r-y)/1.4746);\n" \
+    "}\n" \
+    "vec4 lldv_code(float y,float c,uint padding){\n" \
+    "    vec2 limited=vec2(256.0+3504.0*clamp(y,0.0,1.0),2048.0+3584.0*clamp(c,-.5,.5));\n" \
+    "    return cb1_carrier(uvec2(floor(limited/float(1u<<padding)+.5))<<padding);\n" \
+    "}\n"
+
+static bool player_led_compute_init(struct player_led_compute *c, pl_gpu gpu)
+{
+    if (c->tried)
+        return c->program != 0;
+    c->tried = true;
+
+    /* Reuse libplacebo's stable PQ realization in the GLES compute stage. */
+    pl_shader pq = pl_shader_alloc(NULL, pl_shader_params(.gpu=gpu,.cb1_stable_pq=true));
+    if (!pq)
+        return false;
+    pl_shader_delinearize(pq, &pl_color_space_hdr10);
+    const struct pl_shader_res *function = pl_shader_finalize(pq);
+    if (!function || function->num_variables || function->num_descriptors ||
+        function->num_vertex_attribs || function->num_constants ||
+        function->input != PL_SHADER_SIG_COLOR || function->output != PL_SHADER_SIG_COLOR) {
+        pl_shader_free(&pq);
+        return false;
+    }
+    const char *parts[] = {
+        "#version 310 es\nprecision highp float;precision highp int;\n"
+        "layout(local_size_x=16,local_size_y=8) in;\n"
+        "layout(binding=0) uniform highp sampler2D lldv_input;\n"
+        "layout(rgba8,binding=0) uniform highp writeonly image2D lldv_output;\n"
+        "uniform mat3 lldv_matrix;uniform float lldv_scale;uniform int lldv_flip;uniform uint lldv_padding;\n",
+        function->glsl,
+        PLAYER_LED_COLOR_GLSL
+        "vec3 lldv_encode(vec3 rgb){\n"
+        "    return ", function->name,
+        "(vec4(clamp(lldv_matrix*rgb,0.0,1.0)*lldv_scale,1.0)).rgb;\n"
+        "}\n"
+        "void main(){\n"
+        "    ivec2 out_pos=ivec2(gl_GlobalInvocationID.xy)*ivec2(2,1);\n"
+        "    ivec2 size=textureSize(lldv_input,0);\n"
+        "    if(any(greaterThanEqual(out_pos,size)))return;\n"
+        "    ivec2 pos=out_pos;if(lldv_flip!=0)pos.y=size.y-1-pos.y;\n"
+        "    vec3 left=texelFetch(lldv_input,ivec2(max(pos.x-1,0),pos.y),0).rgb;\n"
+        "    vec3 center=texelFetch(lldv_input,pos,0).rgb;\n"
+        "    vec3 right=texelFetch(lldv_input,pos+ivec2(1,0),0).rgb;\n"
+        // PQ(0) rounds to limited-range black at both transport depths.
+        "    if(all(equal(left,vec3(0.0))) && all(equal(center,vec3(0.0))) && all(equal(right,vec3(0.0)))){\n"
+        "        vec4 black=cb1_carrier(uvec2(256u,2048u));\n"
+        "        imageStore(lldv_output,out_pos,black);\n"
+        "        imageStore(lldv_output,out_pos+ivec2(1,0),black);\n"
+        "        return;\n"
+        "    }\n"
+        "    left=lldv_encode(left);center=lldv_encode(center);right=lldv_encode(right);\n"
+        "    vec2 c=lldv_chroma(left,center,right);\n"
+        "    imageStore(lldv_output,out_pos,lldv_code(dot(center,lldv_luma),c.x,lldv_padding));\n"
+        "    imageStore(lldv_output,out_pos+ivec2(1,0),lldv_code(dot(right,lldv_luma),c.y,lldv_padding));\n"
+        "}\n",
+    };
+    GLuint shader = glCreateShader(GL_COMPUTE_SHADER);
+    GLint compiled = 0, linked = 0;
+    if (shader) {
+        glShaderSource(shader, sizeof(parts)/sizeof(*parts), parts, NULL);
+        glCompileShader(shader);
+        glGetShaderiv(shader, GL_COMPILE_STATUS, &compiled);
+    }
+    pl_shader_free(&pq);
+
+    GLuint program = compiled ? glCreateProgram() : 0;
+    if (program) {
+        glAttachShader(program, shader);
+        glLinkProgram(program);
+        glGetProgramiv(program, GL_LINK_STATUS, &linked);
+    }
+    glDeleteShader(shader);
+    if (linked) {
+        glGenSamplers(1, &c->sampler);
+        glSamplerParameteri(c->sampler, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glSamplerParameteri(c->sampler, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        c->matrix = glGetUniformLocation(program, "lldv_matrix");
+        c->scale = glGetUniformLocation(program, "lldv_scale");
+        c->flip = glGetUniformLocation(program, "lldv_flip");
+        c->padding = glGetUniformLocation(program, "lldv_padding");
+    }
+    if (glGetError() != GL_NO_ERROR || !linked || !c->sampler ||
+        c->matrix < 0 || c->scale < 0 || c->flip < 0 || c->padding < 0) {
+        glDeleteProgram(program);
+        if (c->sampler)
+            glDeleteSamplers(1, &c->sampler);
+        c->sampler = 0;
+        return false;
+    }
+    c->program = program;
+    return true;
+}
+
+static bool player_led_compute_pack(const struct player_led_compute *c, GLuint src, GLuint dst,
+    int w, int h, const float *matrix, float scale, int flip, unsigned padding)
+{
+    GLint active, texture, sampler, program, image, level, layered, layer, access, format;
+    glGetIntegerv(GL_ACTIVE_TEXTURE, &active);
+    glGetIntegerv(GL_CURRENT_PROGRAM, &program);
+    glGetIntegeri_v(GL_IMAGE_BINDING_NAME, 0, &image);
+    glGetIntegeri_v(GL_IMAGE_BINDING_LEVEL, 0, &level);
+    glGetIntegeri_v(GL_IMAGE_BINDING_LAYERED, 0, &layered);
+    glGetIntegeri_v(GL_IMAGE_BINDING_LAYER, 0, &layer);
+    glGetIntegeri_v(GL_IMAGE_BINDING_ACCESS, 0, &access);
+    glGetIntegeri_v(GL_IMAGE_BINDING_FORMAT, 0, &format);
+    glActiveTexture(GL_TEXTURE0);
+    glGetIntegerv(GL_TEXTURE_BINDING_2D, &texture);
+    glGetIntegerv(GL_SAMPLER_BINDING, &sampler);
+
+    glUseProgram(c->program);
+    glUniformMatrix3fv(c->matrix, 1, GL_FALSE, matrix);
+    glUniform1f(c->scale, scale);
+    glUniform1i(c->flip, flip);
+    glUniform1ui(c->padding, padding);
+    glBindTexture(GL_TEXTURE_2D, src);
+    glBindSampler(0, c->sampler);
+    glBindImageTexture(0, dst, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA8);
+    bool ok = glGetError() == GL_NO_ERROR;
+    if (ok) {
+        glDispatchCompute((w/2+15)/16, (h+7)/8, 1);
+        glMemoryBarrier(GL_FRAMEBUFFER_BARRIER_BIT | GL_TEXTURE_FETCH_BARRIER_BIT |
+                        GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+        ok = glGetError() == GL_NO_ERROR;
+    }
+    glBindImageTexture(0, image, level, layered, layer, access, format);
+    glBindSampler(0, sampler);
+    glBindTexture(GL_TEXTURE_2D, texture);
+    glUseProgram(program);
+    glActiveTexture(active);
+    return glGetError() == GL_NO_ERROR && ok;
+}
+
+bool dvbridge_pack_player_led_422(struct dvbridge_renderer *r,
+    const struct dvbridge_policy *policy, pl_tex linear, pl_tex carrier,
+    unsigned bits, bool flip_y)
+{
+    if (!r || !policy || (policy->mode != DVBRIDGE_MODE_HDR10_EXPERT &&
+        policy->mode != DVBRIDGE_MODE_PLAYER_LED) ||
+        dvbridge_policy_validate(policy) != DVBRIDGE_POLICY_VALID ||
+        (bits != 10 && bits != 12) || !linear || !carrier || linear == carrier)
+        return false;
+
+    const struct pl_tex_params *src = &linear->params, *dst = &carrier->params;
+    if (!src->sampleable || !dst->renderable || src->d || dst->d ||
+        src->w <= 0 || src->w % 2 || src->h <= 0 || src->w != dst->w || src->h != dst->h ||
+        !src->format || !dst->format || src->format->type != PL_FMT_FLOAT ||
+        dst->format->type != PL_FMT_UNORM || src->format->num_components != 4 ||
+        dst->format->num_components != 4)
+        return false;
+    for (int c = 0; c < 4; c++)
+        if (src->format->component_depth[c] != 32 || dst->format->component_depth[c] != 8)
+            return false;
+
+    /* Accept actual 2D textures only. A framebuffer-only wrapper can report
+     * four 8-bit components even when its encoding or sample count differs. */
+    GLenum src_target = 0, dst_target = 0;
+    GLint src_format = 0, dst_format = 0;
+    GLuint framebuffer = 0;
+    GLuint src_name = pl_opengl_unwrap(r->gpu, linear, &src_target, &src_format, NULL);
+    GLuint dst_name = pl_opengl_unwrap(r->gpu, carrier, &dst_target, &dst_format, &framebuffer);
+    if (!src_name || !dst_name || src_name == dst_name || !framebuffer ||
+        src_target != GL_TEXTURE_2D || dst_target != GL_TEXTURE_2D ||
+        src_format != GL_RGBA32F || dst_format != GL_RGBA8 || glGetError() != GL_NO_ERROR)
+        return false;
+
+    GLint draw, samples, encoding, attachment, level, draw_buffer;
+    glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &draw);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, framebuffer);
+    bool complete = glCheckFramebufferStatus(GL_DRAW_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE;
+    glGetIntegerv(GL_SAMPLES, &samples);
+    glGetIntegerv(GL_DRAW_BUFFER0, &draw_buffer);
+    glGetFramebufferAttachmentParameteriv(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+        GL_FRAMEBUFFER_ATTACHMENT_OBJECT_NAME, &attachment);
+    glGetFramebufferAttachmentParameteriv(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+        GL_FRAMEBUFFER_ATTACHMENT_TEXTURE_LEVEL, &level);
+    glGetFramebufferAttachmentParameteriv(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+        GL_FRAMEBUFFER_ATTACHMENT_COLOR_ENCODING, &encoding);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, draw);
+    if (glGetError() != GL_NO_ERROR || !complete || samples || encoding != GL_LINEAR ||
+        draw_buffer != GL_COLOR_ATTACHMENT0 || (GLuint) attachment != dst_name || level)
+        return false;
+
+    const struct pl_raw_primaries prim = cb1_display_primaries(policy);
+    /* An exact identity keeps zero channels at zero before the PQ curve. */
+    pl_matrix3x3 matrix = !policy->lldv_edid_version && policy->tv.gamut == DVBRIDGE_GAMUT_BT2020 ?
+        pl_matrix3x3_identity : pl_get_color_mapping_matrix(&prim,
+            pl_raw_primaries_get(PL_COLOR_PRIM_BT_2020), PL_INTENT_RELATIVE_COLORIMETRIC);
+    float columns[3][3];
+    for (int row = 0; row < 3; row++)
+        for (int col = 0; col < 3; col++)
+            columns[col][row] = matrix.m[row][col];
+
+    const float scale = policy->tv.peak_nits / PL_COLOR_SDR_WHITE;
+    const int flip = flip_y;
+    const unsigned padding = 12 - bits;
+    /* GLES image stores require immutable textures. Mutable framebuffer
+     * targets keep the raster pass with the same layout and quantization. */
+    if (r->gpu->glsl.gles && r->gpu->glsl.version >= 310) {
+        GLint bound, immutable;
+        glGetIntegerv(GL_TEXTURE_BINDING_2D, &bound);
+        glBindTexture(GL_TEXTURE_2D, dst_name);
+        glGetTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_IMMUTABLE_FORMAT, &immutable);
+        glBindTexture(GL_TEXTURE_2D, bound);
+        if (glGetError() != GL_NO_ERROR)
+            return false;
+        if (immutable && player_led_compute_init(&r->player_led_compute, r->gpu))
+            return player_led_compute_pack(&r->player_led_compute, src_name, dst_name,
+                src->w, src->h, &columns[0][0], scale, flip, padding);
+    }
+
+    if (!r->player_led_dispatch) {
+        r->player_led_dispatch = pl_dispatch_create(NULL, r->gpu);
+        if (!r->player_led_dispatch)
+            return false;
+        pl_dispatch_mark_cb1_stable_pq(r->player_led_dispatch, true);
+    }
+
+    const struct pl_shader_var vars[] = {
+        {.var=pl_var_mat3("lldv_matrix"), .data=columns, .dynamic=true},
+        {.var=pl_var_float("lldv_scale"), .data=&scale, .dynamic=true},
+        {.var=pl_var_int("lldv_flip"), .data=&flip, .dynamic=true},
+        {.var=pl_var_uint("lldv_padding"), .data=&padding, .dynamic=true},
+    };
+    const struct pl_shader_desc input = {
+        .desc={.name="lldv_input", .type=PL_DESC_SAMPLED_TEX},
+        .binding={.object=linear, .sample_mode=PL_TEX_SAMPLE_NEAREST},
+    };
+
+    pl_dispatch dispatch = r->player_led_dispatch;
+    pl_dispatch_reset_frame(dispatch);
+    pl_shader shader = pl_dispatch_begin(dispatch);
+    bool ok = pl_shader_custom(shader, &(struct pl_custom_shader){
+        .input=PL_SHADER_SIG_NONE, .output=PL_SHADER_SIG_COLOR,
+        .output_w=src->w, .output_h=src->h,
+        .descriptors=&input, .num_descriptors=1, .variables=vars, .num_variables=4,
+        .description="LLDV 4:2:2 carrier",
+        .header=PLAYER_LED_COLOR_GLSL
+            "ivec2 lldv_pos; int lldv_even; vec3 lldv_left, lldv_center;\n"
+            "vec3 lldv_sample(int x){\n"
+            "    vec3 rgb=texelFetch(lldv_input,ivec2(x,lldv_pos.y),0).rgb;\n"
+            "    return clamp(lldv_matrix*rgb,0.0,1.0)*lldv_scale;\n"
+            "}\n",
+        .body=
+            "lldv_pos=ivec2(gl_FragCoord.xy);\n"
+            "if(lldv_flip!=0)lldv_pos.y=textureSize(lldv_input,0).y-1-lldv_pos.y;\n"
+            "lldv_even=lldv_pos.x&~1;\n"
+            "color=vec4(lldv_sample(max(lldv_even-1,0)),1.0);\n",
+    });
+
+    /* BT.2100 co-sites chroma at the even luma sample. Filter the three PQ
+     * samples about that position, with the left edge replicated. */
+    const char *steps[] = {
+        "lldv_left=color.rgb; color.rgb=lldv_sample(lldv_even);\n",
+        "lldv_center=color.rgb; color.rgb=lldv_sample(lldv_even+1);\n",
+        "bool odd=(lldv_pos.x&1)!=0;\n"
+        "float y=dot(odd?color.rgb:lldv_center,lldv_luma);\n"
+        "vec2 c=lldv_chroma(lldv_left,lldv_center,color.rgb);\n"
+        "color=lldv_code(y,odd?c.y:c.x,lldv_padding);\n",
+    };
+    for (int i = 0; ok && i < 3; i++) {
+        pl_shader_delinearize(shader, &pl_color_space_hdr10);
+        ok = pl_shader_custom(shader, &(struct pl_custom_shader){
+            .input=PL_SHADER_SIG_COLOR, .output=PL_SHADER_SIG_COLOR, .body=steps[i],
+        });
+    }
+    if (ok) {
+        GLint viewport[4], scissor[4];
+        glGetIntegerv(GL_VIEWPORT, viewport);
+        glGetIntegerv(GL_SCISSOR_BOX, scissor);
+        struct transport_write_state state;
+        transport_write_begin(&state);
+        ok = pl_dispatch_finish(dispatch, pl_dispatch_params(.shader=&shader, .target=carrier));
+        ok = glGetError() == GL_NO_ERROR && ok;
+        transport_write_end(&state);
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, draw);
+        glViewport(viewport[0], viewport[1], viewport[2], viewport[3]);
+        glScissor(scissor[0], scissor[1], scissor[2], scissor[3]);
+        ok = glGetError() == GL_NO_ERROR && ok;
+    }
+    pl_dispatch_abort(dispatch, &shader);
+    return ok;
+}
+
+bool dvbridge_resolve_player_led_rgb10(struct dvbridge_renderer *r,
+    const struct dvbridge_policy *policy, pl_tex linear, pl_tex rgb10, bool flip_y)
+{
+    if (!r || !policy || policy->mode != DVBRIDGE_MODE_PLAYER_LED ||
+        dvbridge_policy_validate(policy) != DVBRIDGE_POLICY_VALID ||
+        !linear || !rgb10 || linear == rgb10 || !linear->params.sampleable ||
+        !rgb10->params.renderable || linear->params.w != rgb10->params.w ||
+        linear->params.h != rgb10->params.h)
+        return false;
+
+    if (!r->player_led_dispatch) {
+        r->player_led_dispatch = pl_dispatch_create(NULL, r->gpu);
+        if (!r->player_led_dispatch)
+            return false;
+        pl_dispatch_mark_cb1_stable_pq(r->player_led_dispatch, true);
+    }
+    const struct pl_raw_primaries primaries = cb1_display_primaries(policy);
+    const pl_matrix3x3 matrix = pl_get_color_mapping_matrix(&primaries,
+        pl_raw_primaries_get(PL_COLOR_PRIM_BT_2020), PL_INTENT_RELATIVE_COLORIMETRIC);
+    float columns[3][3];
+    for (int row = 0; row < 3; ++row)
+        for (int col = 0; col < 3; ++col)
+            columns[col][row] = matrix.m[row][col];
+
+    const float scale = policy->tv.peak_nits / PL_COLOR_SDR_WHITE;
+    const int flip = flip_y;
+    const struct pl_shader_var vars[] = {
+        {.var=pl_var_mat3("lldv_matrix"), .data=columns, .dynamic=true},
+        {.var=pl_var_float("lldv_scale"), .data=&scale, .dynamic=true},
+        {.var=pl_var_int("lldv_flip"), .data=&flip, .dynamic=true},
+    };
+    const struct pl_shader_desc input = {
+        .desc={.name="lldv_input", .type=PL_DESC_SAMPLED_TEX},
+        .binding={.object=linear, .sample_mode=PL_TEX_SAMPLE_NEAREST},
+    };
+    pl_dispatch dispatch = r->player_led_dispatch;
+    pl_dispatch_reset_frame(dispatch);
+    pl_shader shader = pl_dispatch_begin(dispatch);
+    bool ok = pl_shader_custom(shader, &(struct pl_custom_shader){
+        .input=PL_SHADER_SIG_NONE, .output=PL_SHADER_SIG_COLOR,
+        .output_w=linear->params.w, .output_h=linear->params.h,
+        .descriptors=&input, .num_descriptors=1, .variables=vars, .num_variables=3,
+        .description="LLDV RGB10 scanout",
+        .body=
+            "ivec2 p=ivec2(gl_FragCoord.xy);\n"
+            "if(lldv_flip!=0)p.y=textureSize(lldv_input,0).y-1-p.y;\n"
+            "vec3 rgb=texelFetch(lldv_input,p,0).rgb;\n"
+            "color=vec4(clamp(lldv_matrix*rgb,0.0,1.0)*lldv_scale,1.0);\n",
+    });
+    if (ok) {
+        pl_shader_delinearize(shader, &pl_color_space_hdr10);
+        GLint draw, viewport[4], scissor[4];
+        glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &draw);
+        glGetIntegerv(GL_VIEWPORT, viewport);
+        glGetIntegerv(GL_SCISSOR_BOX, scissor);
+        struct transport_write_state state;
+        transport_write_begin(&state);
+        ok = pl_dispatch_finish(dispatch, pl_dispatch_params(.shader=&shader, .target=rgb10));
+        ok = glGetError() == GL_NO_ERROR && ok;
+        transport_write_end(&state);
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, draw);
+        glViewport(viewport[0], viewport[1], viewport[2], viewport[3]);
+        glScissor(scissor[0], scissor[1], scissor[2], scissor[3]);
+    }
+    pl_dispatch_abort(dispatch, &shader);
+    return ok;
+}
+
+#undef PLAYER_LED_COLOR_GLSL
+
 pl_tex dvbridge_render_texture(const struct dvbridge_renderer *r)
 {
     if(r && r->dv.active && (r->dv.ai_direct_lean || r->enhanced_skip_aux) && !r->dv.output.intermediate)return NULL;
@@ -1891,9 +2592,9 @@ bool dvbridge_render_hdr10_policy_rgb(struct dvbridge_renderer *r,
     return true;
 }
 
-static bool direct_target_valid(struct dvbridge_renderer *r,pl_tex target,unsigned bits)
+static bool direct_target_valid_min(const struct dvbridge_renderer *r,pl_tex target,unsigned bits,unsigned minimum)
 {
-    if(!r || !target || bits<10 || bits>16 || target==r->rgb ||
+    if(!r || !target || bits<minimum || bits>16 || target==r->rgb ||
        target->params.w<=0 || target->params.h<=0 || !target->params.renderable ||
        !target->params.format || target->params.format->num_components<3)return false;
     pl_fmt fmt=target->params.format;
@@ -1901,6 +2602,11 @@ static bool direct_target_valid(struct dvbridge_renderer *r,pl_tex target,unsign
         if(!((fmt->type==PL_FMT_UNORM && fmt->component_depth[c]>=(int)bits) ||
              (fmt->type==PL_FMT_FLOAT && fmt->component_depth[c]>=32)))return false;
     return true;
+}
+
+static bool direct_target_valid(struct dvbridge_renderer *r,pl_tex target,unsigned bits)
+{
+    return direct_target_valid_min(r,target,bits,10);
 }
 
 static bool direct_geometry_valid(struct dvbridge_geometry geometry)
@@ -1943,6 +2649,9 @@ bool dvbridge_render_hdr10_policy_direct(struct dvbridge_renderer *r,
     struct dvbridge_geometry geometry,pl_tex target,bool flip,bool limited,unsigned bits)
 {
     dvbridge_render_policy_cancel(r);
+    if(policy && policy->mode==DVBRIDGE_MODE_SDR)
+        return render_sdr_direct(r,policy,identity,source,metadata,bytes,pts,el_pts,
+            geometry,target,flip,limited,bits);
     if(!r || !identity || !policy ||
        policy->mode!=DVBRIDGE_MODE_HDR10_EXPERT ||
        identity->revision!=policy->revision || !isfinite(pts) || !source ||
@@ -2031,6 +2740,214 @@ bool dvbridge_render_policy_committed(const struct dvbridge_renderer *r,
 {
     if (!r || !snapshot || !r->policy_has_committed) return false;
     *snapshot=r->policy_committed; return true;
+}
+
+static struct pl_color_space sdr_container(const struct dvbridge_sdr_profile *profile,
+                                           double peak,double gamma,double black)
+{
+    const enum pl_color_primaries primaries = profile->gamut==DVBRIDGE_GAMUT_BT2020 ?
+        PL_COLOR_PRIM_BT_2020 : PL_COLOR_PRIM_BT_709;
+    return (struct pl_color_space){.primaries=primaries,
+        .transfer=gamma==2.2?PL_COLOR_TRC_GAMMA22:PL_COLOR_TRC_GAMMA24,
+        .hdr={.min_luma=fmax(black,PL_COLOR_HDR_BLACK),.max_luma=peak}};
+}
+
+static void sdr_final_params(struct pl_render_params *params)
+{
+    params->min_fbo_precision=32;params->peak_detect_params=NULL;params->frame_mixer=NULL;
+    params->dither_params=&pl_dither_default_params;params->skip_caching_single_frame=true;
+    params->cb1_stable_pq=false;
+}
+
+static bool raw_sdr_source_valid(const struct pl_frame *source)
+{
+    if(!source || source->enhancement_layer || source->repr.dovi || source->profile.len ||
+       source->icc || source->lut || source->color.primaries!=PL_COLOR_PRIM_BT_2020 ||
+       source->num_planes<1 || source->num_planes>4)return false;
+    for(int i=0;i<source->num_planes;i++)if(!source->planes[i].texture)return false;
+    if(source->color.transfer==PL_COLOR_TRC_HLG)
+        return source->repr.sys==PL_COLOR_SYSTEM_BT_2020_NC || source->repr.sys==PL_COLOR_SYSTEM_RGB;
+    if(source->color.transfer!=PL_COLOR_TRC_PQ)return false;
+    const struct pl_hdr_metadata *hdr=&source->color.hdr;
+    const float luminance[]={hdr->min_luma,hdr->max_luma,hdr->max_cll,hdr->max_fall,
+        hdr->scene_max[0],hdr->scene_max[1],hdr->scene_max[2],hdr->scene_avg};
+    for(unsigned i=0;i<sizeof(luminance)/sizeof(*luminance);i++)
+        if(!isfinite(luminance[i]) || luminance[i]<0 || luminance[i]>10000)return false;
+    if((hdr->max_luma && hdr->min_luma>hdr->max_luma) ||
+       !isfinite(hdr->max_pq_y) || !isfinite(hdr->avg_pq_y) || hdr->max_pq_y<0 ||
+       hdr->max_pq_y>1 || hdr->avg_pq_y<0 || hdr->avg_pq_y>hdr->max_pq_y)return false;
+    return true;
+}
+
+/* Match fix_frame's absent-A inference only after validating the actual native
+ * plane structure. An arbitrary UNKNOWN declaration with A is not opaque. */
+static bool effective_no_alpha(const struct pl_frame *source)
+{
+    if(!source || source->num_planes<1 || source->num_planes>4 ||
+       (source->repr.alpha!=PL_ALPHA_NONE && source->repr.alpha!=PL_ALPHA_UNKNOWN))return false;
+    unsigned channels=0;
+    for(int p=0;p<source->num_planes;p++){
+        const struct pl_plane *plane=&source->planes[p];
+        if(!plane->texture || !plane->texture->params.format || plane->components<1 ||
+           plane->components>4 || plane->components>plane->texture->params.format->num_components)return false;
+        for(int c=0;c<plane->components;c++){
+            int channel=plane->component_mapping[c];
+            if(channel<0 || channel>PL_CHANNEL_A)return false;
+            if(source->repr.alpha==PL_ALPHA_UNKNOWN &&
+               (channel==PL_CHANNEL_A || (channels&(1u<<channel))))return false;
+            channels|=1u<<channel;
+        }
+    }
+    return source->repr.alpha==PL_ALPHA_NONE || channels==7;
+}
+
+bool dvbridge_render_sdr_policy_direct_eligible(const struct dvbridge_renderer *r,
+    const struct dvbridge_policy *policy,const struct dvbridge_identity *id,
+    const struct pl_frame *source,const void *metadata,size_t bytes,double pts,double el_pts,
+    struct dvbridge_geometry geometry,pl_tex target,unsigned bits)
+{
+    double peak,gamma,black;float crop[4];unsigned margins[4];
+    int width,height;
+    if(!r || !policy || policy->mode!=DVBRIDGE_MODE_SDR || !id ||
+       id->revision!=policy->revision || dvbridge_policy_validate(policy)!=DVBRIDGE_POLICY_VALID ||
+       !dvbridge_sdr_target(&policy->sdr,&peak,&gamma,&black) || !effective_no_alpha(source) ||
+       source->rotation || source->num_overlays || source->profile.len || source->icc || source->lut ||
+       !isfinite(pts) || !isfinite(el_pts) || !direct_geometry_valid(geometry) ||
+       geometry.source_width!=geometry.width || geometry.source_height!=geometry.height ||
+       !dvbridge_geometry_source(geometry,crop) || crop[0] || crop[1] ||
+       crop[2]!=geometry.source_width || crop[3]!=geometry.source_height ||
+       source->crop.x0 || source->crop.y0 || source->crop.x1!=geometry.source_width ||
+       source->crop.y1!=geometry.source_height || !direct_target_valid_min(r,target,bits,8) ||
+       !dvbridge_geometry_raster(geometry,&width,&height) ||
+       target->params.w!=width || target->params.h!=height)return false;
+    const struct pl_frame *el=source->enhancement_layer;
+    if(el && (pts!=el_pts || el->rotation || el->num_overlays || el->enhancement_layer ||
+        el->profile.len || el->icc || el->lut || !effective_no_alpha(el)))return false;
+    for(int i=0;i<source->num_planes;i++)if(source->planes[i].texture==target)return false;
+    if(el)for(int i=0;i<el->num_planes;i++)if(el->planes[i].texture==target)return false;
+    if(!metadata && !bytes)
+        // HLG first resolves to the reference PQ domain before SDR mapping.
+        return source->color.transfer==PL_COLOR_TRC_PQ &&
+            source->repr.sys==PL_COLOR_SYSTEM_BT_2020_NC && raw_sdr_source_valid(source);
+    struct dvbridge_color mapped;
+    return metadata && bytes && dvbridge_frame_area(margins,metadata,bytes,geometry) &&
+        !margins[0] && !margins[1] && !margins[2] && !margins[3] &&
+        dvbridge_map_color(&mapped,metadata,bytes,el!=NULL);
+}
+
+bool dvbridge_render_sdr_policy_rgb(struct dvbridge_renderer *r,
+    const struct dvbridge_policy *policy,const struct dvbridge_identity *id,
+    const struct pl_frame *source,const void *metadata,size_t bytes,
+    double pts,double el_pts,struct dvbridge_geometry geometry)
+{
+    dvbridge_render_policy_cancel(r);
+    if(r && r->dv.active)return false; /* Poll the existing retirement owner before reuse. */
+    if(r){r->l2_trims_disabled=false;dvbridge_renderer_set_cmv40(r,NULL);r->cmv40_status=CB1_CMV40_OFF;}
+    double peak,gamma,black;
+    if(!r || !policy || policy->mode!=DVBRIDGE_MODE_SDR || !id ||
+       id->revision!=policy->revision || dvbridge_policy_validate(policy)!=DVBRIDGE_POLICY_VALID ||
+       !dvbridge_sdr_target(&policy->sdr,&peak,&gamma,&black) || !source ||
+       source->num_overlays || source->rotation || !isfinite(pts) || !isfinite(el_pts) ||
+       (source->enhancement_layer && (pts!=el_pts || source->enhancement_layer->num_overlays)))return false;
+    bool fel=false;
+    if(metadata || bytes){
+        struct dvbridge_color mapped;
+        if(!metadata || !bytes || !dvbridge_map_color(&mapped,metadata,bytes,
+            source->enhancement_layer && pts==el_pts))return false;
+        fel=source->enhancement_layer && mapped.dovi.nlq_active;
+        r->sdr_reconstruction=true;
+        bool ok=dvbridge_render_rgb(r,source,metadata,bytes,pts,el_pts,geometry);
+        r->sdr_reconstruction=false;
+        if(!ok)return false;
+    }else{
+        if(!raw_sdr_source_valid(source) || !configure_target(r,geometry) || !ensure_rgb(r))return false;
+        if(!ai_render_pixels(r,source,geometry,NULL,false,NULL,NULL))return false;
+    }
+    struct pl_color_space target=sdr_container(&policy->sdr,peak,gamma,black);
+    r->policy_pending=(struct dvbridge_hdr10_policy_output){.identity=*id,.policy=*policy,
+        .nominal_target=target,.container=target,.geometry=geometry,.fel_reconstructed=fel};
+    r->policy_ready=r->ready=true;return true;
+}
+
+static struct pl_hook_res sdr_gamma(void *priv,const struct pl_hook_params *p)
+{
+    const struct pl_shader_var var={.var=pl_var_vec3("sdr_gamma_range"),.data=priv,.dynamic=true};
+    bool ok=pl_shader_custom(p->sh,&(struct pl_custom_shader){.input=PL_SHADER_SIG_COLOR,
+        .output=PL_SHADER_SIG_COLOR,.variables=&var,.num_variables=1,
+        .body="color.rgb=sdr_gamma_range.y+sdr_gamma_range.z*pow(max((color.rgb-sdr_gamma_range.y)/sdr_gamma_range.z,vec3(0)),vec3(sdr_gamma_range.x));"});
+    return (struct pl_hook_res){.failed=!ok,.output=PL_HOOK_SIG_NONE};
+}
+
+/* Private Phase A. Eligibility is decided before drawing; failure after the
+ * draw starts remains a failed picture, never an implicit staged retry. */
+static bool render_sdr_direct(struct dvbridge_renderer *r,
+    const struct dvbridge_policy *policy,const struct dvbridge_identity *id,
+    const struct pl_frame *source,const void *metadata,size_t bytes,double pts,double el_pts,
+    struct dvbridge_geometry geometry,pl_tex target,bool flip,bool limited,unsigned bits)
+{
+    if(!dvbridge_render_sdr_policy_direct_eligible(r,policy,id,source,metadata,bytes,
+        pts,el_pts,geometry,target,bits) || r->dv.active)return false;
+    double peak,gamma,black;dvbridge_sdr_target(&policy->sdr,&peak,&gamma,&black);
+    const struct pl_frame *el=source->enhancement_layer;
+    struct dvbridge_color mapped={0};
+    if(metadata && !dvbridge_map_color(&mapped,metadata,bytes,el!=NULL))return false;
+    struct pl_color_space container=sdr_container(&policy->sdr,peak,gamma,black);
+    struct direct_output direct;
+    direct_target_init(&direct,target,flip,limited,bits,false);
+    direct.sdr_target=&container;
+    direct.custom_gamma=gamma!=2.2 && gamma!=2.4;
+    direct.sdr_gamma[0]=2.4/gamma;
+    direct.sdr_gamma[1]=limited?16.*(1u<<(bits-8))/((1u<<bits)-1):0;
+    direct.sdr_gamma[2]=limited?219.*(1u<<(bits-8))/((1u<<bits)-1):1;
+    direct.hook=(struct pl_hook){.stages=PL_HOOK_OUTPUT,.input=PL_HOOK_SIG_COLOR,
+        .priv=direct.sdr_gamma,.hook=sdr_gamma,.signature=0x4342315344520001ULL};
+    r->l2_trims_disabled=false;dvbridge_renderer_set_cmv40(r,NULL);r->cmv40_status=CB1_CMV40_OFF;
+    r->sdr_reconstruction=true;
+    bool ok=metadata ? render(r,source,metadata,bytes,pts,el_pts,geometry,NULL,false,
+        NULL,NULL,NULL,false,&direct,false,NULL,false,NULL) :
+        configure_target(r,geometry) && ai_render_pixels(r,source,geometry,NULL,false,NULL,&direct);
+    r->sdr_reconstruction=false;
+    if(!ok)return false;
+    r->policy_pending=(struct dvbridge_hdr10_policy_output){.identity=*id,.policy=*policy,
+        .nominal_target=container,.container=container,.geometry=geometry,
+        .fel_reconstructed=el && mapped.dovi.nlq_active,.resolved=true,.final_target=target};
+    r->policy_ready=r->ready=true;
+    return true;
+}
+
+bool dvbridge_render_sdr_policy_resolve(struct dvbridge_renderer *r,pl_tex output,
+    bool flip,bool limited,unsigned bits)
+{
+    if(!r || !r->policy_ready || !r->ready || r->policy_pending.policy.mode!=DVBRIDGE_MODE_SDR ||
+       !r->rgb || !output || output==r->rgb || bits<8 || bits>16 || !output->params.renderable ||
+       !output->params.format || output->params.format->num_components<3 ||
+       output->params.w!=r->rgb->params.w || output->params.h!=r->rgb->params.h){
+        dvbridge_render_policy_cancel(r);return false;
+    }
+    for(int c=0;c<3;c++)if(output->params.format->component_depth[c]<(int)bits){
+        dvbridge_render_policy_cancel(r);return false;
+    }
+    struct pl_frame source={.num_planes=1,
+        .planes={{.texture=r->rgb,.components=4,.component_mapping={0,1,2,3}}},
+        .repr=pl_color_repr_rgb,.color=r->reconstructed_color};
+    struct pl_frame target=source;target.planes[0].texture=output;target.planes[0].flipped=flip;
+    target.color=r->policy_pending.container;
+    target.repr.levels=limited?PL_COLOR_LEVELS_LIMITED:PL_COLOR_LEVELS_FULL;
+    target.repr.bits.sample_depth=target.repr.bits.color_depth=bits;
+    double peak,gamma,black;
+    dvbridge_sdr_target(&r->policy_pending.policy.sdr,&peak,&gamma,&black);
+    float ratio[3]={2.4/gamma,limited?16.*(1u<<(bits-8))/((1u<<bits)-1):0,
+        limited?219.*(1u<<(bits-8))/((1u<<bits)-1):1};
+    const struct pl_hook hook={.stages=PL_HOOK_OUTPUT,.input=PL_HOOK_SIG_COLOR,
+        .priv=ratio,.hook=sdr_gamma,.signature=0x4342315344520001ULL};
+    const struct pl_hook *hooks[]={&hook};
+    struct pl_render_params params=pl_render_default_params;
+    sdr_final_params(&params);
+    if(gamma!=2.2 && gamma!=2.4){params.hooks=hooks;params.num_hooks=1;}
+    bool ok=pl_render_image(r->renderer,&source,&target,&params);
+    struct pl_render_errors errors=pl_renderer_get_errors(r->renderer);
+    if(!ok || errors.errors || errors.num_disabled_hooks){dvbridge_render_policy_cancel(r);return false;}
+    r->policy_pending.resolved=true;r->policy_pending.final_target=output;return true;
 }
 
 
@@ -2216,7 +3133,7 @@ bool dvbridge_renderer_supports_mode(struct dvbridge_renderer *r,enum dvbridge_m
     if(!r || mode<=DVBRIDGE_MODE_DISABLED || mode>=DVBRIDGE_MODE_COUNT ||
        !r->gpu || !r->renderer ||
        !pl_find_fmt(r->gpu,PL_FMT_FLOAT,4,32,32,PL_FMT_CAP_RENDERABLE|PL_FMT_CAP_SAMPLEABLE))return false;
-    if(mode==DVBRIDGE_MODE_MASTER_REFERENCE)
+    if(mode==DVBRIDGE_MODE_MASTER_REFERENCE || mode==DVBRIDGE_MODE_PLAYER_LED)
         return r->gpu->glsl.version >= (r->gpu->glsl.gles?310:400) &&
             pl_find_fmt(r->gpu,PL_FMT_FLOAT,1,32,32,PL_FMT_CAP_RENDERABLE|PL_FMT_CAP_SAMPLEABLE) &&
             pl_find_fmt(r->gpu,PL_FMT_FLOAT,2,32,32,PL_FMT_CAP_RENDERABLE|PL_FMT_CAP_SAMPLEABLE);
@@ -2477,7 +3394,8 @@ static bool dve_immutable(struct dvbridge_renderer *r,pl_tex *texture,GLuint *na
     }
     return *texture!=NULL;
 }
-static bool dve_allocate(struct dvbridge_renderer *r,unsigned width,unsigned height,bool ai_fused,bool analytic_pq)
+static bool dve_allocate(struct dvbridge_renderer *r,unsigned width,unsigned height,
+    bool ai_fused,bool analytic_pq,int placed_y)
 {
     if(r->enhanced_authored){GLint shared;glGetIntegerv(GL_MAX_COMPUTE_SHARED_MEMORY_SIZE,&shared);if(shared<3584)return false;}
     if(!width || !height || width>3840 || height>2160 || !dve_requirements(r->gpu))return false;
@@ -2491,9 +3409,11 @@ static bool dve_allocate(struct dvbridge_renderer *r,unsigned width,unsigned hei
     bool identity_target=!r->spatial_fit || r->target_identity;
     r->ai_enhanced_prepack=identity_target && r->ai_enhanced_fused && r->fragment_quad &&
         fragment_images>=3 && width==3840 && height==2160;
-    /* Packing uses output geometry; the reconstruction/scaler keep their domain. */
-    r->enhanced_prepack=identity_target && (r->enhanced_linear || r->enhanced_skip_aux) &&
-        width==3840 && height==2160 && images>=2;
+    /* Pack at native size when only whole rows of transport black surround it. */
+    r->enhanced_prepack=width==3840 && images>=2 &&
+        ((identity_target && height==2160 && (r->enhanced_linear || r->enhanced_skip_aux)) ||
+         (placed_y>=0 && r->enhanced_skip_aux));
+    r->enhanced_placed_y=r->enhanced_prepack?placed_y:-1;
     r->enhanced_skip_aux=r->enhanced_skip_aux && r->enhanced_prepack;
     if(!dve_program(r,pq_lookup)){dv_release(r);return false;}
     /* ES image access requires immutable storage; pinned LP GLES uses mutable
@@ -2570,13 +3490,14 @@ static bool dve_run(struct dvbridge_renderer *r,const struct cb1_dv_enhanced_pla
     unsigned content_width=quad?3840:w,content_height=quad?2160:h;
     if(margins[0]+margins[1]>=content_width || margins[2]+margins[3]>=content_height)return false;
     unsigned first=0,end=h;
+    unsigned packed_y=r->enhanced_placed_y>=0?(unsigned)r->enhanced_placed_y:0;
     if(r->enhanced_authored_curve && r->enhanced_skip_aux){
         first=margins[2];end=h-margins[3];
         if(s->enhanced_overlay){
             first=fmin(first,fmax(0,floor(s->overlay.rect[1])));
             end=fmax(end,fmin(h,ceil(s->overlay.rect[3])));
         }
-        if(!dve_clear_rows(r->enhanced_packed_fbo,first,end))return false;
+        if(!dve_clear_rows(r->enhanced_packed_fbo,first+packed_y,end+packed_y))return false;
     }
     s->groups=(content_width-margins[0]-margins[1])*(content_height-margins[2]-margins[3]);
     GLint program,active,binding,sampler,generic,indexed[3],image[2][6];GLint64 offsets[3],sizes[3];
@@ -2634,6 +3555,7 @@ static bool dve_run(struct dvbridge_renderer *r,const struct cb1_dv_enhanced_pla
     glUniform4ui(glGetUniformLocation(shader,"area"),margins[0],margins[2],w-margins[1],h-margins[3]);
     glUniform1ui(glGetUniformLocation(shader,"width"),w);
     glUniform1ui(glGetUniformLocation(shader,"origin_y"),first);
+    if(prepack)glUniform1ui(glGetUniformLocation(shader,"packed_y"),packed_y);
     glUniform1f(glGetUniformLocation(shader,"display_peak"),p->target);
     glUniform2f(glGetUniformLocation(shader,"bounds"),p->master,p->envelope);
     float curve[257],color[67],matrix[9];
@@ -2766,6 +3688,20 @@ void dvbridge_render_dv_policy_cancel(struct dvbridge_renderer *r)
     dvbridge_candidate_destroy(r->pending);r->pending=NULL;
 }
 
+int dvbridge_adaptive_placed_rows(struct dvbridge_geometry geometry)
+{
+    float crop[4],dest[4];
+    int width,height;
+    if(geometry.source_width!=3840 || geometry.source_height>=2160 ||
+       !dvbridge_geometry_raster(geometry,&width,&height) || width!=3840 || height!=2160 ||
+       !dvbridge_geometry_source(geometry,crop) || crop[0] || crop[1] ||
+       crop[2]!=width || crop[3]!=geometry.source_height ||
+       !dvbridge_geometry_destination(geometry,dest) || dest[0] || dest[2]!=width ||
+       dest[1]!=floorf(dest[1]) || dest[3]-dest[1]!=geometry.source_height)
+        return -1;
+    return (int)dest[1];
+}
+
 static enum dvbridge_dv_policy_status dv_policy_prepare(struct dvbridge_renderer *r,
     const struct dvbridge_policy *policy,const struct dvbridge_identity *id,const struct pl_frame *source,
     const void *metadata,size_t bytes,double pts,double el_pts,struct dvbridge_geometry geometry,
@@ -2825,13 +3761,18 @@ static enum dvbridge_dv_policy_status dv_policy_prepare(struct dvbridge_renderer
     }else pl_tex_destroy(r->gpu,&r->enhanced_input);
     if(packed && !pixels && !r->fragment_quad)return DVBRIDGE_DV_UNSUPPORTED;
     bool fel=color.dovi.nlq_active && source->enhancement_layer && pts==el_pts;
+    int placed_y=native_grid && r->enhanced_skip_aux?dvbridge_adaptive_placed_rows(geometry):-1;
+    if(placed_y>=0 && (margins[0] || margins[1] ||
+       margins[2]!=placed_y+r->enhanced_margins[2] ||
+       margins[3]!=2160-placed_y-geometry.source_height+r->enhanced_margins[3]))placed_y=-1;
+    bool full_fp16=policy->adaptive==DVBRIDGE_ADAPTIVE_B_FP16 &&
+        geometry.source_width==3840 && geometry.source_height==2160;
     bool analytic_pq=pixels && r->enhanced_linear &&
-        ((fel && !(r->authored_fel_lookup && policy->adaptive==DVBRIDGE_ADAPTIVE_B_FP16 &&
-                   geometry.source_width==3840 && geometry.source_height==2160)) ||
-         (r->authored_p5_analytic && policy->adaptive==DVBRIDGE_ADAPTIVE_B_FP16 &&
-                 geometry.source_width==3840 && geometry.source_height==2160 &&
-                 dvbridge_dv_profile5_transport(metadata)));
-    if(!(pixels?dve_allocate(r,reconstruction_width,reconstruction_height,false,analytic_pq):dv_allocate_transport(r)))return DVBRIDGE_DV_UNSUPPORTED;
+        ((fel && !(r->authored_fel_lookup && full_fp16)) ||
+         (r->authored_analytic_pq && ((placed_y>=0 && policy->adaptive==DVBRIDGE_ADAPTIVE_B_FP16) ||
+                                     (full_fp16 && dvbridge_dv_profile5_transport(metadata)))));
+    if(!(pixels?dve_allocate(r,reconstruction_width,reconstruction_height,false,analytic_pq,placed_y):
+         dv_allocate_transport(r)))return DVBRIDGE_DV_UNSUPPORTED;
     struct dvbridge_dv_slot *s=&r->dv;
     s->output_metadata=av_memdup(metadata,bytes);s->output_bytes=bytes;
     if(!s->output_metadata){dv_release(r);return DVBRIDGE_DV_FAILED;}
@@ -2984,7 +3925,7 @@ static bool dve_derive(struct dvbridge_renderer *r,const uint32_t *record)
     if(!isfinite(raw[0]) || !isfinite(mean) || !isfinite(raw[2]) ||
        raw[0]<0 || raw[2]>1 || raw[0]>raw[2] || mean<raw[0]-1e-6 || mean>raw[2]+1e-6)return false;
     if(record[11]){
-        bool direct=(!r->spatial_fit || r->target_identity) &&
+        bool direct=(!r->spatial_fit || r->target_identity || r->enhanced_placed_y>=0) &&
             !s->ai_source && r->enhanced_skip_aux && r->fragment_quad &&
             v->policy.adaptive!=DVBRIDGE_ADAPTIVE_A;
         if(!direct && !s->ai_source && r->enhanced_linear && !dve_native_pq(r))return false;
@@ -3290,7 +4231,7 @@ static bool dve_copy_packed(struct dvbridge_renderer *r,unsigned framebuffer,boo
 {
     unsigned first=0,end=2160;
     const unsigned *margins=r->dv.output.value.margins;
-    if(r->enhanced_authored && r->dv.output.value.fel_reconstructed &&
+    if(r->enhanced_authored && (r->dv.output.value.fel_reconstructed || r->enhanced_placed_y>=0) &&
        !r->dv.enhanced_overlay && margins[2]<2160 && margins[3]<2160-margins[2]){
         first=margins[2];end=2160-margins[3];
         if(!dve_clear_rows(framebuffer,flip?2160-end:first,flip?2160-first:end))return false;
@@ -3402,13 +4343,10 @@ bool dvbridge_render_dv_policy_commit(struct dvbridge_renderer *r,
         r->enhanced_committed=r->dv.enhanced_plan;r->enhanced_pts=r->dv.pts;
         r->enhanced_stream=id->stream;r->enhanced_has_committed=true;
     }else r->enhanced_has_committed=false;
+    /* All resolved authored Adaptive frames have finished analysis. The final
+     * draw can still read image storage, which the ordered handoff protects. */
     bool handoff=r->dv.borrowed_storage && r->dv.enhanced_pixels && !r->dv.ai_source &&
-        r->dv.enhanced_plan.status==CB1_DVE_READY && r->dv.prepacked && r->enhanced_skip_aux &&
-        !r->overlay_visible && !r->dv.enhanced_overlay &&
-        out->value.policy.adaptive!=DVBRIDGE_ADAPTIVE_A &&
-        out->value.geometry.source_width==3840 && out->value.geometry.source_height==2160 &&
-        !out->value.geometry.x && !out->value.geometry.y &&
-        out->value.geometry.width==3840 && out->value.geometry.height==2160;
+        out->value.policy.adaptive!=DVBRIDGE_ADAPTIVE_A;
     r->dv_committed=out->value;r->dv_has_committed=true;dvbridge_render_dv_policy_cancel(r);
     r->dv.ordered_handoff=handoff;return true;
 }
@@ -3535,7 +4473,8 @@ static struct pl_hook_res ai_native_transport(void *priv,const struct pl_hook_pa
 
 static bool ai_render_pixels(struct dvbridge_renderer *r,
     const struct pl_frame *source,struct dvbridge_geometry g,
-    pl_tex packed,bool flip,const struct dvbridge_native_overlay *overlay)
+    pl_tex packed,bool flip,const struct dvbridge_native_overlay *overlay,
+    struct direct_output *sdr)
 {
     bool native=r->dv.active && r->dv.ai_source && r->dv.enhanced_plan.status==CB1_DVE_READY &&
         r->enhanced_rgb && ((r->spatial_fit && !r->target_identity) ||
@@ -3551,13 +4490,23 @@ static bool ai_render_pixels(struct dvbridge_renderer *r,
     bool prepack=fused && r->ai_enhanced_prepack;
     bool direct=prepack && r->dv.ai_direct_target;
     if(direct)flip=r->dv.ai_direct_flip;
-    pl_tex rgb=native?r->native_picture:prepack?r->ai_enhanced_native:r->rgb;
     if(!packed && !prepack && !p5_preserve_backing(r))return false;
+    pl_tex rgb=native?r->native_picture:prepack?r->ai_enhanced_native:r->rgb;
+    pl_tex effective=sdr?sdr->texture:packed?packed:direct?r->dv.ai_direct_target:prepack?r->ai_enhanced_packed:rgb;
     /* Keep the native PQ result at FP32 precision for shared validation. */
     struct pl_frame image=*source,target={.num_planes=1,
-        .planes={{.texture=packed?packed:direct?r->dv.ai_direct_target:prepack?r->ai_enhanced_packed:rgb,
-            .flipped=(packed || direct) && flip,.components=4,.component_mapping={0,1,2,3}}},
+        .planes={{.texture=effective,
+            .flipped=sdr?sdr->flip:(packed || direct) && flip,.components=4,.component_mapping={0,1,2,3}}},
         .repr=pl_color_repr_rgb,.color=source->color,.crop={g.x,g.y,g.x+g.width,g.y+g.height}};
+    if(sdr){
+        target.color=*sdr->sdr_target;
+        target.repr.levels=sdr->limited?PL_COLOR_LEVELS_LIMITED:PL_COLOR_LEVELS_FULL;
+        target.repr.bits.sample_depth=target.repr.bits.color_depth=sdr->bits;
+    }
+    if(source->color.transfer==PL_COLOR_TRC_HLG){
+        image.color=cb1_hlg_reference_color(PL_COLOR_TRC_HLG);
+        target.color=cb1_hlg_reference_color(PL_COLOR_TRC_PQ);
+    }
     int width,height;
     if(!dvbridge_geometry_raster(g,&width,&height))return false;
     if(packed || prepack || (!native && r->spatial_fit)){
@@ -3567,7 +4516,7 @@ static bool ai_render_pixels(struct dvbridge_renderer *r,
     }
     bool raw=false;
 #ifdef CB1_HAS_HDR10_AI
-    raw=packed && r->target_identity && !r->dv.active && !overlay &&
+    raw=source->color.transfer==PL_COLOR_TRC_PQ && packed && r->target_identity && !r->dv.active && !overlay &&
         g.source_width==3840 && g.source_height==2160 && !g.x && !g.y && g.width==3840 && g.height==2160 &&
         source->crop.x0==0 && source->crop.y0==0 &&
         cb1_hdr10_ingress_validate(source)==CB1_AI_READY &&
@@ -3582,14 +4531,16 @@ static bool ai_render_pixels(struct dvbridge_renderer *r,
     params.frame_mixer=NULL;params.skip_caching_single_frame=true;params.border=PL_CLEAR_SKIP;
     params.cb1_nearest_identity=true;params.cb1_stable_pq=true;params.cb1_fp32_scaler_lut=true;
     params.sigmoid_params=NULL;params.disable_linear_scaling=raw;
+    if(sdr)sdr_final_params(&params);
     if(r->spatial_fit && !r->target_identity && !native && !fused && image.num_planes>1){
         pl_fmt fmt=pl_find_fmt(r->gpu,PL_FMT_FLOAT,4,32,32,PL_FMT_CAP_SAMPLEABLE|PL_FMT_CAP_RENDERABLE);
         if(!fmt || !pl_tex_recreate(r->gpu,&r->native_picture,pl_tex_params(
             .w=g.source_width,.h=g.source_height,.format=fmt,.sampleable=true,.renderable=true)))return false;
         struct pl_frame decoded={.num_planes=1,
             .planes={{.texture=r->native_picture,.components=4,.component_mapping={0,1,2,3}}},
-            .repr=pl_color_repr_rgb,.color=source->color,.crop={0,0,g.source_width,g.source_height}};
+            .repr=pl_color_repr_rgb,.color=target.color,.crop={0,0,g.source_width,g.source_height}};
         struct pl_frame full_source=*source;
+        full_source.color=image.color;
         full_source.crop=(pl_rect2df){0,0,g.source_width,g.source_height};
         if(!pl_render_image(r->renderer,&full_source,&decoded,&params))return false;
         image=decoded;
@@ -3613,8 +4564,13 @@ static bool ai_render_pixels(struct dvbridge_renderer *r,
         .hook=ai_native_transport,.signature=0x43423141494e0001ULL};
     const struct pl_hook *hooks[]={&native_transport,&reference,&expansion};
     params.hooks=raw?hooks:hooks+1;params.num_hooks=raw || fused?2:1;
-    if(!packed && (g.x || g.y || g.width!=(unsigned)rgb->params.w || g.height!=(unsigned)rgb->params.h)){
-        pl_tex_clear(r->gpu,rgb,(float[4]){0,0,0,1});
+    const struct pl_hook intermediate={.stages=PL_HOOK_SCALED,.input=PL_HOOK_SIG_COLOR,
+        .hook=sdr_intermediate,.signature=0x4342315344520002ULL};
+    const struct pl_hook *sdr_hooks[]={&reference,&intermediate,sdr?&sdr->hook:NULL};
+    if(sdr){params.hooks=sdr_hooks;params.num_hooks=sdr->custom_gamma?3:2;}
+    pl_tex clear_target=sdr?effective:rgb;
+    if(!packed && (g.x || g.y || g.width!=(unsigned)clear_target->params.w || g.height!=(unsigned)clear_target->params.h)){
+        pl_tex_clear(r->gpu,clear_target,(float[4]){0,0,0,1});
         if(fused){
             pl_tex_clear(r->gpu,r->enhanced_rgb,(float[4]){0,0,0,1});
             pl_tex_clear_ex(r->gpu,r->ai_enhanced_stats,(union pl_clear_color){0});
@@ -3638,8 +4594,9 @@ static bool ai_render_pixels(struct dvbridge_renderer *r,
         ok=ok && glGetError()==GL_NO_ERROR;
     }
     if(!ok)return false;
-    r->reconstructed_color=source->color;
-    r->dv.output.intermediate=packed?NULL:rgb;
+    r->reconstructed_color=target.color;
+    r->dv.output.intermediate=packed || sdr?NULL:rgb;
+    if(sdr)r->direct_output=true;
     r->dv.final_fitted=!native;
     r->ready=true;return true;
 }
@@ -3687,10 +4644,10 @@ static pl_tex ai_enhanced(struct dvbridge_renderer *r,const struct dvbridge_poli
     if(!r->owner){av_free(metadata);return NULL;}
     bool native=pixels && ((r->spatial_fit && !r->target_identity) ||
         g.source_width!=3840 || g.source_height!=2160);
-    bool allocated=pixels?dve_allocate(r,native?g.source_width:3840,native?g.source_height:2160,!native,false):dv_allocate_transport(r);
+    bool allocated=pixels?dve_allocate(r,native?g.source_width:3840,native?g.source_height:2160,!native,false,-1):dv_allocate_transport(r);
     if(!allocated && pixels && r->ai_enhanced_fused && !pl_gpu_is_failed(r->gpu)){
         r->ai_fusion_failed=true;
-        allocated=dve_allocate(r,3840,2160,false,false);
+        allocated=dve_allocate(r,3840,2160,false,false,-1);
     }
     if(!allocated){av_free(metadata);return NULL;}
     if(direct && pixels && !native && !r->ai_enhanced_prepack){av_free(metadata);return NULL;}
@@ -3701,13 +4658,13 @@ static pl_tex ai_enhanced(struct dvbridge_renderer *r,const struct dvbridge_poli
     s->ai_direct_target=direct;s->ai_direct_flip=direct && flip;
     s->ai_direct_lean=direct && pixels && !overlay && !native;
     s->enhanced_overlay=overlay!=NULL;if(overlay)s->overlay=*overlay;
-    bool rendered=ai_render_pixels(r,source,g,NULL,false,overlay);
+    bool rendered=ai_render_pixels(r,source,g,NULL,false,overlay,NULL);
     if(!rendered && !direct && pixels && r->ai_enhanced_fused && !pl_gpu_is_failed(r->gpu)){
         /* Same-context retry keeps all submitted resources leased until the
          * final fence. Only the optional fusion is disabled. */
         r->ai_fusion_failed=true;r->ai_enhanced_fused=r->ai_enhanced_prepack=false;
         pl_renderer_reset_errors(r->renderer,NULL);
-        rendered=dve_program(r,r->enhanced_pq_lookup) && ai_render_pixels(r,source,g,NULL,false,NULL);
+        rendered=dve_program(r,r->enhanced_pq_lookup) && ai_render_pixels(r,source,g,NULL,false,NULL,NULL);
     }
     if(!rendered){
         dv_last_use(r);dvbridge_render_dv_policy_cancel(r);return NULL;
@@ -3763,6 +4720,13 @@ static pl_tex render_hdr10_ai(struct dvbridge_renderer *r,const struct dvbridge_
     const struct cb1_ai_result *prediction,const struct pl_frame *source,const struct dvbridge_geometry *geometry,
     pl_tex packed,bool flip,const struct dvbridge_native_overlay *overlay)
 {
+    struct pl_frame hlg;
+    const bool original_hlg=source && source->color.transfer==PL_COLOR_TRC_HLG;
+    if(original_hlg){
+        if(!policy || policy->mode!=DVBRIDGE_MODE_STANDARD || source->repr.dovi ||
+           source->enhancement_layer || source->color.primaries!=PL_COLOR_PRIM_BT_2020)return NULL;
+        hlg=*source;hlg.color=cb1_hlg_reference_color(PL_COLOR_TRC_HLG);source=&hlg;
+    }
     if(r){r->l2_trims_disabled=false;dvbridge_renderer_set_cmv40(r,NULL);r->cmv40_status=CB1_CMV40_OFF;}
     if(!r || !geometry)return NULL;
     if(r->dv.active){dvbridge_render_dv_policy_cancel(r);return NULL;}
@@ -3776,7 +4740,7 @@ static pl_tex render_hdr10_ai(struct dvbridge_renderer *r,const struct dvbridge_
        source->rotation || source->num_overlays ||
        source->profile.len || source->icc || source->lut || source->enhancement_layer || source->repr.dovi ||
        (source->repr.sys!=PL_COLOR_SYSTEM_RGB && source->repr.sys!=PL_COLOR_SYSTEM_BT_2020_NC) ||
-       source->color.transfer!=PL_COLOR_TRC_PQ ||
+       (source->color.transfer!=PL_COLOR_TRC_PQ && !original_hlg) ||
        source->color.primaries!=PL_COLOR_PRIM_BT_2020 || source->num_planes<1 || source->num_planes>4 ||
        !isfinite(source->color.hdr.max_luma) || !isfinite(source->color.hdr.min_luma) ||
        !isfinite(source->color.hdr.max_cll) || !isfinite(source->color.hdr.max_fall) ||
@@ -3792,7 +4756,8 @@ static pl_tex render_hdr10_ai(struct dvbridge_renderer *r,const struct dvbridge_
        ((!g.crop[2] && !g.crop[3]) && ((g.x&1) || (g.width&1) ||
         fabs((double)g.width*g.source_height/g.source_width-g.height)>1.01)))return NULL;
     unsigned margins[4]={g.x,r->target_width-g.x-g.width,g.y,r->target_height-g.y-g.height};size_t bytes;
-    AVDOVIMetadata *metadata=ai_output_metadata(prediction,&source->color,margins,&bytes);if(!metadata)return NULL;
+    const struct pl_color_space normalized_color=original_hlg?cb1_hlg_reference_color(PL_COLOR_TRC_PQ):source->color;
+    AVDOVIMetadata *metadata=ai_output_metadata(prediction,&normalized_color,margins,&bytes);if(!metadata)return NULL;
     struct cb1_dv_enhanced_plan identity_plan;
     if(identity && (!ai_enhanced_plan(&identity_plan,metadata,bytes,prediction,&source->color,policy) ||
         identity_plan.status!=CB1_DVE_IDENTITY || identity_plan.reason!=CB1_DVE_NO_HEADROOM)){
@@ -3805,7 +4770,7 @@ static pl_tex render_hdr10_ai(struct dvbridge_renderer *r,const struct dvbridge_
     if(packed && !(r->pending=ai_prepare_candidate(r,metadata,bytes,prediction,g))){
         r->dv.active=true;dvbridge_render_dv_policy_cancel(r);av_free(metadata);return NULL;
     }
-    if(!ai_render_pixels(r,source,g,packed,flip,overlay)){
+    if(!ai_render_pixels(r,source,g,packed,flip,overlay,NULL)){
         r->dv.active=true;dv_last_use(r);dvbridge_render_dv_policy_cancel(r);
         av_free(metadata);return NULL;
     }
@@ -3813,8 +4778,8 @@ static pl_tex render_hdr10_ai(struct dvbridge_renderer *r,const struct dvbridge_
     s->output.value=(struct dvbridge_dv_policy_snapshot){
         .identity={prediction->id.stream,prediction->id.picture,prediction->id.revision},.policy=*policy,
         .source_cm_version=0,.output_generation=DVBRIDGE_ETSI_LEGACY_LITERAL,.geometry=g,
-        .container=r->reconstructed_color,.nominal_target=source->color,
-        .nominal_max_nits=source->color.hdr.max_luma};
+        .container=r->reconstructed_color,.nominal_target=normalized_color,
+        .nominal_max_nits=normalized_color.hdr.max_luma};
     s->output.value.source_pq[0]=av_dovi_get_color(metadata)->source_min_pq;
     s->output.value.source_pq[1]=av_dovi_get_color(metadata)->source_max_pq;
     if(identity){

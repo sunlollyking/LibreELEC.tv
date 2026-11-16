@@ -7,6 +7,18 @@
 #include <libavutil/pixfmt.h>
 #include "dvbridge_policy.h"
 
+/* BT.2100 reference display: 1000 cd/m2, zero black, system gamma 1.2.
+ * HLG mastering guesses must never change this normalization. libplacebo
+ * applies inverse OETF, BT.2020 luminance OOTF and the actual PQ encoding. */
+static inline struct pl_color_space cb1_hlg_reference_color(enum pl_color_transfer transfer)
+{
+    struct pl_color_space color=pl_color_space_unknown;
+    color.primaries=PL_COLOR_PRIM_BT_2020;
+    color.transfer=transfer;
+    color.hdr.prim=*pl_raw_primaries_get(PL_COLOR_PRIM_BT_2020);
+    color.hdr.max_luma=1000;
+    return color;
+}
 #define DVBRIDGE_CHROMA_MAP_API 1
 enum pl_chroma_location dvbridge_map_chroma(enum AVChromaLocation location);
 

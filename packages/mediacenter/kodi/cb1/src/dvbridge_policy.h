@@ -11,7 +11,7 @@ enum dvbridge_mode {
     DVBRIDGE_MODE_DISABLED, DVBRIDGE_MODE_STANDARD, DVBRIDGE_MODE_HDR10_BASIC,
     DVBRIDGE_MODE_HDR10_EXPERT, DVBRIDGE_MODE_ENHANCED_DV,
     DVBRIDGE_MODE_MASTER_REFERENCE = 5, DVBRIDGE_MODE_HDR10PLUS = 6,
-    DVBRIDGE_MODE_COUNT = 7
+    DVBRIDGE_MODE_SDR = 7, DVBRIDGE_MODE_PLAYER_LED = 8, DVBRIDGE_MODE_COUNT
 };
 enum dvbridge_panel { DVBRIDGE_PANEL_UNSET, DVBRIDGE_PANEL_OLED, DVBRIDGE_PANEL_LCD };
 enum dvbridge_gamut {
@@ -22,6 +22,15 @@ struct dvbridge_tv_profile {
     enum dvbridge_panel panel;
     enum dvbridge_gamut gamut;
 };
+#define DVBRIDGE_SDR_POLICY_API 1
+enum dvbridge_sdr_preset { DVBRIDGE_SDR_REFERENCE, DVBRIDGE_SDR_BRIGHT, DVBRIDGE_SDR_CUSTOM };
+struct dvbridge_sdr_profile {
+    enum dvbridge_sdr_preset preset;
+    double peak_nits, gamma, black_nits; /* Custom only; presets have fixed values. */
+    enum dvbridge_gamut gamut; /* Unset retains BT.709 for existing callers. */
+};
+bool dvbridge_sdr_target(const struct dvbridge_sdr_profile *profile,
+    double *peak_nits, double *gamma, double *black_nits);
 enum dvbridge_adaptive_variant {
     DVBRIDGE_ADAPTIVE_A, DVBRIDGE_ADAPTIVE_B_FP32, DVBRIDGE_ADAPTIVE_B_FP16
 };
@@ -38,6 +47,11 @@ struct dvbridge_policy {
      * Zero requests a floating PQ intermediate, with no transport-grid claim. */
     unsigned expert_output_bits;
     bool expert_output_limited;
+    struct dvbridge_sdr_profile sdr;
+    /* Player-led only. RGB xy after EDID quantization correction, with D65. */
+    uint64_t lldv_edid_generation;
+    unsigned lldv_edid_version;
+    double lldv_primaries[6];
 };
 struct dvbridge_identity { uint64_t stream, picture, revision; };
 enum dvbridge_policy_status {
