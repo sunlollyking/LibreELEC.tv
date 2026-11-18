@@ -2,8 +2,8 @@
 # Copyright (C) 2016-present Team LibreELEC (https://libreelec.tv)
 
 PKG_NAME="game.libretro.bluemsx"
-PKG_VERSION="0.0.1.57-Piers"
-PKG_SHA256="8060679b299ac372c65f1a4983af6c639c376fc137cbd56cd0b1dbd032143e3a"
+PKG_VERSION="0.0.1.58-Piers"
+PKG_SHA256="4bd12152be3fed1c421d4334cc19b50914e2acde7e8052f9bbc3ebcffc4803d8"
 PKG_REV="1"
 PKG_ARCH="any"
 PKG_LICENSE="GPL-2.0-or-later"

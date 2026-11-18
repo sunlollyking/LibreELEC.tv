@@ -2,8 +2,8 @@
 # Copyright (C) 2026-present Team LibreELEC (https://libreelec.tv)
 
 PKG_NAME="game.libretro.uae2021"
-PKG_VERSION="2.6.1.13-Piers"
-PKG_SHA256="81ac2b644dd24ff32cf57a6a0d50a785ad242413f78e708fd62b0e17e61e8da7"
+PKG_VERSION="2.6.1.14-Piers"
+PKG_SHA256="306cf787830068621999a2e9dd3a6b1a4268f3c587eb085faa80381b2bd56d2a"
 PKG_REV="1"
 PKG_ARCH="any"
 PKG_LICENSE="GPL-2.0-only"
