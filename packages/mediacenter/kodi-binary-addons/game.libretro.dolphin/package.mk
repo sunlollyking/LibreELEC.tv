@@ -2,8 +2,8 @@
 # Copyright (C) 2026-present Team LibreELEC (https://libreelec.tv)
 
 PKG_NAME="game.libretro.dolphin"
-PKG_VERSION="2609.0.0.40-Piers"
-PKG_SHA256="3a71cc6162ed704973806b4a5f4c8af8a376fb1d4a24378ed3e1c4900148bc86"
+PKG_VERSION="2609.0.0.41-Piers"
+PKG_SHA256="15fede5861a0279a8a7c3955de2570fd70a78e04d79623f9e1168b3586d736d5"
 PKG_REV="1"
 PKG_ARCH="x86_64"
 PKG_LICENSE="GPL-2.0-or-later"
