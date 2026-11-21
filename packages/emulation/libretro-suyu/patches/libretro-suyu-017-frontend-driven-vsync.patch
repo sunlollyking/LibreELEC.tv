@@ -1,0 +1,166 @@
+diff -ruN a/src/core/hle/service/vi/conductor.cpp b/src/core/hle/service/vi/conductor.cpp
+--- a/src/core/hle/service/vi/conductor.cpp
++++ b/src/core/hle/service/vi/conductor.cpp
+@@ -12,10 +12,19 @@
+ #include "core/hle/service/vi/display_list.h"
+ #include "core/hle/service/vi/vsync_manager.h"
+ 
++#include <algorithm>
++#include <mutex>
++
+ constexpr auto FrameNs = std::chrono::nanoseconds{1000000000 / 60};
+ 
+ namespace Service::VI {
+ 
++namespace {
++std::atomic<bool> g_frontend_driven{false};
++std::mutex g_frontend_mutex;
++Conductor* g_frontend_conductor = nullptr;
++} // namespace
++
+ Conductor::Conductor(Core::System& system, Container& container, DisplayList& displays)
+     : m_system(system), m_container(container) {
+     displays.ForEachDisplay([&](Display& display) {
+@@ -31,7 +40,12 @@
+                 return std::chrono::nanoseconds(this->GetNextTicks());
+             });
+ 
+-        system.CoreTiming().ScheduleLoopingEvent(FrameNs, FrameNs, m_event);
++        if (g_frontend_driven) {
++            std::scoped_lock lock{g_frontend_mutex};
++            g_frontend_conductor = this;
++        } else {
++            system.CoreTiming().ScheduleLoopingEvent(FrameNs, FrameNs, m_event);
++        }
+         m_thread = std::jthread([this](std::stop_token token) { this->VsyncThread(token); });
+     } else {
+         m_event = Core::Timing::CreateEvent(
+@@ -47,6 +61,13 @@
+ }
+ 
+ Conductor::~Conductor() {
++    {
++        std::scoped_lock lock{g_frontend_mutex};
++        if (g_frontend_conductor == this) {
++            g_frontend_conductor = nullptr;
++        }
++    }
++
+     m_system.CoreTiming().UnscheduleEvent(m_event);
+ 
+     if (m_system.IsMulticore()) {
+@@ -72,6 +93,26 @@
+         m_container.ComposeOnDisplay(&m_swap_interval, &m_compose_speed_scale, display_id);
+         manager.SignalVsync(m_system.Kernel());
+     }
++    m_frontend_swap_interval.store(m_swap_interval, std::memory_order_relaxed);
++}
++
++void Conductor::SetFrontendDriven(bool driven) {
++    g_frontend_driven = driven;
++}
++
++bool Conductor::FrontendFrame() {
++    std::scoped_lock lock{g_frontend_mutex};
++    return g_frontend_conductor && g_frontend_conductor->OnFrontendFrame();
++}
++
++bool Conductor::OnFrontendFrame() {
++    if (++m_frontend_frames <
++        std::max(1, m_frontend_swap_interval.load(std::memory_order_relaxed))) {
++        return false;
++    }
++    m_frontend_frames = 0;
++    m_signal.Set();
++    return true;
+ }
+ 
+ void Conductor::VsyncThread(std::stop_token token) {
+diff -ruN a/src/core/hle/service/vi/conductor.h b/src/core/hle/service/vi/conductor.h
+--- a/src/core/hle/service/vi/conductor.h
++++ b/src/core/hle/service/vi/conductor.h
+@@ -6,6 +6,7 @@
+ 
+ #pragma once
+ 
++#include <atomic>
+ #include <memory>
+ #include <ankerl/unordered_dense.h>
+ 
+@@ -37,6 +38,12 @@
+     explicit Conductor(Core::System& system, Container& container, DisplayList& displays);
+     ~Conductor();
+ 
++    //! A frontend that shows frames on its own display clock drives the guest's vsync instead of
++    //! the 60 Hz timer. Set before the game loads; multicore only.
++    static void SetFrontendDriven(bool driven);
++    //! One frontend frame. True if it started a composition (the guest's swap interval skips some).
++    static bool FrontendFrame();
++
+     void LinkVsyncEvent(u64 display_id, Event* event);
+     void UnlinkVsyncEvent(u64 display_id, Event* event);
+ 
+@@ -44,6 +51,7 @@
+     void ProcessVsync();
+     void VsyncThread(std::stop_token token);
+     s64 GetNextTicks() const;
++    bool OnFrontendFrame();
+ 
+ private:
+     Core::System& m_system;
+@@ -56,6 +64,8 @@
+ private:
+     s32 m_swap_interval = 1;
+     f32 m_compose_speed_scale = 1.0f;
++    std::atomic<s32> m_frontend_swap_interval{1};
++    s32 m_frontend_frames = 0;
+ };
+ 
+ } // namespace Service::VI
+diff -ruN a/src/libretro_core/retro_core.cpp b/src/libretro_core/retro_core.cpp
+--- a/src/libretro_core/retro_core.cpp
++++ b/src/libretro_core/retro_core.cpp
+@@ -38,6 +38,7 @@
+ #include <cstdlib>
+ #include <charconv>
+ #include <chrono>
++#include <thread>
+ #include <stop_token>
+ #include <cmath>
+ #include <fstream>
+@@ -64,6 +65,7 @@
+ #include "core/frontend/framebuffer_layout.h"
+ #include "core/hle/service/am/applet_manager.h"
+ #include "core/hle/service/filesystem/filesystem.h"
++#include "core/hle/service/vi/conductor.h"
+ #include "core/loader/loader.h"
+ #include "core/perf_stats.h"
+ #include "hid_core/hid_core.h"
+@@ -342,6 +344,7 @@
+     g_input_subsystem = std::make_shared<InputCommon::InputSubsystem>();
+     g_input_subsystem->Initialize();
+ 
++    Service::VI::Conductor::SetFrontendDriven(true);
+     g_system->Initialize();
+     Settings::values.renderer_backend.SetValue(Settings::RendererBackend::Vulkan);
+     // Audio output path. Default is "host": suyu opens its own audio device
+@@ -588,6 +591,19 @@
+     if (g_video_cb && g_system && g_game_loaded) {
+         auto& renderer = g_system->Renderer();
+         if (renderer.IsHeadless()) {
++            // Compose the guest's next frame for this call and wait for its readback, so each call
++            // shows the frame made for it; a guest still drawing past the wait shows its last one
++            if (g_emu_window) {
++                const u64 before = g_emu_window->FramesDisplayed();
++                if (Service::VI::Conductor::FrontendFrame()) {
++                    const auto deadline =
++                        std::chrono::steady_clock::now() + std::chrono::milliseconds{8};
++                    while (g_emu_window->FramesDisplayed() == before &&
++                           std::chrono::steady_clock::now() < deadline) {
++                        std::this_thread::sleep_for(std::chrono::microseconds{200});
++                    }
++                }
++            }
+             // A frame read back while this is held waits, and is shown on the next call
+             const auto frame_lock = renderer.LockLastRenderedFrame();
+             const u64 displayed = g_emu_window ? g_emu_window->FramesDisplayed() : 0;
