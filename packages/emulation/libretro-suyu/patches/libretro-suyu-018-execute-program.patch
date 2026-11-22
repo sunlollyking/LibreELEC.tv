@@ -1,0 +1,128 @@
+diff -ruN a/src/libretro_core/retro_core.cpp b/src/libretro_core/retro_core.cpp
+--- a/src/libretro_core/retro_core.cpp
++++ b/src/libretro_core/retro_core.cpp
+@@ -34,6 +34,7 @@
+ 
+ #include <algorithm>
+ #include <array>
++#include <atomic>
+ #include <cstring>
+ #include <cstdlib>
+ #include <charconv>
+@@ -115,6 +116,8 @@ std::unique_ptr<LibretroCore::RetroEmuWindow> g_emu_window;
+ std::shared_ptr<InputCommon::InputSubsystem> g_input_subsystem;
+ std::string g_game_path;
+ bool g_game_loaded = false;
++// The program of the loaded file that ExecuteProgram asked to run next, or -1
++std::atomic<s32> g_requested_program{-1};
+ bool g_tas_playback = false;
+ bool g_previous_tas_enable = false;
+ bool g_previous_tas_loop = false;
+@@ -469,9 +472,40 @@ constexpr RetroToVirtual kButtonMap[] = {
+     {RETRO_DEVICE_ID_JOYPAD_RIGHT, VB::ButtonRight},
+ };
+ bool g_prev_buttons[20] = {};
++
++bool StartLoadedGame(s32 program_index, Service::AM::LaunchType launch_type);
++
++// Ends the running program; the loaded file stays
++void EndProgram() {
++    g_sample_perf = false;
++    g_have_presented = false;
++    if (g_system && g_game_loaded) {
++        // Without retro_run taking audio, the emulated renderer would wait forever for it to be
++        // played, and shutting down waits for the renderer.
++        if (g_use_frontend_audio) {
++            FrontendAudioSink().Detach();
++        }
++        g_system->ShutdownMainProcess();
++    }
++    g_game_loaded = false;
++}
++
++// Collections such as Super Mario 3D All-Stars start each game as another program of their
++// file. As in suyu's Qt frontend, the running program ends and the file boots at that one.
++void SwitchProgram(s32 program_index) {
++    LOG_INFO(Frontend, "libretro core: switching to program {}", program_index);
++    EndProgram();
++    if (!StartLoadedGame(program_index, Service::AM::LaunchType::ApplicationInitiated)) {
++        g_environ_cb(RETRO_ENVIRONMENT_SHUTDOWN, nullptr);
++    }
++}
+ } // namespace
+ 
+ RETRO_API void retro_run() {
++    if (const s32 program = g_requested_program.exchange(-1); program >= 0 && g_game_loaded) {
++        SwitchProgram(program);
++    }
++
+     // This frontend is the sole periodic consumer of the destructive stats read.
+     // Sample guest rendering/timing, independently of retro_run's frontend FPS.
+     if (g_system && g_game_loaded) {
+@@ -943,8 +977,15 @@ RETRO_API bool retro_load_game(const struct retro_game_info* game) {
+         g_tas_playback = true;
+     }
+ 
++    return StartLoadedGame(0, Service::AM::LaunchType::FrontendInitiated);
++}
++
++namespace {
++bool StartLoadedGame(s32 program_index, Service::AM::LaunchType launch_type) {
+     Service::AM::FrontendAppletParameters load_parameters{};
+     load_parameters.applet_id = Service::AM::AppletId::Application;
++    load_parameters.program_index = program_index;
++    load_parameters.launch_type = launch_type;
+ 
+     const Core::SystemResultStatus result =
+         g_system->Load(*g_emu_window, g_game_path, load_parameters);
+@@ -956,6 +997,8 @@ RETRO_API bool retro_load_game(const struct retro_game_info* game) {
+         retro_unload_game();
+         return false;
+     }
++    // A program that ended set this; as in the Qt frontend, clear it once the next one loads
++    g_system->SetShuttingDown(false);
+ 
+     // The GUI's EmuThread does these steps between Load and Run; otherwise the GPU thread
+     // never starts and the CPU manager doesn't know the GPU is ready, causing the game to stall
+@@ -997,11 +1040,14 @@ RETRO_API bool retro_load_game(const struct retro_game_info* game) {
+     g_perf_unique_frames = 0;
+     (void)g_system->GetAndResetPerfStats();
+     g_perf_start = g_perf_last_sample = std::chrono::steady_clock::now();
++    g_system->RegisterExecuteProgramCallback(
++        [](std::size_t index) { g_requested_program = static_cast<s32>(index); });
+     g_system->Run();
+     g_game_loaded = true;
+     LOG_INFO(Frontend, "libretro core: game loaded and running");
+     return true;
+ }
++} // namespace
+ 
+ RETRO_API bool retro_load_game_special(unsigned /*game_type*/, const struct retro_game_info* /*info*/,
+                                        size_t /*num_info*/) {
+@@ -1009,16 +1055,8 @@ RETRO_API bool retro_load_game_special(unsigned /*game_type*/, const struct retr
+ }
+ 
+ RETRO_API void retro_unload_game() {
+-    g_sample_perf = false;
+-    g_have_presented = false;
+-    if (g_system && g_game_loaded) {
+-        // Without retro_run taking audio, the emulated renderer would wait forever for it to be
+-        // played, and shutting down waits for the renderer.
+-        if (g_use_frontend_audio) {
+-            FrontendAudioSink().Detach();
+-        }
+-        g_system->ShutdownMainProcess();
+-    }
++    EndProgram();
++    g_requested_program = -1;
+     if (g_emu_window) {
+         g_emu_window->SetTasPlayback(nullptr);
+     }
+@@ -1030,7 +1068,6 @@ RETRO_API void retro_unload_game() {
+         g_previous_tas_directory.clear();
+     }
+     g_tas_playback = false;
+-    g_game_loaded = false;
+     g_game_path.clear();
+     if (g_explicit_provider || g_content_provider) {
+         g_system->RegisterContentProvider(FileSys::ContentProviderUnionSlot::FrontendManual,
