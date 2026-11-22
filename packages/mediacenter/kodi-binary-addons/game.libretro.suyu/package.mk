@@ -3,7 +3,7 @@
 
 PKG_NAME="game.libretro.suyu"
 PKG_VERSION="0.1.4"
-PKG_REV="20"
+PKG_REV="21"
 PKG_ARCH="any"
 PKG_LICENSE="GPL-3.0-or-later"
 PKG_SITE="https://github.com/suyu-emu/suyu-main"
