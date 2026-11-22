@@ -1,5 +1,5 @@
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index e6c88468b5..e907fe222f 100644
+index 976770e556..0dc8d2fcfd 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -5,6 +5,21 @@ endif()
@@ -3583,7 +3583,7 @@ index 001f65d19a..687a79c29d 100644
     \brief (Re)set the mime-type for internet files if allowed (m_doContentLookup)
     Some sources do not support HTTP HEAD request to determine i.e. mime type
 diff --git a/xbmc/GUIInfoManager.cpp b/xbmc/GUIInfoManager.cpp
-index 963057e62d..18864acdbc 100644
+index 9b4a8c95ff..2a084aa103 100644
 --- a/xbmc/GUIInfoManager.cpp
 +++ b/xbmc/GUIInfoManager.cpp
 @@ -1254,7 +1254,7 @@ constexpr std::array<InfoMap, 11> player_times = {{
@@ -3897,7 +3897,7 @@ index dc08ff75de..a00f7f52e9 100644
              Utils/PackerMAT.h)
  
 diff --git a/xbmc/cores/AudioEngine/Engines/ActiveAE/ActiveAE.cpp b/xbmc/cores/AudioEngine/Engines/ActiveAE/ActiveAE.cpp
-index a7b1190181..d8d2802601 100644
+index 5b14249d1d..9e8ed589bf 100644
 --- a/xbmc/cores/AudioEngine/Engines/ActiveAE/ActiveAE.cpp
 +++ b/xbmc/cores/AudioEngine/Engines/ActiveAE/ActiveAE.cpp
 @@ -302,10 +302,11 @@ bool CEngineStats::IsSuspended()
@@ -4049,7 +4049,7 @@ index a7b1190181..d8d2802601 100644
          case CActiveAEDataProtocol::FREESTREAM:
            MsgStreamFree *msgStreamFree;
            msgStreamFree = reinterpret_cast<MsgStreamFree*>(msg->data);
-@@ -1289,12 +1345,17 @@ void CActiveAE::Configure(AEAudioFormat *desiredFmt)
+@@ -1306,12 +1362,17 @@ void CActiveAE::Configure(AEAudioFormat *desiredFmt)
    const AESinkDevice dev = CAESinkFactory::ParseDevice(device);
    const bool requestedDefaultDevice = IsDefaultDevice(dev);
  
@@ -4069,7 +4069,7 @@ index a7b1190181..d8d2802601 100644
        return;
      m_settings.driver = dev.driver;
      m_currDevice = dev.name;
-@@ -1662,7 +1723,8 @@ void CActiveAE::SFlushStream(CActiveAEStream *stream)
+@@ -1679,7 +1740,8 @@ void CActiveAE::SFlushStream(CActiveAEStream *stream)
      stream->m_processingSamples.front()->Return();
      stream->m_processingSamples.pop_front();
    }
@@ -4079,7 +4079,7 @@ index a7b1190181..d8d2802601 100644
    stream->m_streamPort->Purge();
    stream->m_bufferedTime = 0.0;
    stream->m_paused = false;
-@@ -1976,6 +2038,7 @@ bool CActiveAE::NeedReconfigureSink()
+@@ -1993,6 +2055,7 @@ bool CActiveAE::NeedReconfigureSink()
  
  bool CActiveAE::InitSink()
  {
@@ -4087,8 +4087,8 @@ index a7b1190181..d8d2802601 100644
    SinkConfig config;
    config.format = m_sinkRequestFormat;
    config.stats = &m_stats;
-@@ -2013,7 +2076,9 @@ bool CActiveAE::InitSink()
-       m_sinkHasVolume = data->hasVolume;
+@@ -2039,7 +2102,9 @@ bool CActiveAE::InitSink()
+       }
        m_stats.SetSinkCacheTotal(data->cacheTotal);
        m_stats.SetSinkLatency(data->latency);
 -      m_stats.SetCurrentSinkFormat(m_sinkFormat);
@@ -4098,7 +4098,7 @@ index a7b1190181..d8d2802601 100644
        m_stats.SetSinkNeedIec(m_sink.NeedIecPack());
      }
      reply->Release();
-@@ -2060,6 +2125,7 @@ void CActiveAE::DrainSink()
+@@ -2086,6 +2151,7 @@ void CActiveAE::DrainSink()
  
  void CActiveAE::UnconfigureSink()
  {
@@ -4106,7 +4106,7 @@ index a7b1190181..d8d2802601 100644
    // send message to sink
    Message *reply;
    if (m_sink.m_controlPort.SendOutMessageSync(CSinkControlProtocol::UNCONFIGURE, &reply, 2s))
-@@ -3345,6 +3411,12 @@ bool CActiveAE::GetCurrentSinkFormat(AEAudioFormat &SinkFormat)
+@@ -3371,6 +3437,12 @@ bool CActiveAE::GetCurrentSinkFormat(AEAudioFormat &SinkFormat)
    return true;
  }
  
@@ -4120,7 +4120,7 @@ index a7b1190181..d8d2802601 100644
  {
    Message *reply;
 diff --git a/xbmc/cores/AudioEngine/Engines/ActiveAE/ActiveAE.h b/xbmc/cores/AudioEngine/Engines/ActiveAE/ActiveAE.h
-index eed93485c1..3195466949 100644
+index 2c85cecef8..456995a863 100644
 --- a/xbmc/cores/AudioEngine/Engines/ActiveAE/ActiveAE.h
 +++ b/xbmc/cores/AudioEngine/Engines/ActiveAE/ActiveAE.h
 @@ -9,6 +9,7 @@
@@ -4165,13 +4165,13 @@ index eed93485c1..3195466949 100644
    bool m_extError;
 +  bool m_sinkInitFailed{false};
    unsigned int m_extErrorRetries{0};
-   bool m_extDrain;
-   XbmcThreads::EndTime<> m_extDrainTimer;
+   //! No device opened, so the sink discards output; the device is retried on a backoff
+   bool m_sinkFallback{false};
 diff --git a/xbmc/cores/AudioEngine/Engines/ActiveAE/ActiveAESink.cpp b/xbmc/cores/AudioEngine/Engines/ActiveAE/ActiveAESink.cpp
-index 967a05efe1..e3f20410d3 100644
+index 06141a8a6d..22ad73d812 100644
 --- a/xbmc/cores/AudioEngine/Engines/ActiveAE/ActiveAESink.cpp
 +++ b/xbmc/cores/AudioEngine/Engines/ActiveAE/ActiveAESink.cpp
-@@ -449,6 +449,7 @@ void CActiveAESink::StateMachine(int signal, Protocol *port, Message *msg)
+@@ -451,6 +451,7 @@ void CActiveAESink::StateMachine(int signal, Protocol *port, Message *msg)
          {
          case CSinkDataProtocol::DRAIN:
            m_sink->Drain();
@@ -4179,7 +4179,7 @@ index 967a05efe1..e3f20410d3 100644
            msg->Reply(CSinkDataProtocol::ACC);
            m_state = S_TOP_CONFIGURED_IDLE;
            m_extTimeout = 10s;
-@@ -581,6 +582,7 @@ void CActiveAESink::StateMachine(int signal, Protocol *port, Message *msg)
+@@ -583,6 +584,7 @@ void CActiveAESink::StateMachine(int signal, Protocol *port, Message *msg)
            else
            {
              m_sink->Drain();
@@ -4187,7 +4187,7 @@ index 967a05efe1..e3f20410d3 100644
              m_state = S_TOP_CONFIGURED_IDLE;
              if (m_extAppFocused)
                m_extTimeout = 10s;
-@@ -1064,14 +1066,15 @@ void CActiveAESink::OpenSink()
+@@ -1082,14 +1084,15 @@ void CActiveAESink::OpenSink()
  
  void CActiveAESink::CloseSink(const bool drain)
  {
@@ -4211,7 +4211,7 @@ index 967a05efe1..e3f20410d3 100644
  }
  
  void CActiveAESink::ReturnBuffers()
-@@ -1091,6 +1094,7 @@ void CActiveAESink::ReturnBuffers()
+@@ -1109,6 +1112,7 @@ void CActiveAESink::ReturnBuffers()
  
  unsigned int CActiveAESink::OutputSamples(CSampleBuffer* samples)
  {
@@ -4220,17 +4220,17 @@ index 967a05efe1..e3f20410d3 100644
    uint8_t *packBuffer;
    unsigned int frames = samples->pkt->nb_samples;
 diff --git a/xbmc/cores/AudioEngine/Engines/ActiveAE/ActiveAESink.h b/xbmc/cores/AudioEngine/Engines/ActiveAE/ActiveAESink.h
-index 1fcb22ce1e..41c7d26873 100644
+index c5bf98d12e..aa1e4d46d6 100644
 --- a/xbmc/cores/AudioEngine/Engines/ActiveAE/ActiveAESink.h
 +++ b/xbmc/cores/AudioEngine/Engines/ActiveAE/ActiveAESink.h
-@@ -139,6 +139,7 @@ protected:
+@@ -140,6 +140,7 @@ protected:
    std::chrono::milliseconds m_extSilenceTimeout;
    bool m_extAppFocused;
    bool m_extStreaming;
 +  bool m_hasSubmittedAudio{false};
    bool m_extReserved{false};
-   std::chrono::duration<double> m_reservedCacheTotal{};
-   std::chrono::duration<double> m_reservedLatency{};
+   //! No device could be opened, so output goes to the null sink until the engine reconfigures
+   bool m_extFallback{false};
 diff --git a/xbmc/cores/AudioEngine/Interfaces/AE.h b/xbmc/cores/AudioEngine/Interfaces/AE.h
 index a90ff4ab65..17ec67e854 100644
 --- a/xbmc/cores/AudioEngine/Interfaces/AE.h
@@ -5026,7 +5026,7 @@ index 1e8bfb13d2..c124036387 100644
  };
  
 diff --git a/xbmc/cores/AudioEngine/Utils/AEStreamInfo.cpp b/xbmc/cores/AudioEngine/Utils/AEStreamInfo.cpp
-index a56837fef7..4139d0eda6 100644
+index eacf81429a..1ffa6ef4b6 100644
 --- a/xbmc/cores/AudioEngine/Utils/AEStreamInfo.cpp
 +++ b/xbmc/cores/AudioEngine/Utils/AEStreamInfo.cpp
 @@ -11,6 +11,7 @@
@@ -5500,7 +5500,7 @@ index a56837fef7..4139d0eda6 100644
      m_fsize = framesize << 1;
      m_info.m_sampleRate = AC3FSCod[fscod];
 diff --git a/xbmc/cores/AudioEngine/Utils/AEStreamInfo.h b/xbmc/cores/AudioEngine/Utils/AEStreamInfo.h
-index 3bcdf4328f..ac479ca531 100644
+index 4548bde12c..014be4f5a5 100644
 --- a/xbmc/cores/AudioEngine/Utils/AEStreamInfo.h
 +++ b/xbmc/cores/AudioEngine/Utils/AEStreamInfo.h
 @@ -57,6 +57,13 @@ public:
@@ -5517,7 +5517,7 @@ index 3bcdf4328f..ac479ca531 100644
    void SetCoreOnly(bool value) { m_coreOnly = value; }
    void SetDTSHDMA(bool value) { m_dtsHDMA = value; }
    unsigned int IsValid() const { return m_hasSync; }
-@@ -93,6 +100,12 @@ private:
+@@ -92,6 +99,12 @@ private:
    int m_substreams = 0;       /* used for TrueHD  */
    AVCRC m_crcTrueHD[1024];  /* TrueHD crc table */
  
@@ -15383,7 +15383,7 @@ index 3728283d6c..b39f29be0c 100644
    int samplerate = 0;
    int bitspersample = 0;
 diff --git a/xbmc/cores/VideoPlayer/Process/ProcessInfo.cpp b/xbmc/cores/VideoPlayer/Process/ProcessInfo.cpp
-index 78f58c323b..c6cee90bf5 100644
+index a73b2c27c6..c55f574650 100644
 --- a/xbmc/cores/VideoPlayer/Process/ProcessInfo.cpp
 +++ b/xbmc/cores/VideoPlayer/Process/ProcessInfo.cpp
 @@ -85,6 +85,7 @@ void CProcessInfo::ResetVideoCodecInfo()
@@ -33367,10 +33367,10 @@ index b58104ff22..179b179314 100644
    {"stretch4x3", ViewModeStretch4x3},
    {"widezoom", ViewModeWideZoom, },
 diff --git a/xbmc/interfaces/json-rpc/schema/types.json b/xbmc/interfaces/json-rpc/schema/types.json
-index cab88b4c46..b9c3123e2a 100644
+index 33c338b0a3..08e99030ea 100644
 --- a/xbmc/interfaces/json-rpc/schema/types.json
 +++ b/xbmc/interfaces/json-rpc/schema/types.json
-@@ -535,6 +535,8 @@
+@@ -558,6 +558,8 @@
      "type": "string",
      "enum": [
        "normal",
@@ -34361,10 +34361,10 @@ index 3c5800b455..71f11bfe4d 100644
    return m_buffer != nullptr;
  }
 diff --git a/xbmc/settings/AdvancedSettings.cpp b/xbmc/settings/AdvancedSettings.cpp
-index 1a93346b51..3eaf3fcacb 100644
+index 23e2fb574e..585e6fe6a0 100644
 --- a/xbmc/settings/AdvancedSettings.cpp
 +++ b/xbmc/settings/AdvancedSettings.cpp
-@@ -593,6 +593,7 @@ void CAdvancedSettings::Initialize()
+@@ -594,6 +594,7 @@ void CAdvancedSettings::Initialize()
    m_stereoscopicregex_3d = "[-. _]3d[-. _]";
    m_stereoscopicregex_sbs = "[-. _]h?sbs[-. _]";
    m_stereoscopicregex_tab = "[-. _]h?tab[-. _]";
@@ -34372,7 +34372,7 @@ index 1a93346b51..3eaf3fcacb 100644
  
    m_logLevelHint = m_logLevel = LOG_LEVEL_NORMAL;
  
-@@ -755,6 +756,8 @@ void CAdvancedSettings::ParseSettingsFile(const std::string &file)
+@@ -756,6 +757,8 @@ void CAdvancedSettings::ParseSettingsFile(const std::string &file)
      XMLUtils::GetString(pElement, "stereoscopicregex3d", m_stereoscopicregex_3d);
      XMLUtils::GetString(pElement, "stereoscopicregexsbs", m_stereoscopicregex_sbs);
      XMLUtils::GetString(pElement, "stereoscopicregextab", m_stereoscopicregex_tab);
@@ -34382,10 +34382,10 @@ index 1a93346b51..3eaf3fcacb 100644
      XMLUtils::GetFloat(pElement, "subsdelaystep", m_videoSubsDelayStep, 0, 1.0f);
      XMLUtils::GetFloat(pElement, "audiodelayrange", m_videoAudioDelayRange, 10, 600);
 diff --git a/xbmc/settings/AdvancedSettings.h b/xbmc/settings/AdvancedSettings.h
-index 75a2df9a82..7128767c40 100644
+index 6840d730f8..62d564875c 100644
 --- a/xbmc/settings/AdvancedSettings.h
 +++ b/xbmc/settings/AdvancedSettings.h
-@@ -433,6 +433,11 @@ class CAdvancedSettings : public ISettingCallback, public ISettingsHandler
+@@ -434,6 +434,11 @@ class CAdvancedSettings : public ISettingCallback, public ISettingsHandler
      std::string m_stereoscopicregex_sbs;
      std::string m_stereoscopicregex_tab;
  
@@ -39613,7 +39613,7 @@ index 0000000000..b082573147
 +};
 +}
 diff --git a/xbmc/windowing/gbm/WinSystemGbm.cpp b/xbmc/windowing/gbm/WinSystemGbm.cpp
-index a61d92f4bc..7ecc277245 100644
+index eeac2802e1..4b61ac197e 100644
 --- a/xbmc/windowing/gbm/WinSystemGbm.cpp
 +++ b/xbmc/windowing/gbm/WinSystemGbm.cpp
 @@ -12,11 +12,19 @@
@@ -39748,7 +39748,7 @@ index a61d92f4bc..7ecc277245 100644
    auto setting = settings->GetSetting(SETTING_VIDEOSCREEN_LIMITGUISIZE);
    if (setting)
      setting->SetVisible(true);
-@@ -238,22 +312,59 @@ bool CWinSystemGbm::DestroyWindowSystem()
+@@ -240,22 +314,59 @@ bool CWinSystemGbm::DestroyWindowSystem()
    return true;
  }
  
@@ -39811,7 +39811,7 @@ index a61d92f4bc..7ecc277245 100644
    }
    else
    {
-@@ -268,12 +379,16 @@ void CWinSystemGbm::UpdateResolutions()
+@@ -270,12 +381,16 @@ void CWinSystemGbm::UpdateResolutions()
            current.iWidth == res.iWidth && current.iHeight == res.iHeight &&
            current.fRefreshRate == res.fRefreshRate && current.dwFlags == res.dwFlags)
        {
@@ -39831,7 +39831,7 @@ index a61d92f4bc..7ecc277245 100644
      }
    }
  
-@@ -304,11 +419,231 @@ void CWinSystemGbm::OnSettingChanged(const std::shared_ptr<const CSetting>& sett
+@@ -306,11 +421,231 @@ void CWinSystemGbm::OnSettingChanged(const std::shared_ptr<const CSetting>& sett
  
      CServiceBroker::GetAppMessenger()->PostMsg(TMSG_CALLBACK, -1, -1, &m_colorRangeCallback);
    }
@@ -40064,7 +40064,7 @@ index a61d92f4bc..7ecc277245 100644
  }
  
  ColorRange CWinSystemGbm::GetColorRange() const
-@@ -343,22 +678,32 @@ void CWinSystemGbm::MigrateLimitedRangeSetting()
+@@ -345,22 +680,32 @@ void CWinSystemGbm::MigrateLimitedRangeSetting()
    settings->SetBool(CSettings::SETTING_VIDEOSCREEN_LIMITEDRANGE, false);
  }
  
@@ -40108,7 +40108,7 @@ index a61d92f4bc..7ecc277245 100644
    const char* targetName = BROADCAST_RGB_AUTOMATIC;
    switch (GetColorRange())
    {
-@@ -372,130 +717,297 @@ void CWinSystemGbm::ApplyBroadcastRange(bool retry)
+@@ -374,130 +719,297 @@ void CWinSystemGbm::ApplyBroadcastRange(bool retry)
        break;
    }
  
@@ -40486,7 +40486,7 @@ index a61d92f4bc..7ecc277245 100644
                                  100);
    if (delay > 0ms)
      m_dispResetTimer.Set(delay);
-@@ -503,7 +1015,174 @@ bool CWinSystemGbm::SetFullScreen(bool fullScreen, RESOLUTION_INFO& res, bool bl
+@@ -505,7 +1017,174 @@ bool CWinSystemGbm::SetFullScreen(bool fullScreen, RESOLUTION_INFO& res, bool bl
    return result;
  }
  
@@ -40661,7 +40661,7 @@ index a61d92f4bc..7ecc277245 100644
  {
    if (m_videoLayerBridge && !videoLayer)
    {
-@@ -511,19 +1190,61 @@ void CWinSystemGbm::FlipPage(bool rendered, bool videoLayer, bool async)
+@@ -513,19 +1192,61 @@ void CWinSystemGbm::FlipPage(bool rendered, bool videoLayer, bool async)
      m_videoLayerBridge->Disable();
    }
  
@@ -40727,7 +40727,7 @@ index a61d92f4bc..7ecc277245 100644
  
    HoldAfterHdrChange();
  
-@@ -540,15 +1261,50 @@ void CWinSystemGbm::FlipPage(bool rendered, bool videoLayer, bool async)
+@@ -542,15 +1263,50 @@ void CWinSystemGbm::FlipPage(bool rendered, bool videoLayer, bool async)
      auto* gui = m_DRM->GetGuiPlane();
      m_DRM->FindGuiPlane(gui->GetFormat(), gui->GetModifier());
    }
@@ -40783,7 +40783,7 @@ index a61d92f4bc..7ecc277245 100644
  }
  
  bool CWinSystemGbm::Hide()
-@@ -583,6 +1339,7 @@ void CWinSystemGbm::Unregister(IDispResource* resource)
+@@ -585,6 +1341,7 @@ void CWinSystemGbm::Unregister(IDispResource* resource)
  
  void CWinSystemGbm::OnLostDevice()
  {
@@ -40791,7 +40791,7 @@ index a61d92f4bc..7ecc277245 100644
    CLog::Log(LOGDEBUG, "{} - notify display change event", __FUNCTION__);
    m_dispReset = true;
  
-@@ -650,12 +1407,32 @@ bool CWinSystemGbm::SetVideoOutput(const VideoPicture* videoPicture)
+@@ -652,12 +1409,32 @@ bool CWinSystemGbm::SetVideoOutput(const VideoPicture* videoPicture)
                        : m_DRM->FindGuiPlane(current->GetFormat(), current->GetModifier());
  }
  
@@ -40825,7 +40825,7 @@ index a61d92f4bc..7ecc277245 100644
    auto connector = drm->GetConnector();
    if (!connector || !connector->SupportsProperty("Colorspace"))
      return;
-@@ -663,46 +1440,181 @@ void CWinSystemGbm::SetColorimetry(const VideoPicture* videoPicture)
+@@ -665,46 +1442,181 @@ void CWinSystemGbm::SetColorimetry(const VideoPicture* videoPicture)
    KODI::UTILS::Colorimetry colorimetry = KODI::UTILS::Colorimetry::DEFAULT;
  
    if (videoPicture)
@@ -41019,8 +41019,8 @@ index a61d92f4bc..7ecc277245 100644
    }
  }
  
-@@ -769,8 +1681,147 @@ void CWinSystemGbm::UpdateContentType()
-   drm->RequestModeset();
+@@ -790,8 +1702,147 @@ void CWinSystemGbm::ResetContentType()
+   drm->CommitProperty(connector, "content type", *noData);
  }
  
 +namespace
@@ -41167,7 +41167,7 @@ index a61d92f4bc..7ecc277245 100644
    auto settingsComponent = CServiceBroker::GetSettingsComponent();
    if (!settingsComponent)
      return false;
-@@ -798,10 +1849,8 @@ bool CWinSystemGbm::SetHDR(const VideoPicture* videoPicture)
+@@ -819,10 +1870,8 @@ bool CWinSystemGbm::SetHDR(const VideoPicture* videoPicture)
        drm->AddProperty(connector, "HDR_OUTPUT_METADATA", 0);
        drm->SetActive(true);
  
@@ -41178,7 +41178,7 @@ index a61d92f4bc..7ecc277245 100644
      return false;
    }
  
-@@ -809,94 +1858,85 @@ bool CWinSystemGbm::SetHDR(const VideoPicture* videoPicture)
+@@ -830,94 +1879,85 @@ bool CWinSystemGbm::SetHDR(const VideoPicture* videoPicture)
    if (videoPicture->color_transfer != AVCOL_TRC_SMPTE2084 &&
        videoPicture->color_transfer != AVCOL_TRC_ARIB_STD_B67)
    {
@@ -41333,7 +41333,7 @@ index a61d92f4bc..7ecc277245 100644
  bool CWinSystemGbm::IsHDRDisplay()
  {
    auto drm = std::dynamic_pointer_cast<CDRMAtomic>(m_DRM);
-@@ -911,6 +1951,228 @@ bool CWinSystemGbm::IsHDRDisplay()
+@@ -932,6 +1972,228 @@ bool CWinSystemGbm::IsHDRDisplay()
           m_info->SupportsHDRStaticMetadataType1();
  }
  
@@ -41562,7 +41562,7 @@ index a61d92f4bc..7ecc277245 100644
  CHDRCapabilities CWinSystemGbm::GetDisplayHDRCapabilities() const
  {
    if (!m_info)
-@@ -926,5 +2188,11 @@ CHDRCapabilities CWinSystemGbm::GetDisplayHDRCapabilities() const
+@@ -947,5 +2209,11 @@ CHDRCapabilities CWinSystemGbm::GetDisplayHDRCapabilities() const
  
    caps.SetMaxLuminance(m_info->GetMaxLuminance());
  
@@ -41575,7 +41575,7 @@ index a61d92f4bc..7ecc277245 100644
    return caps;
  }
 diff --git a/xbmc/windowing/gbm/WinSystemGbm.h b/xbmc/windowing/gbm/WinSystemGbm.h
-index 69285ac7fa..3e37c5e2f1 100644
+index 8a6ccccc18..106717a245 100644
 --- a/xbmc/windowing/gbm/WinSystemGbm.h
 +++ b/xbmc/windowing/gbm/WinSystemGbm.h
 @@ -8,7 +8,13 @@
@@ -41730,8 +41730,8 @@ index 69285ac7fa..3e37c5e2f1 100644
    std::unique_ptr<CVideoSync> GetVideoSync(CVideoReferenceClock* clock) override;
  
    std::shared_ptr<CDRMUtils> m_DRM;
-@@ -116,31 +192,108 @@ private:
-   void UpdateContentType();
+@@ -117,31 +193,108 @@ private:
+   void ResetContentType();
    void HoldAfterHdrChange();
    static void ApplyLimitGuiSize(void* userptr);
 -  static void ApplyColorRangeSetting(void* userptr);
@@ -41846,7 +41846,7 @@ index 69285ac7fa..3e37c5e2f1 100644
    CDRMPropertyBlob m_hdrBlob;
    KODI::UTILS::Eotf m_eotf = KODI::UTILS::Eotf::TRADITIONAL_SDR;
    KODI::UTILS::Colorimetry m_colorimetry = KODI::UTILS::Colorimetry::DEFAULT;
-@@ -149,6 +302,15 @@ private:
+@@ -150,6 +303,15 @@ private:
    bool m_hdrOutput = false;
  
    std::unique_ptr<UTILS::CDisplayInfo> m_info;
@@ -51531,7 +51531,7 @@ index 8bd07ea621..2cdfa816d4 100644
 +endif()
  core_add_library(windowing_gbm_drm)
 diff --git a/xbmc/windowing/gbm/drm/DRMAtomic.cpp b/xbmc/windowing/gbm/drm/DRMAtomic.cpp
-index 7a6f87c2db..8915335b38 100644
+index 15e9aaf349..6a007bc05f 100644
 --- a/xbmc/windowing/gbm/drm/DRMAtomic.cpp
 +++ b/xbmc/windowing/gbm/drm/DRMAtomic.cpp
 @@ -15,8 +15,17 @@
@@ -51920,8 +51920,7 @@ index 7a6f87c2db..8915335b38 100644
 +        m_dvFailures.Record(DVNowMs(), "native-atomic-commit", error))
 +      CollectDVKernelLog();
 +    return reject("atomic-commit", error);
-   }
--  else
++  }
 +  if (strict)
 +  {
 +    if (auditCommit)
@@ -51933,7 +51932,8 @@ index 7a6f87c2db..8915335b38 100644
 +    if (DVBRIDGE::DiagnosticsEnabled() && m_dvFailures.Recovered(DVNowMs()))
 +      DVBRIDGE::DiagnosticEssentialLog(LOGINFO, "DVBridge output recovered: failures={} recoveries={}",
 +          m_dvFailures.Count(), m_dvFailures.Recoveries());
-+  }
+   }
+-  else
 +  FinishRequest(true);
 +  return true;
 +}
@@ -52254,7 +52254,7 @@ index 7a6f87c2db..8915335b38 100644
    m_need_modeset = true;
    m_active = active;
  
-@@ -310,11 +864,65 @@ bool CDRMAtomic::SetActive(bool active)
+@@ -310,9 +864,20 @@ bool CDRMAtomic::SetActive(bool active)
  
  bool CDRMAtomic::AddProperty(CDRMObject* object, const char* name, uint64_t value)
  {
@@ -52275,8 +52275,13 @@ index 7a6f87c2db..8915335b38 100644
 +    m_signalDirty = true;
 +  m_propertyFailure |= !added;
 +  return added;
-+}
-+
+ }
+ 
+ bool CDRMAtomic::CommitProperty(CDRMObject* object, const char* name, uint64_t value)
+@@ -334,6 +899,49 @@ bool CDRMAtomic::CommitProperty(CDRMObject* object, const char* name, uint64_t v
+   return true;
+ }
+ 
 +void CDRMAtomic::ReportSignalState() noexcept try
 +{
 +  // Cached values are updated only after an accepted real commit. No DRM query
@@ -52316,14 +52321,14 @@ index 7a6f87c2db..8915335b38 100644
 +    m_signalKnown = true;
 +    m_signalState = state;
 +  }
- }
- 
++}
++
 +catch (...) {}
 +
  CDRMAtomic::CDRMAtomicRequest::CDRMAtomicRequest() : m_atomicRequest(drmModeAtomicAlloc())
  {
  }
-@@ -332,6 +940,7 @@ bool CDRMAtomic::CDRMAtomicRequest::AddProperty(CDRMObject* object,
+@@ -351,6 +959,7 @@ bool CDRMAtomic::CDRMAtomicRequest::AddProperty(CDRMObject* object,
      return false;
  
    m_atomicRequestItems[object][propertyId] = value;
@@ -52331,7 +52336,7 @@ index 7a6f87c2db..8915335b38 100644
    return true;
  }
  
-@@ -381,6 +990,31 @@ void CDRMAtomic::CDRMAtomicRequest::LogAtomicRequest()
+@@ -400,6 +1009,31 @@ void CDRMAtomic::CDRMAtomicRequest::LogAtomicRequest()
    LogAtomicRequest(LOGDEBUG, m_atomicRequestItems);
  }
  
@@ -52364,7 +52369,7 @@ index 7a6f87c2db..8915335b38 100644
      uint8_t logLevel, std::map<CDRMObject*, std::map<uint32_t, uint64_t>>& atomicRequestItems)
  {
 diff --git a/xbmc/windowing/gbm/drm/DRMAtomic.h b/xbmc/windowing/gbm/drm/DRMAtomic.h
-index 9a00b4f8cd..bdbe391f67 100644
+index f6bcdd6c9c..6d15b4313c 100644
 --- a/xbmc/windowing/gbm/drm/DRMAtomic.h
 +++ b/xbmc/windowing/gbm/drm/DRMAtomic.h
 @@ -10,8 +10,11 @@
@@ -52379,7 +52384,7 @@ index 9a00b4f8cd..bdbe391f67 100644
  #include <deque>
  #include <map>
  #include <memory>
-@@ -27,25 +30,116 @@ class CDRMAtomic : public CDRMUtils
+@@ -27,27 +30,118 @@ class CDRMAtomic : public CDRMUtils
  {
  public:
    CDRMAtomic() = default;
@@ -52414,6 +52419,8 @@ index 9a00b4f8cd..bdbe391f67 100644
    void DestroyDrm() override;
    bool SupportsFencing() override { return true; }
    bool AddProperty(CDRMObject* object, const char* name, uint64_t value);
+   //! Commit one property on its own, for when no frame follows to carry it
+   bool CommitProperty(CDRMObject* object, const char* name, uint64_t value);
 +  bool FlipPageTransactional(struct gbm_bo* bo, bool restore = false, bool async = false,
 +                             bool* lldvTestRejected = nullptr);
 +  bool FlipPageWithHDR10Metadata(struct gbm_bo* bo, uint32_t blob);
@@ -52498,7 +52505,7 @@ index 9a00b4f8cd..bdbe391f67 100644
  
    class CDRMAtomicRequest
    {
-@@ -55,10 +149,17 @@ private:
+@@ -57,10 +151,17 @@ private:
      CDRMAtomicRequest(const CDRMAtomicRequest& right) = delete;
  
      drmModeAtomicReqPtr Get() const { return m_atomicRequest.get(); }
