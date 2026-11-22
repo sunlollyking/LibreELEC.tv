@@ -13,9 +13,7 @@ PKG_DEPENDS_TARGET="toolchain tinyxml ${MEDIACENTER}:host libheif tinyxml2"
 PKG_SECTION=""
 PKG_SHORTDESC="imagedecoder.heif"
 PKG_LONGDESC="imagedecoder.heif"
-# libde265 checks the CPU with __builtin_cpu_supports. Its __cpu_model is only
-# in libgcc.a (libgcc_s keeps a compat copy that can't be linked to), and g++
-# links a shared library against libgcc_s alone, so add libgcc.a at the end.
+# libde265 needs __cpu_model, which is only in libgcc.a
 PKG_CMAKE_OPTS_TARGET="-DCMAKE_CXX_STANDARD_LIBRARIES=-lgcc"
 
 PKG_IS_ADDON="yes"

@@ -5,7 +5,7 @@
 PKG_NAME="kodi"
 PKG_VERSION="c3bd132f785cd38bd245f1bd697d8098c0e57dd2"
 PKG_SHA256="85ef6c024eae592fabfbce65b5eb618b1564eeb2cdacae80e5e0157a4dad1fb0"
-PKG_LICENSE="GPL-3.0-only"
+PKG_LICENSE="GPL-2.0-or-later"
 PKG_SITE="http://www.kodi.tv"
 PKG_URL="https://github.com/sunlollyking/xbmc/archive/${PKG_VERSION}.tar.gz"
 PKG_DEPENDS_TARGET="toolchain libplacebo JsonSchemaBuilder:host TexturePacker:host Python3 zlib systemd lzo pcre2 swig:host libass curl exiv2 fontconfig fribidi tinyxml tinyxml2 libjpeg-turbo freetype libcdio taglib libxml2 libxslt nlohmann-json sqlite ffmpeg crossguid libdvdnav libfmt libfstrcmp flatbuffers:host flatbuffers libudfread spdlog libxkbcommon"
@@ -461,6 +461,10 @@ post_makeinstall_target() {
     mkdir -p ${INSTALL}/usr/lib/udev/rules.d/
     cp ${PKG_DIR}/config/70-libinput-ignore-power-button.rules ${INSTALL}/usr/lib/udev/rules.d/
   fi
+
+  # install well-known XDG user directories config file
+  mkdir -p ${INSTALL}/usr/config
+  cp ${PKG_DIR}/config/user-dirs.dirs ${INSTALL}/usr/config
 
   # update addon manifest
   ADDON_MANIFEST=${INSTALL}/usr/share/kodi/system/addon-manifest.xml
